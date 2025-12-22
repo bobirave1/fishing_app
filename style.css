@@ -1,0 +1,26 @@
+body {
+  background-color: #c5d1eb;
+}
+
+.custom-bg {
+  background-color: #92afd7;
+}
+
+.custom-btn {
+  background-color: #c5d1eb;
+  
+}
+#registerModal .modal-body {
+        padding: 1.5rem 2rem; /* Reduced padding */
+    }
+
+    #registerModal .modal-content {
+        max-height: 90vh; /* Prevent modal from being too tall */
+    }
+
+    /* Optional: smaller modal on larger screens */
+    @media (min-width: 576px) {
+        #registerModal .modal-dialog {
+            max-width: 450px; /* Slightly narrower */
+        }
+    }
