@@ -14,10 +14,6 @@ body {
         padding: 1.5rem 2rem; /* Reduced padding */
     }
 
-    #registerModal .modal-content {
-        max-height: 90vh; /* Prevent modal from being too tall */
-    }
-
     /* Optional: smaller modal on larger screens */
     @media (min-width: 576px) {
         #registerModal .modal-dialog {
