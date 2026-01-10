@@ -1,10 +1,8 @@
-<!-- Smaller logo in modal -->
 <div class="row justify-content-center mb-3">
     <img src="Images/logo_rounded.png" class="w-50" alt="FISHINGLORY Logo"/>
 </div>
 
-<!-- Compact Registration Form -->
-<form action="/your-register-endpoint" method="POST">
+<form method="POST" action="auth/register.php">
     <div class="mb-3">
         <label for="regFullName" class="form-label">Full Name</label>
         <input type="text" class="form-control" id="regFullName" name="fullName" placeholder="Enter your full name" required>
@@ -27,11 +25,11 @@
 
     <div class="mb-3">
         <label for="regConfirmPassword" class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" id="regConfirmPassword" placeholder="Confirm your password" required>
+        <input type="password" class="form-control" id="regConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
     </div>
 
     <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" id="regTerms" required>
+        <input type="checkbox" class="form-check-input" id="regTerms" name="terms" required>
         <label for="regTerms" class="form-check-label small">
             I agree to the <a href="#" class="text-decoration-none">Terms & Conditions</a>
         </label>
