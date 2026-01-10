@@ -1,5 +1,38 @@
 <?php
 session_start();
+require 'config/database.php';
+
+$posts = [];
+
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+
+    $stmt = $pdo->prepare("
+        SELECT p.*, u.username
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        WHERE
+            p.visibility = 'public'
+         OR (p.visibility = 'friends' AND p.user_id IN (
+                SELECT friend_id FROM friends WHERE user_id = ?
+            ))
+         OR p.user_id = ?
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->execute([$userId, $userId]);
+    $posts = $stmt->fetchAll();
+} else {
+    // за гости – само public постове
+    $stmt = $pdo->query("
+        SELECT p.*, u.username
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.visibility = 'public'
+        ORDER BY p.created_at DESC
+    ");
+    $posts = $stmt->fetchAll();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,6 +67,8 @@ session_start();
                         <a href="auth/logout.php" class="btn btn-light">
                             <i class="fa fa-sign-out-alt me-1"></i> Logout
                         </a>
+
+
                     <?php else: ?>
                         <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#loginModal">
                             <i class="fa fa-sign-in-alt me-1"></i> Login
@@ -48,11 +83,117 @@ session_start();
     </div>
 </nav>
 
-<div class="container my-5 text-center py-5">
-    <h1 class="display-4">Welcome to FISHINGLORY</h1>
-    <p class="lead">The ultimate fishing community and marketplace.</p>
-    <p>Explore, share, and connect with fellow anglers.</p>
+<div class="container my-5 py-5">
+
+<?php if (isset($_SESSION['user_id'])): ?>
+    <div class="row g-4 justify-content-center">
+
+
+        <!-- Profile -->
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fa fa-user fa-3x mb-3 text-primary"></i>
+                    <h5>My Profile</h5>
+                    <a href="profile.php?id=<?= $_SESSION['user_id'] ?>" class="btn btn-primary w-100">
+                        View Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friends -->
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fa fa-users fa-3x mb-3 text-success"></i>
+                    <h5>Friends</h5>
+                    <a href="friends/list_friends.php" class="btn btn-success w-100">
+                        My Friends
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friend Requests -->
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fa fa-user-plus fa-3x mb-3 text-warning"></i>
+                    <h5>Friend Requests</h5>
+                    <a href="friends/list_requests.php" class="btn btn-warning w-100">
+                        View Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<?php else: ?>
+
+    <div class="text-center">
+        <h1 class="display-4">Welcome to FISHINGLORY</h1>
+        <p class="lead">The ultimate fishing community and marketplace.</p>
+        <p>Login or register to unlock all features 🎣</p>
+    </div>
+
+<?php endif; ?>
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body">
+                                <form action="posts/create.php" method="post" enctype="multipart/form-data">
+                                    <input type="text" name="title" class="form-control mb-2"
+                                        placeholder="Post title" required>
+
+                                    <textarea name="content" class="form-control mb-2"
+                                            placeholder="Share your catch..." required></textarea>
+
+                                    <select name="visibility" class="form-select mb-2">
+                                        <option value="public">🌍 Public</option>
+                                        <option value="friends">👥 Friends</option>
+                                        <option value="private">🔒 Only me</option>
+                                    </select>
+
+                                    <input type="file" name="image" class="form-control mb-2">
+
+                                    <button class="btn btn-primary w-100">Post</button>
+                                </form>
+                            </div>
+                        </div>
+                        <?php foreach ($posts as $p): ?>
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5><?= htmlspecialchars($p['title']) ?></h5>
+
+            <strong><?= htmlspecialchars($p['username']) ?></strong>
+
+            <p class="mt-2">
+                <?= nl2br(htmlspecialchars($p['content'])) ?>
+            </p>
+
+            <?php if (!empty($p['image'])): ?>
+                <img src="<?= htmlspecialchars($p['image']) ?>"
+                     class="img-fluid rounded mb-2">
+            <?php endif; ?>
+
+            <div class="d-flex justify-content-between">
+                <small class="text-muted">
+                    <?= $p['created_at'] ?>
+                </small>
+                <small class="text-muted">
+                    <?= strtoupper($p['visibility']) ?>
+                </small>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
+</div> <!-- container -->
 </div>
+
+
+</div>
+
 
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
