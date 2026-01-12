@@ -37,7 +37,7 @@ $isPending = $pending->fetch();
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-body text-center">
-            <img src="Images/default-avatar.png" width="120" class="rounded-circle mb-3">
+            <img src="fe/assets/img/default-avatar.png" width="120" class="rounded-circle mb-3">
             <h3><?= htmlspecialchars($user['username']) ?></h3>
             <p class="text-muted"><?= htmlspecialchars($user['full_name']) ?></p>
 

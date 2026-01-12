@@ -37,5 +37,5 @@ $stmt->execute([
     $visibility
 ]);
 
-header("Location: ../posts/feed.php");
+header("Location: ../index.php");
 exit;

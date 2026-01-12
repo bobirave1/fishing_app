@@ -1,5 +1,5 @@
 <div class="row justify-content-center mb-3">
-    <img src="Images/logo_rounded.png" class="w-50" alt="FISHINGLORY Logo"/>
+    <img src="fe/assets/img/logo_rounded.png" class="w-50" alt="FISHINGLORY Logo"/>
 </div>
 
 <form method="POST" action="auth/register.php">

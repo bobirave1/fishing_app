@@ -44,14 +44,14 @@ if (isset($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="Images/logo_rounded.png">
+    <link rel="icon" href="fe/assets/img/logo_rounded.png">
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
         <a class="navbar-brand" href="#">
-            <img src="Images/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
+            <img src="fe/assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
             FISHINGLORY
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -61,8 +61,9 @@ if (isset($_SESSION['user_id'])) {
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item d-flex gap-2">
                     <?php if (isset($_SESSION['user_id'])): ?>
-                        <span class="text-white me-2">
-                            👋 <?= htmlspecialchars($_SESSION['username']) ?>
+                        <span class="text-white">
+                            <img src="fe/assets/img/default-avatar.png" width="40" height="40" class="rounded-circle me-1">
+                             <?= htmlspecialchars($_SESSION['username']) ?>
                         </span>
                         <a href="auth/logout.php" class="btn btn-light">
                             <i class="fa fa-sign-out-alt me-1"></i> Logout

@@ -33,7 +33,7 @@ $friends = $stmt->fetchAll();
             <div class="col-md-4 mb-3">
                 <div class="card text-center">
                     <div class="card-body">
-                        <img src="../Images/default-avatar.png" width="80" class="rounded-circle mb-2">
+                        <img src="../img/default-avatar.png" width="80" class="rounded-circle mb-2">
                         <h6><?= htmlspecialchars($f['username']) ?></h6>
                         <a href="../profile.php?id=<?= $f['id'] ?>" class="btn btn-outline-primary btn-sm">
                             View Profile

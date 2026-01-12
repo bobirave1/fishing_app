@@ -1,5 +1,5 @@
 <div class="row justify-content-center mb-4">
-    <img src="Images/logo_rounded.png" class="w-50" alt="Logo"/>
+    <img src="fe/assets/img/logo_rounded.png" class="w-50" alt="Logo"/>
 </div>
 
 <?php if (isset($_GET['error'])): ?>
