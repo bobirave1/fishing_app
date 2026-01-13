@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
 
 $userId = $_SESSION['user_id'];
 $requestId = (int)$_POST['request_id'];
@@ -30,5 +30,5 @@ $pdo->prepare(
 
 $pdo->commit();
 
-header("Location: ../friends/list_requests.php");
+header("Location: ../../fe/friends/list_requests.php");
 exit;

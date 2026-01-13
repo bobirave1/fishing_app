@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
 
 // Collect POST data
 $email    = trim($_POST['email'] ?? '');
@@ -13,7 +13,7 @@ $user = $stmt->fetch();
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
     // Redirect back with error
-    header("Location: ../index.php?login_error=1");
+    header("Location: ../../index.php?login_error=1");
     exit;
 }
 
@@ -22,5 +22,5 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['username'] = $user['username'];
 
-header("Location: ../index.php");
+header("Location: ../../index.php");
 exit;

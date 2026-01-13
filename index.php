@@ -32,7 +32,6 @@ if (isset($_SESSION['user_id'])) {
     ");
     $posts = $stmt->fetchAll();
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,52 +42,63 @@ if (isset($_SESSION['user_id'])) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="fe/assets/css/style.css">
     <link rel="icon" href="fe/assets/img/logo_rounded.png">
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="fe/assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-            FISHINGLORY
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item d-flex gap-2">
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <span class="text-white">
-                            <img src="fe/assets/img/default-avatar.png" width="40" height="40" class="rounded-circle me-1">
-                             <?= htmlspecialchars($_SESSION['username']) ?>
-                        </span>
-                        <a href="auth/logout.php" class="btn btn-light">
-                            <i class="fa fa-sign-out-alt me-1"></i> Logout
-                        </a>
+<!-- HEADER -->
+<nav class="navbar navbar-expand navbar-light bg-white shadow-sm fixed-top">
+    <div class="container-fluid px-4">
 
-
-                    <?php else: ?>
-                        <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#loginModal">
-                            <i class="fa fa-sign-in-alt me-1"></i> Login
-                        </button>
-                        <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#registerModal">
-                            <i class="fa fa-user-plus me-1"></i> Register
-                        </button>
-                    <?php endif; ?>
-                </li>
-            </ul>
+        <!-- Logo + Search -->
+        <div class="d-flex align-items-center gap-3">
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <img src="fe/assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
+                <span class="fw-bold fs-4 brand-color">FISHINGLORY</span>
+            </a>
+            <input type="text" class="form-control form-control-sm rounded-pill bg-light border-0"
+                   placeholder="Търси риболовци, водоеми...">
         </div>
+
+        <!-- Main Navigation -->
+        <ul class="navbar-nav mx-auto d-none d-md-flex flex-row gap-4">
+            <li class="nav-item"><a class="nav-link active"><i class="fas fa-home fs-4"></i></a></li>
+            <li class="nav-item"><a class="nav-link"><i class="fas fa-map-marked-alt fs-4"></i></a></li>
+            <li class="nav-item"><a class="nav-link"><i class="fas fa-fish fs-4"></i></a></li>
+            <li class="nav-item"><a class="nav-link"><i class="fas fa-calendar fs-4"></i></a></li>
+        </ul>
+
+        <!-- Profile / Login-Register -->
+        <ul class="navbar-nav ms-auto align-items-center">
+            <li class="nav-item d-flex gap-2">
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>" class="d-flex align-items-center text-dark text-decoration-none">
+                        <img src="fe/assets/img/default-avatar.png" width="40" height="40" class="rounded-circle me-1">
+                        <?= htmlspecialchars($_SESSION['username']) ?>
+                    </a>
+                    <a href="be/auth/logout.php" class="btn btn-light ms-2">
+                        <i class="fa fa-sign-out-alt me-1"></i> Logout
+                    </a>
+                <?php else: ?>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="fa fa-sign-in-alt me-1"></i> Login
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                        <i class="fa fa-user-plus me-1"></i> Register
+                    </button>
+                <?php endif; ?>
+            </li>
+        </ul>
+
     </div>
 </nav>
+
 
 <div class="container my-5 py-5">
 
 <?php if (isset($_SESSION['user_id'])): ?>
     <div class="row g-4 justify-content-center">
-
 
         <!-- Profile -->
         <div class="col-md-4">
@@ -96,7 +106,7 @@ if (isset($_SESSION['user_id'])) {
                 <div class="card-body">
                     <i class="fa fa-user fa-3x mb-3 text-primary"></i>
                     <h5>My Profile</h5>
-                    <a href="profile.php?id=<?= $_SESSION['user_id'] ?>" class="btn btn-primary w-100">
+                    <a href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>" class="btn btn-primary w-100">
                         View Profile
                     </a>
                 </div>
@@ -109,7 +119,7 @@ if (isset($_SESSION['user_id'])) {
                 <div class="card-body">
                     <i class="fa fa-users fa-3x mb-3 text-success"></i>
                     <h5>Friends</h5>
-                    <a href="friends/list_friends.php" class="btn btn-success w-100">
+                    <a href="be/friends/list_friends.php" class="btn btn-success w-100">
                         My Friends
                     </a>
                 </div>
@@ -122,7 +132,7 @@ if (isset($_SESSION['user_id'])) {
                 <div class="card-body">
                     <i class="fa fa-user-plus fa-3x mb-3 text-warning"></i>
                     <h5>Friend Requests</h5>
-                    <a href="friends/list_requests.php" class="btn btn-warning w-100">
+                    <a href="be/friends/list_requests.php" class="btn btn-warning w-100">
                         View Requests
                     </a>
                 </div>
@@ -132,70 +142,53 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
 <?php else: ?>
-
     <div class="text-center">
         <h1 class="display-4">Welcome to FISHINGLORY</h1>
         <p class="lead">The ultimate fishing community and marketplace.</p>
         <p>Login or register to unlock all features 🎣</p>
     </div>
-
 <?php endif; ?>
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-body">
-                                <form action="posts/create.php" method="post" enctype="multipart/form-data">
-                                    <input type="text" name="title" class="form-control mb-2"
-                                        placeholder="Post title" required>
 
-                                    <textarea name="content" class="form-control mb-2"
-                                            placeholder="Share your catch..." required></textarea>
+<!-- Create post form -->
+<?php if (isset($_SESSION['user_id'])): ?>
+    <div class="card mb-4 shadow-sm mt-4">
+        <div class="card-body">
+            <form action="be/posts/create.php" method="post" enctype="multipart/form-data">
+                <input type="text" name="title" class="form-control mb-2" placeholder="Post title" required>
+                <textarea name="content" class="form-control mb-2" placeholder="Share your catch..." required></textarea>
+                <select name="visibility" class="form-select mb-2">
+                    <option value="public">🌍 Public</option>
+                    <option value="friends">👥 Friends</option>
+                    <option value="private">🔒 Only me</option>
+                </select>
+                <input type="file" name="image" class="form-control mb-2">
+                <button class="btn btn-primary w-100">Post</button>
+            </form>
+        </div>
+    </div>
+<?php endif; ?>
 
-                                    <select name="visibility" class="form-select mb-2">
-                                        <option value="public">🌍 Public</option>
-                                        <option value="friends">👥 Friends</option>
-                                        <option value="private">🔒 Only me</option>
-                                    </select>
-
-                                    <input type="file" name="image" class="form-control mb-2">
-
-                                    <button class="btn btn-primary w-100">Post</button>
-                                </form>
-                            </div>
-                        </div>
-                        <?php foreach ($posts as $p): ?>
+<!-- Posts feed -->
+<?php foreach ($posts as $p): ?>
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
             <h5><?= htmlspecialchars($p['title']) ?></h5>
-
             <strong><?= htmlspecialchars($p['username']) ?></strong>
-
-            <p class="mt-2">
-                <?= nl2br(htmlspecialchars($p['content'])) ?>
-            </p>
-
+            <p class="mt-2"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
             <?php if (!empty($p['image'])): ?>
-                <img src="<?= htmlspecialchars($p['image']) ?>"
-                     class="img-fluid rounded mb-2">
+                <img src="<?= htmlspecialchars($p['image']) ?>" class="img-fluid rounded mb-2">
             <?php endif; ?>
-
             <div class="d-flex justify-content-between">
-                <small class="text-muted">
-                    <?= $p['created_at'] ?>
-                </small>
-                <small class="text-muted">
-                    <?= strtoupper($p['visibility']) ?>
-                </small>
+                <small class="text-muted"><?= $p['created_at'] ?></small>
+                <small class="text-muted"><?= strtoupper($p['visibility']) ?></small>
             </div>
         </div>
     </div>
 <?php endforeach; ?>
 
 </div> <!-- container -->
-</div>
 
-
-</div>
-
-
+<!-- Login Modal -->
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded shadow custom-bg">
@@ -210,6 +203,7 @@ if (isset($_SESSION['user_id'])) {
     </div>
 </div>
 
+<!-- Register Modal -->
 <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded shadow custom-bg">
@@ -225,11 +219,10 @@ if (isset($_SESSION['user_id'])) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
     // Load login form
     document.getElementById('loginModal').addEventListener('show.bs.modal', function () {
-        fetch('login_form.php')
+        fetch('fe/auth/login_form.php')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('loginModalBody').innerHTML = html;
@@ -241,7 +234,7 @@ if (isset($_SESSION['user_id'])) {
 
     // Load register form
     document.getElementById('registerModal').addEventListener('show.bs.modal', function () {
-        fetch('register_form.php')
+        fetch('fe/auth/register_form.php')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('registerModalBody').innerHTML = html;

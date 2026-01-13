@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'config/database.php';
+require '../../config/database.php';
 
 $profileId = (int)($_GET['id'] ?? 0);
 $currentUser = $_SESSION['user_id'] ?? 0;
@@ -30,14 +30,14 @@ $isPending = $pending->fetch();
 <html>
 <head>
     <title><?= htmlspecialchars($user['username']) ?> - Profile</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../fe/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-body text-center">
-            <img src="fe/assets/img/default-avatar.png" width="120" class="rounded-circle mb-3">
+            <img src="../../fe/assets/img/default-avatar.png" width="120" class="rounded-circle mb-3">
             <h3><?= htmlspecialchars($user['username']) ?></h3>
             <p class="text-muted"><?= htmlspecialchars($user['full_name']) ?></p>
 
@@ -47,7 +47,7 @@ $isPending = $pending->fetch();
                 <?php elseif ($isPending): ?>
                     <span class="badge bg-warning text-dark">Request sent</span>
                 <?php else: ?>
-                    <form action="friends/send_request.php" method="post">
+                    <form action="../friends/send_request.php" method="post">
                         <input type="hidden" name="receiver_id" value="<?= $profileId ?>">
                         <button class="btn btn-primary">Add Friend</button>
                     </form>

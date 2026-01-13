@@ -1,5 +1,5 @@
 <?php
-require '../config/database.php';
+require '../../config/database.php';
 
 // Collect POST data
 $fullName = trim($_POST['fullName'] ?? '');
@@ -32,5 +32,5 @@ try {
 }
 
 // Redirect to login
-header("Location: ../index.php");
+header("Location: ../../index.php");
 exit;

@@ -2,7 +2,7 @@
     <img src="fe/assets/img/logo_rounded.png" class="w-50" alt="FISHINGLORY Logo"/>
 </div>
 
-<form method="POST" action="auth/register.php">
+<form method="POST" action="be/auth/register.php"> 
     <div class="mb-3">
         <label for="regFullName" class="form-label">Full Name</label>
         <input type="text" class="form-control" id="regFullName" name="fullName" placeholder="Enter your full name" required>

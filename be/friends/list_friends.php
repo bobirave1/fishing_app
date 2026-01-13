@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
 
 $userId = $_SESSION['user_id'];
 
@@ -17,7 +17,7 @@ $friends = $stmt->fetchAll();
 <html>
 <head>
     <title>My Friends</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../fe/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
@@ -33,9 +33,9 @@ $friends = $stmt->fetchAll();
             <div class="col-md-4 mb-3">
                 <div class="card text-center">
                     <div class="card-body">
-                        <img src="../img/default-avatar.png" width="80" class="rounded-circle mb-2">
+                        <img src="../../fe/assets/img/default-avatar.png" width="80" class="rounded-circle mb-2">
                         <h6><?= htmlspecialchars($f['username']) ?></h6>
-                        <a href="../profile.php?id=<?= $f['id'] ?>" class="btn btn-outline-primary btn-sm">
+                        <a href="../../profile.php?id=<?= $f['id'] ?>" class="btn btn-outline-primary btn-sm">
                             View Profile
                         </a>
                     </div>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
 
 $sender = $_SESSION['user_id'];
 $receiver = (int)$_POST['receiver_id'];
@@ -16,7 +16,7 @@ $stmt = $pdo->prepare(
 
 try {
     $stmt->execute([$sender, $receiver]);
-    header("Location: ../profile.php?id=$receiver");
+    header("Location: ../../profile.php?id=$receiver");
 } catch (PDOException $e) {
     die("Request already sent.");
 }

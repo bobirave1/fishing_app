@@ -1,0 +1,22 @@
+body {
+  background-color: #c5d1eb;
+}
+
+.custom-bg {
+  background-color: #92afd7;
+}
+
+.custom-btn {
+  background-color: #c5d1eb;
+}
+
+#registerModal .modal-body {
+    padding: 1.5rem 2rem;
+}
+
+
+@media (min-width: 576px) {
+    #registerModal .modal-dialog {
+        max-width: 450px; 
+    }
+}

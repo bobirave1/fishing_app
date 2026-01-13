@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
 
 $userId = $_SESSION['user_id'];
 
@@ -17,7 +17,7 @@ $requests = $stmt->fetchAll();
 <html>
 <head>
     <title>Friend Requests</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../fe/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
