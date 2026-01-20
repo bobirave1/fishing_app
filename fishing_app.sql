@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 19, 2026 at 08:16 PM
+-- Generation Time: Jan 20, 2026 at 09:02 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,6 +20,36 @@ SET time_zone = "+00:00";
 --
 -- Database: `fishing_app`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `activity_feed`
+--
+
+CREATE TABLE `activity_feed` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `action_type` enum('post','comment','like','follow','catch','plan') DEFAULT 'post',
+  `related_id` int(11) DEFAULT NULL,
+  `post_id` int(11) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `comments`
+--
+
+CREATE TABLE `comments` (
+  `id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -56,6 +86,19 @@ CREATE TABLE `fish_catches` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `follows`
+--
+
+CREATE TABLE `follows` (
+  `id` int(11) NOT NULL,
+  `follower_id` int(11) NOT NULL,
+  `following_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `friends`
 --
 
@@ -79,17 +122,37 @@ CREATE TABLE `friend_requests` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `friend_requests`
+--
+
+INSERT INTO `friend_requests` (`id`, `sender_id`, `receiver_id`, `status`, `created_at`) VALUES
+(1, 1, 1, 'pending', '2026-01-12 07:27:36'),
+(2, 3, 3, 'pending', '2026-01-12 07:28:51');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `notifications`
+-- Table structure for table `likes`
 --
 
-CREATE TABLE `notifications` (
-  `id` int(11) NOT NULL,
+CREATE TABLE `likes` (
+  `post_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `type` enum('friend_request','like','comment') NOT NULL,
-  `related_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `content` text NOT NULL,
   `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -119,22 +182,11 @@ CREATE TABLE `posts` (
   `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `content` text NOT NULL,
-  `image` varchar(255) DEFAULT NULL,
   `visibility` enum('public','friends','private') DEFAULT 'public',
+  `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `posts`
---
-
-INSERT INTO `posts` (`id`, `user_id`, `title`, `content`, `image`, `visibility`, `created_at`, `updated_at`) VALUES
-(11, 3, 'Ebanie', 'mreni kato moq ui', 'uploads/1768160541_Barbuspetenyi.png', 'public', '2026-01-11 19:42:21', NULL),
-(12, 3, 'S', 'S', 'uploads/1768160575_Barbuspetenyi.png', 'public', '2026-01-11 19:42:55', NULL),
-(13, 3, 's', 's', 'uploads/1768235039_Valeri_Tsvetanov_38386-66266199b3074.jpeg', 'friends', '2026-01-12 16:23:59', NULL),
-(14, 3, 'д', 'д', 'uploads/1768237338_13x18.jpg', 'public', '2026-01-12 17:02:18', NULL),
-(15, 3, 's', 's', 'fe/assets/img/69653ae4330c5.jpeg', 'public', '2026-01-12 18:18:12', NULL);
 
 -- --------------------------------------------------------
 
@@ -147,7 +199,7 @@ CREATE TABLE `post_comments` (
   `post_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `content` text NOT NULL,
-  `created_at` datetime NOT NULL
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -172,7 +224,8 @@ CREATE TABLE `post_images` (
 CREATE TABLE `post_likes` (
   `id` int(11) NOT NULL,
   `post_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL
+  `user_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -199,8 +252,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `full_name`, `username`, `email`, `password_hash`, `role`, `is_verified`, `status`, `created_at`, `last_login`) VALUES
-(3, 'Borislav', 'bobirave', 'hristov.borislav@icloud.com', '$2y$10$vHii.VwMcoFalTeoJNTcUerLvUOXtFUro3X5.seWutxTte7MLPW1y', 'user', 0, 'active', '2026-01-10 14:08:43', NULL),
-(4, 'Borislav Hristov', 'shah', 'hristov.borslav@icloud.com', '$2y$10$l06JJHNB78RhgfrOfV3VtugutnpUkPv20s9gn7ihgoLIQJTdKicBy', 'user', 0, 'active', '2026-01-12 16:16:10', NULL);
+(1, 'Borislav Hristov', 'shahttt', 'hristov.borislav@icloud.com', '$2y$10$upz2.KMk9gXXbYBSZpiRBeh2GhMCHbBOXXt1jElbsYvokKKloJnyW', 'user', 0, 'active', '2026-01-06 15:04:37', NULL),
+(3, 'Borislav Hristov', '6666', 'malkatashahta@abv.bg', '$2y$10$lY7mby4tf0WAYE6mtQg3z.KAGnCRNsyJKYZc/uO2.BokuRHz05JkO', 'user', 0, 'active', '2026-01-12 07:28:30', NULL);
 
 -- --------------------------------------------------------
 
@@ -210,11 +263,20 @@ INSERT INTO `users` (`id`, `full_name`, `username`, `email`, `password_hash`, `r
 
 CREATE TABLE `user_profiles` (
   `user_id` int(11) NOT NULL,
+  `first_name` varchar(50) DEFAULT NULL,
+  `last_name` varchar(50) DEFAULT NULL,
   `avatar_url` varchar(255) DEFAULT NULL,
   `bio` text DEFAULT NULL,
   `location` varchar(100) DEFAULT NULL,
   `experience_level` enum('beginner','advanced','pro') DEFAULT 'beginner'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_profiles`
+--
+
+INSERT INTO `user_profiles` (`user_id`, `first_name`, `last_name`, `avatar_url`, `bio`, `location`, `experience_level`) VALUES
+(1, NULL, NULL, 'fe/assets/img/avatars/avatar_1_696f2fcf8f9eb.jpg', '', '', 'pro');
 
 -- --------------------------------------------------------
 
@@ -232,8 +294,34 @@ CREATE TABLE `waterbodies` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Dumping data for table `waterbodies`
+--
+
+INSERT INTO `waterbodies` (`id`, `name`, `type`, `latitude`, `longitude`, `description`) VALUES
+(1, 'Danube River', 'river', 43.2119800, 27.9147400, 'Major European river, excellent for fishing'),
+(2, 'Black Sea Coast', 'sea', 43.2566300, 28.2361700, 'Coastal fishing area with sea fish'),
+(3, 'Lake Iskar', 'lake', 42.9960900, 24.3363500, 'Mountain lake near Sofia'),
+(4, 'Arda River', 'river', 41.7375600, 26.5572300, 'Beautiful river in southern Bulgaria');
+
+--
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `activity_feed`
+--
+ALTER TABLE `activity_feed`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `post_id` (`post_id`);
+
+--
+-- Indexes for table `comments`
+--
+ALTER TABLE `comments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_comments_post` (`post_id`);
 
 --
 -- Indexes for table `fishing_plans`
@@ -251,6 +339,14 @@ ALTER TABLE `fish_catches`
   ADD KEY `post_id` (`post_id`);
 
 --
+-- Indexes for table `follows`
+--
+ALTER TABLE `follows`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_follow` (`follower_id`,`following_id`),
+  ADD KEY `following_id` (`following_id`);
+
+--
 -- Indexes for table `friends`
 --
 ALTER TABLE `friends`
@@ -266,10 +362,20 @@ ALTER TABLE `friend_requests`
   ADD KEY `receiver_id` (`receiver_id`);
 
 --
--- Indexes for table `notifications`
+-- Indexes for table `likes`
 --
-ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `likes`
+  ADD PRIMARY KEY (`post_id`,`user_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `sender_id` (`sender_id`),
+  ADD KEY `receiver_id` (`receiver_id`),
+  ADD KEY `conversation` (`sender_id`,`receiver_id`);
 
 --
 -- Indexes for table `password_resets`
@@ -282,14 +388,15 @@ ALTER TABLE `password_resets`
 -- Indexes for table `posts`
 --
 ALTER TABLE `posts`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_posts_user` (`user_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `post_comments`
 --
 ALTER TABLE `post_comments`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `post_images`
@@ -303,7 +410,8 @@ ALTER TABLE `post_images`
 --
 ALTER TABLE `post_likes`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `post_id` (`post_id`,`user_id`);
+  ADD UNIQUE KEY `unique_like` (`post_id`,`user_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `users`
@@ -331,6 +439,18 @@ ALTER TABLE `waterbodies`
 --
 
 --
+-- AUTO_INCREMENT for table `activity_feed`
+--
+ALTER TABLE `activity_feed`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `comments`
+--
+ALTER TABLE `comments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `fishing_plans`
 --
 ALTER TABLE `fishing_plans`
@@ -343,15 +463,21 @@ ALTER TABLE `fish_catches`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `friend_requests`
+-- AUTO_INCREMENT for table `follows`
 --
-ALTER TABLE `friend_requests`
+ALTER TABLE `follows`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `notifications`
+-- AUTO_INCREMENT for table `friend_requests`
 --
-ALTER TABLE `notifications`
+ALTER TABLE `friend_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -364,7 +490,7 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `posts`
 --
 ALTER TABLE `posts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `post_comments`
@@ -388,17 +514,24 @@ ALTER TABLE `post_likes`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `waterbodies`
 --
 ALTER TABLE `waterbodies`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `activity_feed`
+--
+ALTER TABLE `activity_feed`
+  ADD CONSTRAINT `activity_feed_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `activity_feed_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `fishing_plans`
@@ -408,10 +541,11 @@ ALTER TABLE `fishing_plans`
   ADD CONSTRAINT `fishing_plans_ibfk_2` FOREIGN KEY (`waterbody_id`) REFERENCES `waterbodies` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `fish_catches`
+-- Constraints for table `follows`
 --
-ALTER TABLE `fish_catches`
-  ADD CONSTRAINT `fish_catches_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
+ALTER TABLE `follows`
+  ADD CONSTRAINT `follows_ibfk_1` FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `follows_ibfk_2` FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `friends`
@@ -428,22 +562,31 @@ ALTER TABLE `friend_requests`
   ADD CONSTRAINT `friend_requests_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `password_resets`
 --
 ALTER TABLE `password_resets`
   ADD CONSTRAINT `password_resets_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `posts`
+-- Constraints for table `post_comments`
 --
-ALTER TABLE `posts`
-  ADD CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+ALTER TABLE `post_comments`
+  ADD CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `post_images`
+-- Constraints for table `post_likes`
 --
-ALTER TABLE `post_images`
-  ADD CONSTRAINT `post_images_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
+ALTER TABLE `post_likes`
+  ADD CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `user_profiles`

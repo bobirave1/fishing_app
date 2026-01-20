@@ -21,6 +21,14 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
 // Insert post
 $stmt = $pdo->prepare("INSERT INTO posts (user_id, title, content, image, visibility, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
 $stmt->execute([$_SESSION['user_id'], $title, $content, $imagePath, $visibility]);
+$postId = $pdo->lastInsertId();
+
+// Log activity
+$stmt = $pdo->prepare("
+    INSERT INTO activity_feed (user_id, action_type, post_id, description, created_at)
+    VALUES (?, 'post', ?, ?, NOW())
+");
+$stmt->execute([$_SESSION['user_id'], $postId, $title]);
 
 header('Location: ../../index.php');
 exit;
