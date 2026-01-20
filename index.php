@@ -97,6 +97,16 @@ if (isset($_SESSION['user_id'])) {
 
 <div class="container my-5 py-5">
 
+<!-- Weather Widget -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-cloud-sun"></i> Local Fishing Weather</h5>
+        <div id="weather-info">
+            <p>Fetching weather based on your location...</p>
+        </div>
+    </div>
+</div>
+
 <?php if (isset($_SESSION['user_id'])): ?>
     <div class="row g-4 justify-content-center">
 
@@ -142,10 +152,21 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
 <?php else: ?>
-    <div class="text-center">
-        <h1 class="display-4">Welcome to FISHINGLORY</h1>
-        <p class="lead">The ultimate fishing community and marketplace.</p>
-        <p>Login or register to unlock all features 🎣</p>
+    <div class="text-center py-5">
+        <div class="hero-section">
+            <i class="fas fa-fish fa-5x text-primary mb-4"></i>
+            <h1 class="display-4 fw-bold text-primary">Welcome to FISHINGLORY</h1>
+            <p class="lead fs-4">The ultimate fishing community and marketplace.</p>
+            <p class="mb-4">Connect with anglers, share catches, track weather, and explore fishing spots.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#registerModal">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+        </div>
     </div>
 <?php endif; ?>
 
@@ -252,7 +273,66 @@ if (isset($_SESSION['user_id'])) {
             ).innerHTML = '<p class="text-center">Loading form...</p>';
         });
     });
+
+    // Weather widget
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('weather-info').innerHTML = `<p class="text-danger">${data.error}</p>`;
+                    } else {
+                        let fishingTip = '';
+                        if (data.wind_speed < 5) fishingTip = 'Great day for fishing! Low wind speeds are ideal.';
+                        else if (data.wind_speed < 10) fishingTip = 'Moderate wind, still suitable for most fishing activities.';
+                        else fishingTip = 'High wind speeds may make fishing challenging or unsafe.';
+
+                        document.getElementById('weather-info').innerHTML = `
+                            <div class="row text-center">
+                                <div class="col-12 mb-3">
+                                    <h5><i class="fas fa-map-marker-alt"></i> ${data.location}</h5>
+                                    <img src="https://openweathermap.org/img/wn/${data.icon}@2x.png" alt="weather icon" class="img-fluid" style="max-width: 80px;">
+                                    <p class="mb-0 fs-4">${data.description}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><i class="fas fa-thermometer-half"></i> <strong>Temperature:</strong> ${data.temperature}°C</p>
+                                    <p><i class="fas fa-wind"></i> <strong>Wind:</strong> ${data.wind_speed} m/s (${data.wind_direction}°)</p>
+                                    <p><i class="fas fa-tint"></i> <strong>Humidity:</strong> ${data.humidity}%</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><i class="fas fa-eye"></i> <strong>Visibility:</strong> ${data.visibility} km</p>
+                                    <p><i class="fas fa-gauge"></i> <strong>Pressure:</strong> ${data.pressure} hPa</p>
+                                    ${data.sea_level ? `<p><i class="fas fa-water"></i> <strong>Sea Level:</strong> ${data.sea_level} hPa</p>` : ''}
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-fish"></i> <strong>Fishing Tip:</strong> ${fishingTip}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('weather-info').innerHTML = '<p class="text-danger">Failed to load weather data.</p>';
+                });
+        }, function() {
+            document.getElementById('weather-info').innerHTML = '<p class="text-danger">Location access denied. Please enable location services for personalized weather.</p>';
+        });
+    } else {
+        document.getElementById('weather-info').innerHTML = '<p class="text-danger">Geolocation not supported by this browser.</p>';
+    }
 </script>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
+    </div>
+</footer>
 
 </body>
 </html>
