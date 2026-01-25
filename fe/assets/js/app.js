@@ -1,5 +1,10 @@
 // Comprehensive JavaScript for all fishing app features
 
+// Helper function to get CSRF token
+function getCsrfToken() {
+    return document.body.dataset.csrfToken || '';
+}
+
 // ==================== LIKES ====================
 function toggleLike(postId, button) {
     const isLiked = button.classList.contains('liked');
@@ -8,6 +13,7 @@ function toggleLike(postId, button) {
     const formData = new FormData();
     formData.append('post_id', postId);
     formData.append('action', action);
+    formData.append('csrf_token', getCsrfToken());
     
     fetch('be/posts/like.php', {
         method: 'POST',
@@ -24,6 +30,8 @@ function toggleLike(postId, button) {
                 button.classList.remove('liked');
                 button.innerHTML = '<i class="far fa-heart"></i> <span id="like-count-' + postId + '">' + data.like_count + '</span>';
             }
+        } else if (data.error) {
+            alert('Error: ' + data.error);
         }
     })
     .catch(error => console.error('Error:', error));
@@ -31,6 +39,12 @@ function toggleLike(postId, button) {
 
 // ==================== COMMENTS ====================
 function loadComments(postId) {
+    const commentsSection = document.getElementById('comments-' + postId);
+    if (!commentsSection) return;
+    
+    // Show loading state
+    commentsSection.innerHTML = '<p class="text-center text-muted small"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+    
     const formData = new FormData();
     formData.append('post_id', postId);
     formData.append('action', 'get');
@@ -39,12 +53,14 @@ function loadComments(postId) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            const commentsSection = document.getElementById('comments-' + postId);
-            if (!commentsSection) return;
-            
             commentsSection.innerHTML = '';
             
             if (data.comments.length === 0) {
@@ -74,9 +90,14 @@ function loadComments(postId) {
                 commentHtml += `</div></div>`;
                 commentsSection.innerHTML += commentHtml;
             });
+        } else {
+            commentsSection.innerHTML = '<p class="text-danger text-center small">Error: ' + (data.error || 'Failed to load') + '</p>';
         }
     })
-    .catch(error => console.error('Error loading comments:', error));
+    .catch(error => {
+        console.error('Error loading comments:', error);
+        commentsSection.innerHTML = '<p class="text-danger text-center small">Failed to load comments</p>';
+    });
 }
 
 function addComment(postId) {
@@ -92,6 +113,7 @@ function addComment(postId) {
     formData.append('post_id', postId);
     formData.append('content', content);
     formData.append('action', 'add');
+    formData.append('csrf_token', getCsrfToken());
     
     fetch('be/posts/comment.php', {
         method: 'POST',
@@ -124,6 +146,7 @@ function deleteComment(postId, commentId) {
     formData.append('post_id', postId);
     formData.append('comment_id', commentId);
     formData.append('action', 'delete');
+    formData.append('csrf_token', getCsrfToken());
     
     fetch('be/posts/comment.php', {
         method: 'POST',
@@ -157,6 +180,7 @@ function toggleFollow(userId, button) {
     const formData = new FormData();
     formData.append('target_id', userId);
     formData.append('action', action);
+    formData.append('csrf_token', getCsrfToken());
     
     fetch('be/users/follow.php', {
         method: 'POST',
@@ -361,6 +385,7 @@ function sendMessage(receiverId) {
     formData.append('action', 'send');
     formData.append('receiver_id', receiverId);
     formData.append('content', content);
+    formData.append('csrf_token', getCsrfToken());
     
     fetch('be/messages/message.php', {
         method: 'POST',
@@ -460,12 +485,14 @@ function updateNotificationBadge(count) {
 }
 
 function markNotificationRead(notificationId) {
+    const formData = new FormData();
+    formData.append('notification_id', notificationId);
+    formData.append('action', 'mark_read');
+    formData.append('csrf_token', getCsrfToken());
+    
     fetch('be/notifications/mark_read.php', {
         method: 'POST',
-        body: new FormData(Object.assign(new FormData(), {
-            'notification_id': notificationId,
-            'action': 'mark_read'
-        }))
+        body: formData
     })
     .then(response => response.json())
     .then(data => {

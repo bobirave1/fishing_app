@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="icon" href="../assets/img/logo_rounded.png">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         .activity-item {
             padding: 15px;
@@ -16,6 +18,25 @@
         }
         .activity-item:hover {
             background: #f8f9fa;
+        }
+        #map {
+            height: 450px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .map-instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .location-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
         }
         .activity-icon {
             width: 40px;
@@ -88,107 +109,455 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
 
 <div class="container my-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
+        <div class="col-lg-10">
+            <!-- Map Selection -->
+            <div class="card shadow-sm mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-stream"></i> Activity Feed</h5>
-                    <small>What your friends are doing</small>
+                    <h6 class="mb-0"><i class="fas fa-map-marked-alt"></i> Select Fishing Location on Map</h6>
                 </div>
-                <div class="card-body p-0" id="activityFeed">
-                    <p class="text-center text-muted p-4"><i class="fas fa-spinner fa-spin"></i> Loading activity...</p>
+                <div class="card-body">
+                    <div class="map-instructions">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Instructions:</strong> Click anywhere on the map to select your fishing location. 
+                        Popular spots are pre-marked with 🎣 icons.
+                    </div>
+                    <div id="map"></div>
+                    <div class="location-info mt-3" id="locationInfo" style="display: none;">
+                        <strong><i class="fas fa-map-pin"></i> Selected Location:</strong>
+                        <span id="selectedLocationName">None</span><br>
+                        <small class="text-muted">
+                            Coordinates: <span id="selectedCoords"></span>
+                        </small>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-success w-100" id="calculateBtn" onclick="loadFishActivity()" disabled>
+                            <i class="fas fa-calculator"></i> Calculate Fish Activity for Selected Location
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-fish"></i> Fish Activity Prediction</h5>
+                    <small>Real-time fish activity forecast based on environmental conditions</small>
+                </div>
+                <div class="card-body" id="activityFeed">
+                    <p class="text-center text-muted p-4">
+                        <i class="fas fa-mouse-pointer"></i> Click on the map above to select a fishing location
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-    function loadActivityFeed() {
-        fetch('../../be/activity/feed.php?action=get_feed&limit=20')
+    // Global variables
+    let map;
+    let marker;
+    let selectedLat = null;
+    let selectedLon = null;
+    let selectedLocationName = null;
+
+    // Popular fishing spots in Bulgaria
+    const popularSpots = [
+        { name: "Варненско езеро", lat: 43.2167, lon: 27.9167, icon: "🎣" },
+        { name: "Бургаско езеро", lat: 42.5000, lon: 27.4833, icon: "🎣" },
+        { name: "Река Дунав (Русе)", lat: 43.8500, lon: 25.9667, icon: "🎣" },
+        { name: "Язовир Искър", lat: 42.8167, lon: 23.9500, icon: "🎣" },
+        { name: "Язовир Батак", lat: 41.9833, lon: 24.0667, icon: "🎣" },
+        { name: "Черно море (Варна)", lat: 43.2050, lon: 28.0350, icon: "🎣" },
+        { name: "Язовир Панчарево", lat: 42.5833, lon: 23.4500, icon: "🎣" }
+    ];
+
+    // Initialize map centered on Bulgaria
+    function initMap() {
+        map = L.map('map').setView([42.7339, 25.4858], 7);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add popular fishing spots
+        popularSpots.forEach(spot => {
+            const popupMarker = L.marker([spot.lat, spot.lon], {
+                icon: L.divIcon({
+                    html: `<div style="font-size: 24px;">${spot.icon}</div>`,
+                    className: 'custom-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(map);
+            
+            popupMarker.bindPopup(`<strong>${spot.name}</strong><br><a href="#" onclick="selectPopularSpot(${spot.lat}, ${spot.lon}, '${spot.name}'); return false;">Select this location</a>`);
+        });
+
+        // Add click event to map
+        map.on('click', function(e) {
+            selectLocation(e.latlng.lat, e.latlng.lng, 'Custom Location');
+        });
+    }
+
+    function selectPopularSpot(lat, lon, name) {
+        selectLocation(lat, lon, name);
+        map.closePopup();
+    }
+
+    function selectLocation(lat, lon, name) {
+        selectedLat = lat;
+        selectedLon = lon;
+        selectedLocationName = name;
+
+        // Remove old marker
+        if (marker) {
+            map.removeLayer(marker);
+        }
+
+        // Add new marker
+        marker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                html: '<div style="font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">📍</div>',
+                className: 'selected-marker',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            })
+        }).addTo(map);
+
+        marker.bindPopup(`<strong>${name}</strong><br>Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`).openPopup();
+
+        // Update location info
+        document.getElementById('locationInfo').style.display = 'block';
+        document.getElementById('selectedLocationName').textContent = name;
+        document.getElementById('selectedCoords').textContent = `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+        document.getElementById('calculateBtn').disabled = false;
+
+        // Scroll to button
+        document.getElementById('calculateBtn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function loadFishActivity() {
+        if (!selectedLat || !selectedLon) {
+            alert('Please select a location on the map first');
+            return;
+        }
+        
+        document.getElementById('activityFeed').innerHTML = '<p class="text-center p-4"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Calculating fish activity for selected location...</p>';
+        
+        fetch(`../../be/activity/feed.php?action=calculate_fish_activity&location=${encodeURIComponent(selectedLocationName)}&lat=${selectedLat}&lon=${selectedLon}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    displayActivityFeed(data.activities);
+                    displayFishActivityScore(data, selectedLocationName);
+                    // Scroll to results
+                    document.getElementById('activityFeed').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    document.getElementById('activityFeed').innerHTML = `<p class="text-warning text-center p-4"><i class="fas fa-exclamation-triangle"></i><br>${data.error || 'Unable to calculate activity'}</p>`;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('activityFeed').innerHTML = '<p class="text-danger">Failed to load activity feed</p>';
+                document.getElementById('activityFeed').innerHTML = '<p class="text-danger text-center p-4"><i class="fas fa-times-circle"></i><br>Failed to calculate fish activity. Please try again.</p>';
             });
     }
 
-    function displayActivityFeed(activities) {
-        const container = document.getElementById('activityFeed');
+    function displayFishActivityScore(data, location) {
+        const score = data.activity_score;
+        const factors = data.factors;
         
-        if (!activities || activities.length === 0) {
-            container.innerHTML = `
-                <div class="text-center p-5">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No activity yet. Follow more users to see their activities!</p>
-                </div>
-            `;
-            return;
+        // Determine activity level and color
+        let activityLevel, activityColor, activityIcon, recommendation;
+        if (score >= 80) {
+            activityLevel = 'EXCELLENT';
+            activityColor = '#198754';
+            activityIcon = '🟢';
+            recommendation = 'Perfect conditions! Fish are very active. Great time to go fishing!';
+        } else if (score >= 60) {
+            activityLevel = 'GOOD';
+            activityColor = '#28a745';
+            activityIcon = '🟡';
+            recommendation = 'Good conditions. Fish activity is above average. Recommended for fishing.';
+        } else if (score >= 40) {
+            activityLevel = 'MODERATE';
+            activityColor = '#ffc107';
+            activityIcon = '🟠';
+            recommendation = 'Moderate conditions. Fish may bite but less actively. Worth trying.';
+        } else if (score >= 20) {
+            activityLevel = 'LOW';
+            activityColor = '#fd7e14';
+            activityIcon = '🔴';
+            recommendation = 'Low activity. Fish are less active. Try deeper waters or different baits.';
+        } else {
+            activityLevel = 'VERY LOW';
+            activityColor = '#dc3545';
+            activityIcon = '⛔';
+            recommendation = 'Poor conditions. Fish activity is minimal. Consider waiting for better conditions.';
         }
 
-        let html = '';
-        activities.forEach(activity => {
-            const avatar = activity.avatar_url || '../assets/img/default-avatar.png';
-            let icon = 'fas fa-star';
-            let iconClass = 'activity-post';
-            let actionText = 'did something';
+        const html = `
+            <div class="p-4">
+                <!-- Location and Score Header -->
+                <div class="text-center mb-4">
+                    <h4><i class="fas fa-map-marker-alt"></i> ${location}</h4>
+                    <div class="mt-3">
+                        <div style="font-size: 4rem; line-height: 1;">${activityIcon}</div>
+                        <h2 style="color: ${activityColor}; font-weight: bold; margin: 10px 0;">
+                            ${Math.round(score)}%
+                        </h2>
+                        <h5 style="color: ${activityColor};">${activityLevel} ACTIVITY</h5>
+                        <p class="text-muted">${new Date().toLocaleString()}</p>
+                    </div>
+                </div>
 
-            switch(activity.action_type) {
-                case 'post':
-                    icon = 'fas fa-images';
-                    iconClass = 'activity-post';
-                    actionText = `posted <strong>${activity.description || 'a new post'}</strong>`;
-                    break;
-                case 'like':
-                    icon = 'fas fa-heart';
-                    iconClass = 'activity-like';
-                    actionText = 'liked a post';
-                    break;
-                case 'comment':
-                    icon = 'fas fa-comment';
-                    iconClass = 'activity-comment';
-                    actionText = 'commented on a post';
-                    break;
-                case 'follow':
-                    icon = 'fas fa-user-plus';
-                    iconClass = 'activity-follow';
-                    actionText = activity.description || 'started following someone';
-                    break;
-            }
-
-            html += `
-                <div class="activity-item">
-                    <div class="d-flex gap-3">
-                        <div class="activity-icon ${iconClass}">
-                            <i class="${icon}"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div>
-                                <a href="../../be/users/profile.php?id=${activity.user_id}" class="text-decoration-none fw-bold">
-                                    ${activity.username}
-                                </a>
-                                <span>${actionText}</span>
-                            </div>
-                            <small class="text-muted">${formatDate(activity.created_at)}</small>
-                            ${activity.post_id ? `<br><small class="text-primary cursor-pointer"><i class="fas fa-link"></i> View post</small>` : ''}
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: ${score}%; background-color: ${activityColor};"
+                             aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100">
+                            ${Math.round(score)}%
                         </div>
                     </div>
                 </div>
-            `;
-        });
 
-        container.innerHTML = html;
+                <!-- Recommendation -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb"></i> Recommendation</h6>
+                    <p class="mb-0">${recommendation}</p>
+                </div>
+
+                <!-- Weather Conditions -->
+                ${factors.weather ? `
+                <div class="card mb-3">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <strong><i class="fas fa-cloud-sun"></i> Weather Conditions</strong>
+                        ${factors.weather.source ? `<small class="badge bg-success">${factors.weather.source}</small>` : ''}
+                    </div>
+                    <div class="card-body">
+                        ${factors.weather.location_name && factors.weather.location_name !== 'Unknown' ? `
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> ${factors.weather.location_name}${factors.weather.country ? `, ${factors.weather.country}` : ''}<br>
+                            <small class="text-muted">Coordinates: ${selectedLat.toFixed(4)}°N, ${selectedLon.toFixed(4)}°E</small>
+                        </div>
+                        ` : ''}
+                        <div class="row text-center">
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-thermometer-half fa-2x text-danger"></i>
+                                <p class="mb-0"><strong>${factors.weather.temperature}°C</strong></p>
+                                <small class="text-muted">Temperature</small>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-wind fa-2x text-info"></i>
+                                <p class="mb-0"><strong>${factors.weather.wind_speed} m/s</strong></p>
+                                <small class="text-muted">Wind Speed</small>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-gauge fa-2x text-warning"></i>
+                                <p class="mb-0"><strong>${factors.weather.pressure} hPa</strong></p>
+                                <small class="text-muted">Pressure</small>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-tint fa-2x text-primary"></i>
+                                <p class="mb-0"><strong>${factors.weather.humidity}%</strong></p>
+                                <small class="text-muted">Humidity</small>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-cloud fa-2x text-secondary"></i>
+                                <p class="mb-0"><strong>${factors.weather.clouds}%</strong></p>
+                                <small class="text-muted">Cloud Cover</small>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-6 mb-3">
+                                <i class="fas fa-eye fa-2x text-success"></i>
+                                <p class="mb-0"><strong>${factors.weather.visibility || 'N/A'} km</strong></p>
+                                <small class="text-muted">Visibility</small>
+                            </div>
+                        </div>
+                        ${factors.weather.weather_description ? `
+                        <div class="text-center mt-2">
+                            <span class="badge bg-light text-dark">${getWeatherIcon(factors.weather.weather)} ${factors.weather.weather_description}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Activity Factors -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <strong><i class="fas fa-list-check"></i> Activity Factors</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-thermometer-half"></i> Temperature Impact</span>
+                                <strong>${factors.temperature_score}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" style="width: ${factors.temperature_score}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.temperature_impact}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-wind"></i> Wind Conditions</span>
+                                <strong>${factors.wind_score}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: ${factors.wind_score}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.wind_impact}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-gauge"></i> Barometric Pressure</span>
+                                <strong>${factors.pressure_score}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: ${factors.pressure_score}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.pressure_impact}</small>
+                        </div>
+                        
+                        ${factors.solunar_score !== undefined ? `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-star"></i> Solunar Period</span>
+                                <strong>${factors.solunar_score}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" style="width: ${factors.solunar_score}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.solunar_impact || 'Moon position effect'}</small>
+                        </div>
+                        ` : `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-moon"></i> Moon Phase</span>
+                                <strong>${factors.moon_score || 50}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-secondary" style="width: ${factors.moon_score || 50}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.moon_phase || 'Moon effect'}</small>
+                        </div>
+                        `}
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-clock"></i> Time of Day</span>
+                                <strong>${factors.time_score}%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: ${factors.time_score}%"></div>
+                            </div>
+                            <small class="text-muted">${factors.time_impact}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Solunar Periods Table (if available) -->
+                ${factors.solunar_periods ? `
+                <div class="card mt-3">
+                    <div class="card-header bg-light">
+                        <strong><i class="fas fa-calendar-alt"></i> Today's Solunar Periods</strong>
+                        <small class="d-block text-muted mt-1">Major and minor feeding times based on moon position</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="alert alert-danger mb-2">
+                                    <strong>🔴 Major Period 1</strong><br>
+                                    <small>${formatSolunarTime(factors.solunar_periods.major1.start)} - ${formatSolunarTime(factors.solunar_periods.major1.end)}</small><br>
+                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.major1.peak)}</small>
+                                </div>
+                                <div class="alert alert-warning mb-2">
+                                    <strong>🟡 Minor Period 1</strong><br>
+                                    <small>${formatSolunarTime(factors.solunar_periods.minor1.start)} - ${formatSolunarTime(factors.solunar_periods.minor1.end)}</small><br>
+                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.minor1.peak)}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="alert alert-danger mb-2">
+                                    <strong>🔴 Major Period 2</strong><br>
+                                    <small>${formatSolunarTime(factors.solunar_periods.major2.start)} - ${formatSolunarTime(factors.solunar_periods.major2.end)}</small><br>
+                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.major2.peak)}</small>
+                                </div>
+                                <div class="alert alert-warning mb-2">
+                                    <strong>🟡 Minor Period 2</strong><br>
+                                    <small>${formatSolunarTime(factors.solunar_periods.minor2.start)} - ${formatSolunarTime(factors.solunar_periods.minor2.end)}</small><br>
+                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.minor2.peak)}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> <strong>Major periods</strong> (2-3 hours): Best fishing times when moon is overhead or underfoot.<br>
+                            <i class="fas fa-info-circle"></i> <strong>Minor periods</strong> (1-2 hours): Good fishing times at moonrise and moonset.
+                        </small>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${factors.weather && factors.weather.clouds !== undefined ? `
+                <div class="alert alert-light mt-3">
+                    <small><i class="fas fa-cloud"></i> <strong>Cloud Cover:</strong> ${factors.weather.clouds}% - ${getCloudDescription(factors.weather.clouds)}</small><br>
+                    <small><i class="fas fa-info-circle"></i> <strong>Conditions:</strong> ${factors.weather.conditions || 'Clear'}</small>
+                </small>
+                </div>
+                ` : ''}
+
+                <!-- Refresh Button -->
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary" onclick="loadFishActivity()">
+                        <i class="fas fa-sync"></i> Refresh Activity
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('activityFeed').innerHTML = html;
     }
 
-    // Load activity on page load
-    loadActivityFeed();
-    setInterval(loadActivityFeed, 30000); // Refresh every 30 seconds
+    function formatSolunarTime(time) {
+        // Convert decimal time (e.g., 6.5) to HH:MM format
+        if (time < 0) time += 24;
+        if (time >= 24) time -= 24;
+        const hours = Math.floor(time);
+        const minutes = Math.round((time - hours) * 60);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    function getCloudDescription(clouds) {
+        if (clouds <= 20) return 'Clear sky - bright conditions';
+        if (clouds <= 50) return 'Partly cloudy - optimal light';
+        if (clouds <= 80) return 'Mostly cloudy - good diffused light';
+        return 'Overcast - low light conditions';
+    }
+
+    function getWeatherIcon(weather) {
+        const icons = {
+            'Clear': '☀️',
+            'Clouds': '☁️',
+            'Rain': '🌧️',
+            'Drizzle': '🌦️',
+            'Thunderstorm': '⛈️',
+            'Snow': '❄️',
+            'Mist': '🌫️',
+            'Fog': '🌫️',
+            'Haze': '🌫️'
+        };
+        return icons[weather] || '🌤️';
+    }
+
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
 </script>
 
 <!-- Footer -->

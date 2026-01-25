@@ -1,6 +1,8 @@
 <?php
-session_start();
+require 'config/security.php';
+secureSession();
 require 'config/database.php';
+setSecurityHeaders();
 
 $posts = [];
 
@@ -53,86 +55,113 @@ if (isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="fe/assets/css/style.css">
     <link rel="icon" href="fe/assets/img/logo_rounded.png">
     <style>
+        /* Modern Search & Engagement Styles */
         .search-results-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             max-height: 400px;
             overflow-y: auto;
             z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            margin-top: 8px;
         }
         .search-category {
-            padding: 8px 12px;
-            background: #f8f9fa;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #eee;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            font-size: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
             text-transform: uppercase;
-            color: #666;
+            color: #64748b;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
         .search-item {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             text-decoration: none;
             color: inherit;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
         .search-item:hover {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            transform: translateX(4px);
         }
         .comment-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 12px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            border: 1px solid #e2e8f0;
         }
         .comment-item {
             background: white;
-            padding: 8px;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
         .engagement-buttons {
             display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e9ecef;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
         }
         .engagement-btn {
             flex: 1;
             border: none;
             background: transparent;
-            color: #666;
+            color: #64748b;
             cursor: pointer;
-            padding: 8px;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .engagement-btn:hover {
-            background: #f8f9fa;
-            color: #0d6efd;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.15);
         }
         .engagement-btn.liked {
-            color: #dc3545;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+        }
+        .engagement-btn.liked:hover {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
         }
         .engagement-btn.following {
-            color: #198754;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .engagement-btn.following:hover {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
         }
         .follow-btn {
-            padding: 4px 12px;
+            padding: 6px 16px;
             font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
         }
     </style>
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>">
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 
 <!-- HEADER -->
 <nav class="navbar navbar-expand navbar-light bg-white shadow-sm fixed-top">
@@ -196,7 +225,7 @@ if (isset($_SESSION['user_id'])) {
                             <li><a class="dropdown-item" href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>">
                                 <i class="fas fa-user"></i> My Profile
                             </a></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editProfileModal" onclick="loadEditProfile()">
+                            <li><a class="dropdown-item" href="fe/pages/edit_profile.php">
                                 <i class="fas fa-edit"></i> Edit Profile
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -300,14 +329,15 @@ if (isset($_SESSION['user_id'])) {
     <div class="card mb-4 shadow-sm mt-4">
         <div class="card-body">
             <form action="be/posts/create.php" method="post" enctype="multipart/form-data">
-                <input type="text" name="title" class="form-control mb-2" placeholder="Post title" required>
-                <textarea name="content" class="form-control mb-2" placeholder="Share your catch..." required></textarea>
+                <?= getCsrfField() ?>
+                <input type="text" name="title" class="form-control mb-2" placeholder="Post title" required maxlength="200">
+                <textarea name="content" class="form-control mb-2" placeholder="Share your catch..." required maxlength="5000"></textarea>
                 <select name="visibility" class="form-select mb-2">
                     <option value="public">🌍 Public</option>
                     <option value="friends">👥 Friends</option>
                     <option value="private">🔒 Only me</option>
                 </select>
-                <input type="file" name="image" class="form-control mb-2">
+                <input type="file" name="image" class="form-control mb-2" accept="image/jpeg,image/png,image/gif,image/webp">
                 <button class="btn btn-primary w-100">Post</button>
             </form>
         </div>
@@ -450,29 +480,6 @@ if (isset($_SESSION['user_id'])) {
     </div>
 </div>
 
-<!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editProfileModalLabel">
-                    <i class="fas fa-user-edit"></i> Edit Profile
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="editProfileBody">
-                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="editProfileForm" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Edit Post Modal -->
 <div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -488,7 +495,7 @@ if (isset($_SESSION['user_id'])) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="editPostForm" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" onclick="submitEditForm()">
                     <i class="fas fa-save"></i> Save Changes
                 </button>
             </div>
@@ -522,44 +529,6 @@ if (isset($_SESSION['user_id'])) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="fe/assets/js/app.js"></script>
 <script>
-    // Load edit profile form
-    function loadEditProfile() {
-        fetch('fe/users/edit_profile_form.php')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('editProfileBody').innerHTML = html;
-            })
-            .catch(() => {
-                document.getElementById('editProfileBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
-            });
-    }
-
-    // Handle edit profile form submission
-    document.addEventListener('submit', function(e) {
-        if (e.target.id === 'editProfileForm') {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-
-            fetch('be/users/edit_profile.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating your profile.');
-            });
-        }
-    });
-
     // Load edit post form
     function loadEditPost(postId) {
         fetch('fe/posts/edit_form.php?id=' + postId)
@@ -570,6 +539,46 @@ if (isset($_SESSION['user_id'])) {
             .catch(() => {
                 document.getElementById('editPostBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
             });
+    }
+
+    // Submit edit form
+    function submitEditForm() {
+        const form = document.getElementById('editPostForm');
+        if (!form) {
+            alert('Form not found');
+            return;
+        }
+        
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const formData = new FormData(form);
+
+        fetch('be/posts/edit.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editPostModal'));
+                if (modal) modal.hide();
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert('Error: ' + (data.message || data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the post.');
+        });
     }
 
     // Load delete confirmation
@@ -608,32 +617,6 @@ if (isset($_SESSION['user_id'])) {
             alert('An error occurred while deleting the post.');
         });
     }
-
-    // Handle edit form submission
-    document.addEventListener('submit', function(e) {
-        if (e.target.id === 'editPostForm') {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-
-            fetch('be/posts/edit.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('editPostModal')).hide();
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating the post.');
-            });
-        }
-    });
 
     // Load login form
     document.getElementById('loginModal').addEventListener('show.bs.modal', function () {
@@ -677,20 +660,33 @@ if (isset($_SESSION['user_id'])) {
         document.getElementById('deletePostBody').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
     });
 
-    document.getElementById('editProfileModal').addEventListener('hidden.bs.modal', function () {
-        document.getElementById('editProfileBody').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-    });
-
-    // Weather widget
+    // Weather widget with improved error handling
     if (navigator.geolocation) {
+        console.log('Geolocation supported - requesting position...');
+        
         navigator.geolocation.getCurrentPosition(function(position) {
+            console.log('Position obtained:', position.coords.latitude, position.coords.longitude);
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
+            
+            document.getElementById('weather-info').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading weather...</p>';
+            
             fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Weather API response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Weather data:', data);
                     if (data.error) {
-                        document.getElementById('weather-info').innerHTML = `<p class="text-danger">${data.error}</p>`;
+                        document.getElementById('weather-info').innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> ${data.error}
+                                <button class="btn btn-sm btn-outline-primary mt-2 d-block" onclick="location.reload()">
+                                    <i class="fas fa-sync"></i> Retry
+                                </button>
+                            </div>
+                        `;
                     } else {
                         let fishingTip = '';
                         if (data.wind_speed < 5) fishingTip = 'Great day for fishing! Low wind speeds are ideal.';
@@ -700,22 +696,22 @@ if (isset($_SESSION['user_id'])) {
                         document.getElementById('weather-info').innerHTML = `
                             <div class="row text-center">
                                 <div class="col-12 mb-3">
-                                    <h5><i class="fas fa-map-marker-alt"></i> ${data.location}</h5>
+                                    <h5><i class="fas fa-map-marker-alt"></i> ${data.location}${data.country ? ', ' + data.country : ''}</h5>
                                     <img src="https://openweathermap.org/img/wn/${data.icon}@2x.png" alt="weather icon" class="img-fluid" style="max-width: 80px;">
-                                    <p class="mb-0 fs-4">${data.description}</p>
+                                    <p class="mb-0 fs-5">${data.description}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><i class="fas fa-thermometer-half"></i> <strong>Temperature:</strong> ${data.temperature}°C</p>
-                                    <p><i class="fas fa-wind"></i> <strong>Wind:</strong> ${data.wind_speed} m/s (${data.wind_direction}°)</p>
-                                    <p><i class="fas fa-tint"></i> <strong>Humidity:</strong> ${data.humidity}%</p>
+                                    <p><i class="fas fa-thermometer-half text-danger"></i> <strong>Temperature:</strong> ${data.temperature}°C</p>
+                                    <p><i class="fas fa-wind text-info"></i> <strong>Wind:</strong> ${data.wind_speed} m/s (${data.wind_direction}°)</p>
+                                    <p><i class="fas fa-tint text-primary"></i> <strong>Humidity:</strong> ${data.humidity}%</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><i class="fas fa-eye"></i> <strong>Visibility:</strong> ${data.visibility} km</p>
-                                    <p><i class="fas fa-gauge"></i> <strong>Pressure:</strong> ${data.pressure} hPa</p>
+                                    <p><i class="fas fa-eye text-success"></i> <strong>Visibility:</strong> ${data.visibility} km</p>
+                                    <p><i class="fas fa-gauge text-warning"></i> <strong>Pressure:</strong> ${data.pressure} hPa</p>
                                     ${data.sea_level ? `<p><i class="fas fa-water"></i> <strong>Sea Level:</strong> ${data.sea_level} hPa</p>` : ''}
                                 </div>
                                 <div class="col-12 mt-3">
-                                    <div class="alert alert-info">
+                                    <div class="alert alert-success mb-0">
                                         <i class="fas fa-fish"></i> <strong>Fishing Tip:</strong> ${fishingTip}
                                     </div>
                                 </div>
@@ -723,14 +719,59 @@ if (isset($_SESSION['user_id'])) {
                         `;
                     }
                 })
-                .catch(() => {
-                    document.getElementById('weather-info').innerHTML = '<p class="text-danger">Failed to load weather data.</p>';
+                .catch((error) => {
+                    console.error('Weather fetch error:', error);
+                    document.getElementById('weather-info').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> <strong>Error loading weather</strong><br>
+                            ${error.message || 'Network error'}
+                            <button class="btn btn-sm btn-outline-primary mt-2 d-block" onclick="location.reload()">
+                                <i class="fas fa-sync"></i> Retry
+                            </button>
+                        </div>
+                    `;
                 });
-        }, function() {
-            document.getElementById('weather-info').innerHTML = '<p class="text-danger">Location access denied. Please enable location services for personalized weather.</p>';
+        }, function(error) {
+            console.error('Geolocation error:', error.code, error.message);
+            
+            let errorMessage = '';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = 'Location information is unavailable. Please check your device settings.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = 'Location request timed out. Please try again.';
+                    break;
+                default:
+                    errorMessage = 'An unknown error occurred while getting your location.';
+            }
+            
+            document.getElementById('weather-info').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Location Access Needed</strong><br>
+                    ${errorMessage}
+                    <button class="btn btn-sm btn-primary mt-2 d-block" onclick="location.reload()">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 300000 // Cache for 5 minutes
         });
     } else {
-        document.getElementById('weather-info').innerHTML = '<p class="text-danger">Geolocation not supported by this browser.</p>';
+        console.error('Geolocation not supported');
+        document.getElementById('weather-info').innerHTML = `
+            <div class="alert alert-secondary">
+                <i class="fas fa-times-circle"></i> Your browser doesn't support geolocation.
+                <br><small class="text-muted">Please use a modern browser like Chrome, Firefox, or Edge.</small>
+            </div>
+        `;
     }
 </script>
 

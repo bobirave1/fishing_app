@@ -1,6 +1,8 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+setSecurityHeaders();
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -10,6 +12,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = $_SESSION['user_id'];
 
+// CSRF Protection
+if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    exit(json_encode(['error' => 'Invalid CSRF token']));
+}
+
 // Check if avatar file was uploaded
 if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== 0) {
     http_response_code(400);
@@ -17,19 +26,12 @@ if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== 0) {
     exit(json_encode(['error' => 'No image provided']));
 }
 
-// Validate file size (max 5MB)
-if ($_FILES['avatar']['size'] > 5 * 1024 * 1024) {
+// Validate file upload
+$validationErrors = validateImageUpload($_FILES['avatar']);
+if (!empty($validationErrors)) {
     http_response_code(400);
     header('Content-Type: application/json');
-    exit(json_encode(['error' => 'File is too large (max 5MB)']));
-}
-
-// Validate file type
-$allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-if (!in_array($_FILES['avatar']['type'], $allowed)) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Invalid image format']));
+    exit(json_encode(['error' => implode(', ', $validationErrors)]));
 }
 
 // Get current avatar to delete old one

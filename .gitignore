@@ -1,0 +1,40 @@
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+error_log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# User uploads
+fe/assets/img/avatars/*
+!fe/assets/img/avatars/.gitkeep
+
+# Database dumps
+*.sql.gz
+backup/
+
+# Node modules (if using npm in future)
+node_modules/
+
+# Composer vendor (if using composer in future)
+vendor/
+
+# PHP cache
+*.cache

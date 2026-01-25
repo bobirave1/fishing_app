@@ -1,6 +1,12 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../../index.php');
+    exit;
+}
 
 $userId = $_SESSION['user_id'];
 
@@ -35,11 +41,13 @@ $requests = $stmt->fetchAll();
 
                 <div>
                     <form action="accept_request.php" method="post" class="d-inline">
+                        <?= getCsrfField() ?>
                         <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
                         <button class="btn btn-success btn-sm">Accept</button>
                     </form>
 
                     <form action="reject_request.php" method="post" class="d-inline">
+                        <?= getCsrfField() ?>
                         <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
                         <button class="btn btn-danger btn-sm">Reject</button>
                     </form>

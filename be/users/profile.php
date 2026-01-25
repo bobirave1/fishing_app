@@ -133,9 +133,9 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
                     </form>
                 <?php endif; ?>
             <?php elseif ($currentUser === $profileId): ?>
-                <button class="btn btn-outline-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editProfileModal" onclick="loadEditProfile()">
+                <a href="../../fe/pages/edit_profile.php" class="btn btn-outline-primary btn-lg">
                     <i class="fas fa-edit"></i> Edit Profile
-                </button>
+                </a>
             <?php endif; ?>
         </div>
     </div>
@@ -192,79 +192,7 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
     </div>
 </footer>
 
-<?php if ($currentUser === $profileId): ?>
-<!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editProfileModalLabel">
-                    <i class="fas fa-user-edit"></i> Edit Profile
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="editProfileBody">
-                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="editProfileForm" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<?php if ($currentUser === $profileId): ?>
-<script>
-    // Load edit profile form
-    function loadEditProfile() {
-        fetch('../../fe/users/edit_profile_form.php')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('editProfileBody').innerHTML = html;
-            })
-            .catch(() => {
-                document.getElementById('editProfileBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
-            });
-    }
-
-    // Handle edit profile form submission
-    document.addEventListener('submit', function(e) {
-        if (e.target.id === 'editProfileForm') {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-
-            fetch('../../be/users/edit_profile.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating your profile.');
-            });
-        }
-    });
-
-    // Clear modal when closed
-    document.getElementById('editProfileModal').addEventListener('hidden.bs.modal', function () {
-        document.getElementById('editProfileBody').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-    });
-</script>
-<?php endif; ?>
 
 </body>
 </html>

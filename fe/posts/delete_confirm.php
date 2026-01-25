@@ -1,5 +1,6 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
 
 // Check if user is logged in
@@ -40,6 +41,7 @@ if (!$post || $post['user_id'] != $_SESSION['user_id']) {
     </div>
 
     <form id="deletePostForm" action="be/posts/delete.php" method="post">
+        <?= getCsrfField() ?>
         <input type="hidden" name="id" value="<?= htmlspecialchars($postId) ?>">
     </form>
 </div>

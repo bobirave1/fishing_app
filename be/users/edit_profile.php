@@ -1,6 +1,7 @@
 <?php
 session_start();
 require '../../config/database.php';
+require '../../config/security.php';
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -8,13 +9,20 @@ if (!isset($_SESSION['user_id'])) {
     exit(json_encode(['error' => 'Unauthorized']));
 }
 
+// CSRF Protection
+if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    exit(json_encode(['error' => 'Invalid CSRF token']));
+}
+
 $userId = $_SESSION['user_id'];
 
 // Get form data
-$full_name = $_POST['full_name'] ?? '';
-$username = $_POST['username'] ?? '';
-$bio = $_POST['bio'] ?? '';
-$location = $_POST['location'] ?? '';
+$full_name = trim($_POST['full_name'] ?? '');
+$username = trim($_POST['username'] ?? '');
+$bio = trim($_POST['bio'] ?? '');
+$location = trim($_POST['location'] ?? '');
 $experience_level = $_POST['experience_level'] ?? 'beginner';
 
 // Validate input
@@ -22,6 +30,13 @@ if (empty($full_name) || empty($username)) {
     http_response_code(400);
     header('Content-Type: application/json');
     exit(json_encode(['error' => 'Full name and username are required']));
+}
+
+// Validate bio length
+if (strlen($bio) > 500) {
+    http_response_code(400);
+    header('Content-Type: application/json');
+    exit(json_encode(['error' => 'Bio is too long (max 500 characters)']));
 }
 
 // Update user basic info

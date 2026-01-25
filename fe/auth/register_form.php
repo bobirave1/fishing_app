@@ -1,8 +1,13 @@
+<?php
+require_once '../../config/security.php';
+secureSession();
+?>
 <div class="row justify-content-center mb-3">
     <img src="fe/assets/img/logo_rounded.png" class="w-50" alt="FISHINGLORY Logo"/>
 </div>
 
 <form method="POST" action="be/auth/register.php"> 
+    <?= getCsrfField() ?>
     <div class="mb-3">
         <label for="regFullName" class="form-label">Full Name</label>
         <input type="text" class="form-control" id="regFullName" name="fullName" placeholder="Enter your full name" required>
@@ -15,17 +20,22 @@
 
     <div class="mb-3">
         <label for="regUsername" class="form-label">Username</label>
-        <input type="text" class="form-control" id="regUsername" name="username" placeholder="Choose a username" required>
+        <input type="text" class="form-control" id="regUsername" name="username" placeholder="Choose a username" 
+               pattern="[a-zA-Z0-9_]{3,20}" title="3-20 characters, letters, numbers, and underscores only" required>
+        <div class="form-text">3-20 characters, letters, numbers, and underscores only</div>
     </div>
 
     <div class="mb-3">
         <label for="regPassword" class="form-label">Password</label>
-        <input type="password" class="form-control" id="regPassword" name="password" placeholder="Create a password" required>
+        <input type="password" class="form-control" id="regPassword" name="password" 
+               placeholder="Create a password" minlength="8" required>
+        <div class="form-text">At least 8 characters with letters and numbers</div>
     </div>
 
     <div class="mb-3">
         <label for="regConfirmPassword" class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" id="regConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+        <input type="password" class="form-control" id="regConfirmPassword" name="confirmPassword" 
+               placeholder="Confirm your password" required>
     </div>
 
     <div class="mb-3 form-check">

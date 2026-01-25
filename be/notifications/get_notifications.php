@@ -1,6 +1,12 @@
 <?php
+// Disable error output to prevent HTML in JSON response
+error_reporting(0);
+ini_set('display_errors', 0);
+
 session_start();
 require '../../config/database.php';
+
+header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);

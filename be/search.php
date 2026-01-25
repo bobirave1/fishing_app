@@ -1,6 +1,8 @@
 <?php
-session_start();
-require '../../config/database.php';
+require '../config/security.php';
+secureSession();
+require '../config/database.php';
+setSecurityHeaders();
 
 $query = trim($_GET['q'] ?? '');
 $type = $_GET['type'] ?? 'all'; // all, users, posts, spots
@@ -11,6 +13,13 @@ if (strlen($query) < 2) {
     exit(json_encode([
         'success' => false,
         'error' => 'Search query too short'
+    ]));
+}
+
+if (strlen($query) > 100) {
+    exit(json_encode([
+        'success' => false,
+        'error' => 'Search query too long'
     ]));
 }
 

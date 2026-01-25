@@ -1,11 +1,20 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+setSecurityHeaders();
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     header('Content-Type: application/json');
     exit(json_encode(['error' => 'Unauthorized']));
+}
+
+// CSRF Protection
+if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    exit(json_encode(['error' => 'Invalid CSRF token']));
 }
 
 $userId = $_SESSION['user_id'];
@@ -58,12 +67,14 @@ if ($action === 'follow') {
     $stmt->execute([$targetId]);
     $targetUser = $stmt->fetch();
     
-    // Log activity
+    // Log activity (optional - table may not exist)
+    /*
     $stmt = $pdo->prepare("
         INSERT INTO activity_feed (user_id, action_type, related_id, description, created_at)
         VALUES (?, 'follow', ?, ?, NOW())
     ");
     $stmt->execute([$userId, $targetId, 'started following ' . $targetUser['username']]);
+    */
     
 } else if ($action === 'unfollow') {
     // Remove follow

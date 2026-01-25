@@ -1,6 +1,19 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+setSecurityHeaders();
+
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    exit('Unauthorized');
+}
+
+// CSRF Protection
+if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    http_response_code(403);
+    exit('Invalid CSRF token');
+}
 
 $userId = $_SESSION['user_id'];
 $requestId = (int)$_POST['request_id'];

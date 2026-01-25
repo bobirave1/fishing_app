@@ -1,6 +1,8 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+setSecurityHeaders();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -10,6 +12,11 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // CSRF Protection
+    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+        http_response_code(403);
+        exit('Invalid CSRF token');
+    }
     $postId = $_POST['id'] ?? null;
     
     if (!$postId) {

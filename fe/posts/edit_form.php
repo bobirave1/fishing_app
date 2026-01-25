@@ -1,5 +1,6 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
 
 // Check if user is logged in
@@ -28,6 +29,7 @@ if (!$post || $post['user_id'] != $_SESSION['user_id']) {
 // Return just the form content (to be loaded into modal)
 ?>
 <form id="editPostForm" action="be/posts/edit.php" method="post" enctype="multipart/form-data">
+    <?= getCsrfField() ?>
     <input type="hidden" name="id" value="<?= htmlspecialchars($postId) ?>">
     
     <div class="mb-3">
@@ -60,6 +62,6 @@ if (!$post || $post['user_id'] != $_SESSION['user_id']) {
 
     <div class="mb-3">
         <label for="editImage" class="form-label"><i class="fas fa-upload"></i> Change Image (optional)</label>
-        <input type="file" id="editImage" name="image" class="form-control">
+        <input type="file" id="editImage" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp">
     </div>
 </form>

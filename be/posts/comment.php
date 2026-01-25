@@ -1,6 +1,8 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
+setSecurityHeaders();
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -12,6 +14,15 @@ $userId = $_SESSION['user_id'];
 $postId = $_POST['post_id'] ?? null;
 $content = trim($_POST['content'] ?? '');
 $action = $_POST['action'] ?? 'add'; // add or get
+
+// CSRF Protection for write operations only (not for 'get' action)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== 'get') {
+    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        exit(json_encode(['error' => 'Invalid CSRF token']));
+    }
+}
 
 header('Content-Type: application/json');
 
@@ -57,12 +68,14 @@ if ($action === 'add') {
         ");
         $stmt->execute([$post['user_id'], $postId, $userId]);
         
-        // Log activity
+        // Log activity (optional - table may not exist)
+        /*
         $stmt = $pdo->prepare("
             INSERT INTO activity_feed (user_id, action_type, post_id, created_at)
             VALUES (?, 'comment', ?, NOW())
         ");
         $stmt->execute([$userId, $postId]);
+        */
     }
     
     // Get user info
