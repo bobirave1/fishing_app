@@ -24,18 +24,26 @@ if ($action === 'calculate_fish_activity') {
         exit(json_encode(['error' => 'Location required']));
     }
     
-    // Get weather data
-    $weatherData = getWeatherData($lat, $lon);
-    
-    // Calculate activity score based on multiple factors
-    $activityScore = calculateFishActivityScore($weatherData);
-    
-    exit(json_encode([
-        'success' => true,
-        'activity_score' => $activityScore['total_score'],
-        'factors' => $activityScore['factors'],
-        'location' => $location
-    ]));
+    try {
+        // Get weather data
+        $weatherData = getWeatherData($lat, $lon);
+        
+        // Calculate activity score based on multiple factors
+        $activityScore = calculateFishActivityScore($weatherData, $lat, $lon);
+        
+        exit(json_encode([
+            'success' => true,
+            'activity_score' => $activityScore['total_score'],
+            'factors' => $activityScore['factors'],
+            'location' => $location
+        ]));
+    } catch (Exception $e) {
+        error_log("Fish activity calculation error: " . $e->getMessage());
+        exit(json_encode([
+            'success' => false,
+            'error' => 'Calculation error: ' . $e->getMessage()
+        ]));
+    }
     
 } else if ($action === 'get_fish_activity') {
     // Old endpoint - fallback
@@ -72,7 +80,7 @@ if ($action === 'calculate_fish_activity') {
 }
 
 // Function to calculate fish activity score (Professional Solunar-based algorithm)
-function calculateFishActivityScore($weather) {
+function calculateFishActivityScore($weather, $lat = 42.7, $lon = 25.5) {
     $factors = [];
     $hour = (int)date('H');
     $minute = (int)date('i');
@@ -80,65 +88,80 @@ function calculateFishActivityScore($weather) {
     
     // Get moon data for solunar calculations
     $moonData = getMoonPhase();
-    $solunarPeriods = calculateSolunarPeriods($moonData);
+    $solunarPeriods = calculateSolunarPeriods($moonData, $lat, $lon);
     
     // Get current season
     $month = (int)date('n');
     $season = getSeason($month);
     
-    // 1. Temperature Score (25% weight) - Species & Season Dependent
-    $temp = $weather['temperature'];
-    $tempScore = calculateTemperatureScore($temp, $season);
+    // 1. Solunar Score (35% weight) - PRIMARY FACTOR like Fishing Points
+    $solunarData = calculateSolunarScore($currentTime, $solunarPeriods, $moonData);
+    $solunarScore = $solunarData['score'];
+    $solunarImpact = $solunarData['impact'];
     
-    // 2. Barometric Pressure Trend (25% weight) - TREND is more important than absolute
+    // 2. Time of Day (25% weight) - Dawn/Dusk feeding patterns
+    $timeData = calculateTimeScore($currentTime, $season);
+    $timeScore = $timeData['score'];
+    $timeImpact = $timeData['impact'];
+    
+    // 3. Barometric Pressure (20% weight) - Trend matters
     $pressure = $weather['pressure'];
     $pressureData = calculatePressureScore($pressure);
     $pressureScore = $pressureData['score'];
     $pressureImpact = $pressureData['impact'];
     
-    // 3. Solunar Score (20% weight) - Major/Minor periods based on moon position
-    $solunarData = calculateSolunarScore($currentTime, $solunarPeriods, $moonData);
-    $solunarScore = $solunarData['score'];
-    $solunarImpact = $solunarData['impact'];
+    // 4. Temperature (12% weight) - Species & Season Dependent
+    $temp = $weather['temperature'];
+    $tempScore = calculateTemperatureScore($temp, $season);
     
-    // 4. Wind & Cloud Cover (15% weight) - Combined light penetration factor
+    // 5. Wind & Cloud Cover (8% weight) - Secondary factors
     $wind = $weather['wind_speed'];
     $clouds = $weather['clouds'];
     $windCloudData = calculateWindCloudScore($wind, $clouds, $currentTime);
     $windScore = $windCloudData['score'];
     $windImpact = $windCloudData['impact'];
     
-    // 5. Time of Day (15% weight) - Crepuscular feeding patterns
-    $timeData = calculateTimeScore($currentTime, $season);
-    $timeScore = $timeData['score'];
-    $timeImpact = $timeData['impact'];
-    
-    // Calculate base weighted score
+    // Calculate base weighted score (matching Fishing Points weights)
     $baseScore = (
-        ($tempScore['score'] * 0.25) +
-        ($pressureScore * 0.25) +
-        ($solunarScore * 0.20) +
-        ($windScore * 0.15) +
-        ($timeScore * 0.15)
+        ($solunarScore * 0.35) +
+        ($timeScore * 0.25) +
+        ($pressureScore * 0.20) +
+        ($tempScore['score'] * 0.12) +
+        ($windScore * 0.08)
     );
     
-    // Apply multipliers for optimal combinations
+    // Apply multipliers for optimal combinations (Fishing Points style)
     $multiplier = 1.0;
     
-    // Perfect storm: Rising pressure + Major solunar + Dawn/Dusk
-    if ($pressureScore > 85 && $solunarScore > 80 && $timeScore > 85) {
-        $multiplier = 1.15;
+    // PERFECT CONDITIONS: Major period + Dawn/Dusk + Good pressure
+    if ($solunarScore > 85 && $timeScore > 85 && $pressureScore > 80) {
+        $multiplier = 1.20; // This is rare but EXCELLENT
     }
-    // Good combo: Stable pressure + Minor solunar + Good time
-    else if ($pressureScore > 70 && $solunarScore > 60 && $timeScore > 70) {
+    // EXCELLENT: Major period + Good time OR good pressure
+    else if ($solunarScore > 85 && ($timeScore > 80 || $pressureScore > 75)) {
+        $multiplier = 1.12;
+    }
+    // VERY GOOD: Major/Minor + Dawn/Dusk
+    else if ($solunarScore > 70 && $timeScore > 80) {
         $multiplier = 1.08;
     }
+    // GOOD: Either solunar or time is good
+    else if ($solunarScore > 70 || $timeScore > 75) {
+        $multiplier = 1.03;
+    }
     
-    // Weather penalties
+    // Weather modifiers
     if ($weather['weather'] === 'Rain' && $wind < 4) {
-        $multiplier *= 1.05; // Light rain can increase activity
+        $multiplier *= 1.04; // Light rain slightly increases activity
     } else if ($weather['weather'] === 'Rain' && $wind > 7) {
-        $multiplier *= 0.85; // Heavy rain decreases activity
+        $multiplier *= 0.88; // Heavy rain/storm decreases
+    } else if ($weather['weather'] === 'Thunderstorm') {
+        $multiplier *= 0.75; // Thunder significantly decreases
+    }
+    
+    // Penalty for bad combinations
+    if ($solunarScore < 30 && $timeScore < 40 && $pressureScore < 50) {
+        $multiplier *= 0.85; // Everything is bad
     }
     
     $totalScore = round(min(100, $baseScore * $multiplier));
@@ -299,50 +322,216 @@ function calculatePressureScore($pressure) {
     return ['score' => 60, 'impact' => "📊 Средно налягане"];
 }
 
-// Solunar theory implementation (Professional algorithm)
-function calculateSolunarPeriods($moonData) {
-    $hour = (int)date('H');
-    $minute = (int)date('i');
+// Solunar theory implementation (Astronomical calculation for accuracy)
+function calculateSolunarPeriods($moonData, $lat = 42.7, $lon = 25.5) {
+    try {
+        // Get current date info
+        $year = (int)date('Y');
+        $month = (int)date('n');
+        $day = (int)date('j');
+        
+        // Use astronomical calculations for moon position
+        // Calculate Julian Day
+        $a = floor((14 - $month) / 12);
+        $y = $year + 4800 - $a;
+        $m = $month + (12 * $a) - 3;
+        $jd = $day + floor((153 * $m + 2) / 5) + (365 * $y) + floor($y / 4) - floor($y / 100) + floor($y / 400) - 32045;
+        
+        // Calculate moon transit (when moon is highest in sky)
+        $moonTransit = calculateMoonTransit($jd, $lon);
+        
+        // Calculate moonrise and moonset
+        $moonTimes = calculateMoonRiseSet($jd, $lat, $lon);
+        $moonrise = $moonTimes['rise'];
+        $moonset = $moonTimes['set'];
+        
+        // Moon underfoot (opposite side - 12 hours from transit)
+        $moonUnderfoot = fmod($moonTransit + 12, 24);
+        if ($moonUnderfoot < 0) $moonUnderfoot += 24;
+        
+        // MAJOR PERIODS: Moon overhead (transit) and underfoot
+        // Duration: 2 hours (1 hour before and after peak)
+        $major1Start = $moonTransit - 1.0;
+        $major1End = $moonTransit + 1.0;
+        $major2Start = $moonUnderfoot - 1.0;
+        $major2End = $moonUnderfoot + 1.0;
+        
+        // MINOR PERIODS: Moonrise and moonset
+        // Duration: 1 hour (30 min before and after)
+        $minor1Start = $moonrise - 0.5;
+        $minor1End = $moonrise + 0.5;
+        $minor2Start = $moonset - 0.5;
+        $minor2End = $moonset + 0.5;
+        
+        return [
+            'major1' => ['start' => $major1Start, 'end' => $major1End, 'peak' => $moonTransit],
+            'major2' => ['start' => $major2Start, 'end' => $major2End, 'peak' => $moonUnderfoot],
+            'minor1' => ['start' => $minor1Start, 'end' => $minor1End, 'peak' => $moonrise],
+            'minor2' => ['start' => $minor2Start, 'end' => $minor2End, 'peak' => $moonset]
+        ];
+    } catch (Exception $e) {
+        // Fallback to simplified calculation if astronomical fails
+        error_log("Solunar calculation error: " . $e->getMessage());
+        return calculateSolunarPeriodsSimplified($moonData);
+    }
+}
+
+// Simplified fallback solunar calculation
+function calculateSolunarPeriodsSimplified($moonData) {
+    $moonAge = $moonData['age'];
     
-    // Moon transit times (simplified - in real app use astronomical calculations)
-    // Major periods: Moon overhead (transit) and moon underfoot (opposite)
-    // Minor periods: Moonrise and moonset
-    
-    $moonAge = $moonData['age']; // Days since new moon
-    
-    // Estimate moon transit (peaks around lunar noon)
-    $lunarNoon = 12 + ($moonAge * 0.8); // Shifts ~50min per day
+    // Approximate moon transit based on moon age
+    $lunarNoon = 12 + ($moonAge * 0.8);
     $lunarNoon = fmod($lunarNoon, 24);
+    if ($lunarNoon < 0) $lunarNoon += 24;
+    
     $lunarMidnight = fmod($lunarNoon + 12, 24);
+    if ($lunarMidnight < 0) $lunarMidnight += 24;
     
-    // Major periods: 2-3 hours centered on transit
-    $major1Start = $lunarNoon - 1.5;
-    $major1End = $lunarNoon + 1.5;
-    $major2Start = $lunarMidnight - 1.5;
-    $major2End = $lunarMidnight + 1.5;
-    
-    // Minor periods: 1-1.5 hours at moonrise/set (estimate)
     $moonrise = fmod($lunarNoon - 6, 24);
+    if ($moonrise < 0) $moonrise += 24;
+    
     $moonset = fmod($lunarNoon + 6, 24);
-    $minor1Start = $moonrise - 0.75;
-    $minor1End = $moonrise + 0.75;
-    $minor2Start = $moonset - 0.75;
-    $minor2End = $moonset + 0.75;
+    if ($moonset < 0) $moonset += 24;
     
     return [
-        'major1' => ['start' => $major1Start, 'end' => $major1End, 'peak' => $lunarNoon],
-        'major2' => ['start' => $major2Start, 'end' => $major2End, 'peak' => $lunarMidnight],
-        'minor1' => ['start' => $minor1Start, 'end' => $minor1End, 'peak' => $moonrise],
-        'minor2' => ['start' => $minor2Start, 'end' => $minor2End, 'peak' => $moonset]
+        'major1' => ['start' => $lunarNoon - 1.0, 'end' => $lunarNoon + 1.0, 'peak' => $lunarNoon],
+        'major2' => ['start' => $lunarMidnight - 1.0, 'end' => $lunarMidnight + 1.0, 'peak' => $lunarMidnight],
+        'minor1' => ['start' => $moonrise - 0.5, 'end' => $moonrise + 0.5, 'peak' => $moonrise],
+        'minor2' => ['start' => $moonset - 0.5, 'end' => $moonset + 0.5, 'peak' => $moonset]
     ];
 }
 
-// Calculate solunar score based on current time vs periods
+// Calculate moon transit time (when moon crosses meridian)
+function calculateMoonTransit($jd, $lon) {
+    // Julian centuries from J2000.0
+    $T = ($jd - 2451545.0) / 36525.0;
+    
+    // Moon's mean longitude
+    $L = 218.316 + 13.176396 * ($jd - 2451545.0);
+    $L = fmod($L, 360);
+    
+    // Sun's mean anomaly
+    $M = 357.529 + 0.98560028 * ($jd - 2451545.0);
+    $M = fmod($M, 360);
+    
+    // Moon's mean anomaly
+    $Mm = 134.963 + 13.064993 * ($jd - 2451545.0);
+    $Mm = fmod($Mm, 360);
+    
+    // Moon's argument of latitude
+    $F = 93.272 + 13.229350 * ($jd - 2451545.0);
+    $F = fmod($F, 360);
+    
+    // Right ascension (simplified)
+    $RA = $L + 6.289 * sin(deg2rad($Mm));
+    
+    // Local sidereal time
+    $LST = 280.46061837 + 360.98564736629 * ($jd - 2451545.0) + $lon;
+    $LST = fmod($LST, 360);
+    
+    // Hour angle
+    $HA = $LST - $RA;
+    if ($HA < 0) $HA += 360;
+    if ($HA > 180) $HA -= 360;
+    
+    // Transit time in hours
+    $transitTime = 12.0 - ($HA / 15.0);
+    if ($transitTime < 0) $transitTime += 24;
+    if ($transitTime >= 24) $transitTime -= 24;
+    
+    return $transitTime;
+}
+
+// Calculate moonrise and moonset times
+function calculateMoonRiseSet($jd, $lat, $lon) {
+    // Julian centuries from J2000.0
+    $T = ($jd - 2451545.0) / 36525.0;
+    
+    // Moon's mean longitude
+    $L = 218.316 + 13.176396 * ($jd - 2451545.0);
+    $L = fmod($L, 360);
+    
+    // Moon's mean anomaly
+    $Mm = 134.963 + 13.064993 * ($jd - 2451545.0);
+    $Mm = fmod($Mm, 360);
+    
+    // Moon's ecliptic longitude (simplified)
+    $lambda = $L + 6.289 * sin(deg2rad($Mm));
+    
+    // Moon's ecliptic latitude (simplified)
+    $beta = 5.128 * sin(deg2rad($Mm));
+    
+    // Obliquity of ecliptic
+    $epsilon = 23.439 - 0.0000004 * ($jd - 2451545.0);
+    
+    // Right ascension and declination
+    $RA = atan2(
+        sin(deg2rad($lambda)) * cos(deg2rad($epsilon)) - tan(deg2rad($beta)) * sin(deg2rad($epsilon)),
+        cos(deg2rad($lambda))
+    );
+    $RA = rad2deg($RA);
+    if ($RA < 0) $RA += 360;
+    
+    $decValue = sin(deg2rad($beta)) * cos(deg2rad($epsilon)) + 
+                 cos(deg2rad($beta)) * sin(deg2rad($epsilon)) * sin(deg2rad($lambda));
+    $decValue = max(-1, min(1, $decValue)); // Clamp to valid range
+    $dec = asin($decValue);
+    $dec = rad2deg($dec);
+    
+    // Local sidereal time at midnight
+    $LST0 = 280.46061837 + 360.98564736629 * ($jd - 2451545.0) + $lon;
+    $LST0 = fmod($LST0, 360);
+    
+    // Hour angle at rise/set (accounting for refraction and moon's semi-diameter)
+    $h0 = -0.833; // Standard value for rise/set
+    $cosHValue = (sin(deg2rad($h0)) - sin(deg2rad($lat)) * sin(deg2rad($dec))) / 
+                 (cos(deg2rad($lat)) * cos(deg2rad($dec)));
+    
+    // Clamp value to valid range for acos
+    $cosHValue = max(-1, min(1, $cosHValue));
+    
+    // Moon always above or below horizon
+    if ($cosHValue >= 0.9999 || $cosHValue <= -0.9999) {
+        // Use approximate times based on transit
+        $transit = calculateMoonTransit($jd, $lon);
+        return [
+            'rise' => fmod($transit - 6 + 24, 24),
+            'set' => fmod($transit + 6, 24)
+        ];
+    }
+    
+    $H = rad2deg(acos($cosHValue));
+    
+    // Transit time
+    $transit = ($RA - $LST0) / 15.0;
+    if ($transit < 0) $transit += 24;
+    if ($transit >= 24) $transit -= 24;
+    
+    // Rise and set times
+    $rise = $transit - ($H / 15.0);
+    $set = $transit + ($H / 15.0);
+    
+    // Normalize to 0-24 range
+    if ($rise < 0) $rise += 24;
+    if ($rise >= 24) $rise -= 24;
+    if ($set < 0) $set += 24;
+    if ($set >= 24) $set -= 24;
+    
+    return [
+        'rise' => $rise,
+        'set' => $set
+    ];
+}
+
+// Calculate solunar score based on current time vs periods (Fishing Points method)
 function calculateSolunarScore($currentTime, $periods, $moonData) {
     $inMajor = false;
     $inMinor = false;
     $nearPeak = false;
     $minutesToPeak = 999;
+    $closestPeriod = null;
+    $distanceToClosest = 999;
     
     foreach ($periods as $key => $period) {
         $isMajor = strpos($key, 'major') !== false;
@@ -377,37 +566,71 @@ function calculateSolunarScore($currentTime, $periods, $moonData) {
                 $inMinor = true;
             }
         }
+        
+        // Calculate distance to this period
+        $distToPeriod = min(
+            abs($currentTime - $start),
+            abs($currentTime - $end),
+            abs($currentTime - $peak)
+        );
+        
+        if ($distToPeriod < $distanceToClosest) {
+            $distanceToClosest = $distToPeriod;
+            $closestPeriod = $isMajor ? 'major' : 'minor';
+        }
     }
     
-    // Score based on solunar period + moon phase strength
+    // Moon phase multiplier (New and Full moon are best)
     $moonPhaseMultiplier = $moonData['score'] / 100;
     
+    // Moon distance factor (perigee = close = better)
+    // Simplified: assume average distance, boost for strong phases
+    $moonDistanceBonus = 1.0;
+    if ($moonData['score'] > 90) {
+        $moonDistanceBonus = 1.15; // Near perigee + good phase
+    } else if ($moonData['score'] < 40) {
+        $moonDistanceBonus = 0.85; // Far from ideal
+    }
+    
+    // IN PERIOD SCORING
     if ($inMajor && $nearPeak) {
         return [
-            'score' => 95 * $moonPhaseMultiplier,
-            'impact' => "🌕 MAJOR Solunar Period - пик на активност!"
+            'score' => min(100, 98 * $moonPhaseMultiplier * $moonDistanceBonus),
+            'impact' => "🌕 MAJOR Period Peak - максимална активност!"
         ];
     }
     if ($inMajor) {
         return [
-            'score' => 85 * $moonPhaseMultiplier,
-            'impact' => "🌕 Major Period - висока активност"
+            'score' => min(100, 88 * $moonPhaseMultiplier * $moonDistanceBonus),
+            'impact' => "🌕 Major Solunar Period - висока активност"
         ];
     }
     if ($inMinor) {
         return [
-            'score' => 70 * $moonPhaseMultiplier,
+            'score' => min(100, 72 * $moonPhaseMultiplier * $moonDistanceBonus),
             'impact' => "🌗 Minor Period - добра активност"
         ];
     }
     
-    // Outside periods - check proximity
-    // Find nearest period
-    // Simplified: return medium score
-    return [
-        'score' => 50,
-        'impact' => "⏱️ Извън solunar период - средна активност"
-    ];
+    // OUTSIDE PERIODS - gradual decline based on distance
+    if ($distanceToClosest < 1.0) { // Within 1 hour
+        $score = 60 - ($distanceToClosest * 10);
+        return [
+            'score' => max(40, $score * $moonPhaseMultiplier),
+            'impact' => "⏱️ Близо до {$closestPeriod} период"
+        ];
+    } else if ($distanceToClosest < 2.0) { // 1-2 hours away
+        $score = 50 - ($distanceToClosest * 5);
+        return [
+            'score' => max(30, $score * $moonPhaseMultiplier),
+            'impact' => "⏱️ Между solunar периоди"
+        ];
+    } else { // Far from any period
+        return [
+            'score' => max(15, 35 * $moonPhaseMultiplier),
+            'impact' => "⏱️ Извън solunar период - ниска активност"
+        ];
+    }
 }
 
 // Wind and cloud cover combined score

@@ -50,6 +50,33 @@ $stmt = $pdo->prepare("INSERT INTO posts (user_id, title, content, image, visibi
 $stmt->execute([$_SESSION['user_id'], $title, $content, $imagePath, $visibility]);
 $postId = $pdo->lastInsertId();
 
+// Notify friends about new post
+if ($visibility !== 'private') {
+    // Get all friends
+    $friendsStmt = $pdo->prepare("
+        SELECT DISTINCT 
+            CASE 
+                WHEN user_id = ? THEN friend_id
+                WHEN friend_id = ? THEN user_id
+            END as friend_id
+        FROM friends 
+        WHERE user_id = ? OR friend_id = ?
+    ");
+    $friendsStmt->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
+    $friends = $friendsStmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Create notification for each friend
+    if (!empty($friends)) {
+        $notifStmt = $pdo->prepare(
+            "INSERT INTO notifications (user_id, type, from_user_id, post_id, created_at)
+             VALUES (?, 'new_post', ?, ?, NOW())"
+        );
+        foreach ($friends as $friendId) {
+            $notifStmt->execute([$friendId, $_SESSION['user_id'], $postId]);
+        }
+    }
+}
+
 // Log activity (optional - table may not exist)
 // Uncomment if you have activity_feed table
 /*

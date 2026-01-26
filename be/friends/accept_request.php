@@ -41,7 +41,13 @@ $pdo->prepare(
     "INSERT INTO friends (user_id, friend_id) VALUES (?, ?), (?, ?)"
 )->execute([$userId, $senderId, $senderId, $userId]);
 
+// Create notification for accepted friend request
+$pdo->prepare(
+    "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
+     VALUES (?, 'friend_accepted', ?, ?, NOW())"
+)->execute([$senderId, $userId, $userId]);
+
 $pdo->commit();
 
-header("Location: ../../fe/friends/list_requests.php");
+header("Location: list_requests.php");
 exit;

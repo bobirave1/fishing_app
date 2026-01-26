@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="icon" href="../assets/img/logo_rounded.png">
     <style>
+        body {
+            padding-top: 70px;
+        }
         .messages-container {
             display: flex;
             height: 80vh;
@@ -62,40 +65,9 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
     exit;
 }
-
-// Get user avatar for navbar
-$stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$profile = $stmt->fetch();
-$avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
 ?>
 
-<!-- HEADER -->
-<nav class="navbar navbar-expand navbar-light bg-white shadow-sm">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center" href="../../index.php">
-            <img src="../assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-            <span class="fw-bold fs-4 brand-color">FISHINGLORY</span>
-        </a>
-        <ul class="navbar-nav ms-auto">
-            <li class="nav-item dropdown">
-                <button class="btn btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <img src="<?= htmlspecialchars($avatar) ?>" width="32" height="32" class="rounded-circle" style="object-fit: cover;">
-                    <?= htmlspecialchars($_SESSION['username']) ?>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="../../be/users/profile.php?id=<?= $_SESSION['user_id'] ?>">
-                        <i class="fas fa-user"></i> My Profile
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="../../be/auth/logout.php">
-                        <i class="fa fa-sign-out-alt me-1"></i> Logout
-                    </a></li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</nav>
+<?php include '../components/navbar.php'; ?>
 
 <div class="container-fluid my-4">
     <div class="row h-100">
@@ -141,7 +113,8 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/avatar_helper.js?v=<?= time() ?>"></script>
+<script src="../assets/js/app.js?v=<?= time() ?>"></script>
 <script>
     let currentConversationUserId = null;
 

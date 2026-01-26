@@ -69,7 +69,7 @@ function loadComments(postId) {
             }
             
             data.comments.forEach(comment => {
-                const avatar = comment.avatar_url || 'fe/assets/img/default-avatar.png';
+                const avatar = getAvatarUrl(comment.avatar_url);
                 let commentHtml = `
                     <div class="comment-item mb-2 pb-2 border-bottom">
                         <div class="d-flex gap-2">
@@ -209,44 +209,132 @@ function toggleFollow(userId, button) {
     .catch(error => console.error('Error:', error));
 }
 
+// ==================== FRIEND REQUESTS ====================
+function sendFriendRequest(receiverId) {
+    const btn = document.getElementById('addFriendBtn');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    
+    const formData = new FormData();
+    formData.append('receiver_id', receiverId);
+    formData.append('csrf_token', getCsrfToken());
+    
+    fetch('../friends/send_request.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            // Success
+            document.getElementById('friendActionContainer').innerHTML = 
+                '<span class="badge bg-warning text-dark fs-6 px-3 py-2">Request sent</span>';
+        } else {
+            return response.text().then(text => {
+                throw new Error(text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Friend';
+        
+        let message = 'Failed to send friend request';
+        if (error.message.includes('already sent') || error.message.includes('already exists')) {
+            message = 'Friend request already sent';
+        } else if (error.message.includes('Already friends')) {
+            message = 'You are already friends';
+        }
+        
+        alert(message);
+    });
+}
+
 // ==================== SEARCH ====================
 let searchTimeout;
 
 function performSearch(query) {
     clearTimeout(searchTimeout);
     
+    const resultsDiv = document.getElementById('searchResults');
+    
+    if (!resultsDiv) {
+        console.error('searchResults element not found!');
+        return;
+    }
+    
     if (query.length < 2) {
-        document.getElementById('searchResults').classList.add('d-none');
+        resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">Type at least 2 characters</div>';
         return;
     }
     
     searchTimeout = setTimeout(() => {
-        fetch('be/search.php?q=' + encodeURIComponent(query))
-            .then(response => response.json())
+        const path = window.location.pathname;
+        let searchPath = 'be/search.php';
+        
+        // If we're in /fe/pages/ or /be/ we need to go up two levels
+        if (path.includes('/fe/pages/') || path.includes('/be/')) {
+            searchPath = '../../be/search.php';
+        }
+        
+        console.log('Fetching from path:', searchPath, 'query:', query);
+        
+        fetch(searchPath + '?q=' + encodeURIComponent(query))
+            .then(response => {
+                console.log('Response received, status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Search data:', data);
                 if (data.success) {
                     displaySearchResults(data.results);
-                    document.getElementById('searchResults').classList.remove('d-none');
+                } else {
+                    resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">No results</div>';
                 }
+            })
+            .catch(err => {
+                console.error('Search error:', err);
+                resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">Search error</div>';
             });
     }, 300);
 }
 
 function displaySearchResults(results) {
-    let html = '<div class="search-results-dropdown">';
+    const resultsDiv = document.getElementById('searchResults');
+    
+    const path = window.location.pathname;
+    const isInFePages = path.includes('/fe/pages/');
+    const isInBe = path.includes('/be/');
+    
+    let html = '';
     
     // Users
     if (results.users && results.users.length > 0) {
-        html += '<div class="search-category"><strong>Users</strong></div>';
+        html += '<div class="fb-search-category">Users</div>';
         results.users.forEach(user => {
-            const avatar = user.avatar_url || 'fe/assets/img/default-avatar.png';
+            let avatar = getAvatarUrl(user.avatar_url);
+            
+            // Determine correct path based on current location
+            let profilePath;
+            if (isInFePages || isInBe) {
+                profilePath = '../../be/users/profile.php';
+            } else {
+                profilePath = 'be/users/profile.php';
+            }
+            
+            const username = escapeHtml(user.username);
+            const fullName = escapeHtml(user.full_name);
+            
             html += `
-                <a href="be/users/profile.php?id=${user.id}" class="search-item">
-                    <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
-                    <div>
-                        <strong>${user.username}</strong>
-                        <small class="text-muted">${user.full_name}</small>
+                <a href="${profilePath}?id=${user.id}" class="fb-search-item">
+                    <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div style="font-weight: 600; font-size: 15px;">${username}</div>
+                        <div style="font-size: 13px; color: #65676b;">${fullName}</div>
                     </div>
+                    ${user.is_friend ? '<span class="badge bg-success">Friend</span>' : ''}
                 </a>
             `;
         });
@@ -254,13 +342,17 @@ function displaySearchResults(results) {
     
     // Posts
     if (results.posts && results.posts.length > 0) {
-        html += '<div class="search-category"><strong>Posts</strong></div>';
+        html += '<div class="fb-search-category">Posts</div>';
         results.posts.forEach(post => {
+            const title = post.title ? escapeHtml(post.title) : 'Без заглавие';
+            const content = post.content ? escapeHtml(post.content.substring(0, 60)) : '';
             html += `
-                <div class="search-item">
-                    <strong>${post.title}</strong>
-                    <p class="mb-0 small text-muted">${post.content.substring(0, 100)}...</p>
-                    <small class="text-muted">by ${post.username}</small>
+                <div class="fb-search-item">
+                    <i class="fas fa-file-alt" style="color: #65676b; width: 36px; text-align: center; font-size: 18px;"></i>
+                    <div class="flex-grow-1">
+                        <div style="font-weight: 600; font-size: 15px;">${title}</div>
+                        <div style="font-size: 13px; color: #65676b;">${content}${content.length >= 60 ? '...' : ''}</div>
+                    </div>
                 </div>
             `;
         });
@@ -268,28 +360,32 @@ function displaySearchResults(results) {
     
     // Spots
     if (results.spots && results.spots.length > 0) {
-        html += '<div class="search-category"><strong>Fishing Spots</strong></div>';
+        html += '<div class="fb-search-category">Spots</div>';
         results.spots.forEach(spot => {
             html += `
-                <a href="#" class="search-item" onclick="viewSpot(${spot.id})">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <div>
-                        <strong>${spot.name}</strong>
-                        <small class="text-muted">${spot.type}</small>
+                <a href="#" class="fb-search-item" onclick="viewSpot(${spot.id}); return false;">
+                    <i class="fas fa-map-marker-alt" style="color: #65676b; width: 36px; text-align: center; font-size: 18px;"></i>
+                    <div class="flex-grow-1">
+                        <div style="font-weight: 600; font-size: 15px;">${escapeHtml(spot.name)}</div>
+                        <div style="font-size: 13px; color: #65676b;">${escapeHtml(spot.type || 'Spot')}</div>
                     </div>
                 </a>
             `;
         });
     }
     
-    if ((!results.users || results.users.length === 0) && 
-        (!results.posts || results.posts.length === 0) && 
-        (!results.spots || results.spots.length === 0)) {
-        html += '<div class="search-item">No results found</div>';
+    if (!html) {
+        html = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">No results found</div>';
     }
     
-    html += '</div>';
-    document.getElementById('searchResults').innerHTML = html;
+    resultsDiv.classList.remove('d-none');
+    resultsDiv.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function viewSpot(spotId) {
@@ -320,7 +416,7 @@ function displayConversations(conversations) {
     
     let html = '';
     conversations.forEach(conv => {
-        const avatar = conv.avatar_url || 'fe/assets/img/default-avatar.png';
+        const avatar = getAvatarUrl(conv.avatar_url);
         const unreadClass = conv.unread_count > 0 ? 'fw-bold' : '';
         const lastMsg = conv.last_message ? conv.last_message.substring(0, 45) + (conv.last_message.length > 45 ? '...' : '') : 'No messages';
         html += `
@@ -410,7 +506,17 @@ if (document.body.dataset.userId && document.body.dataset.userId != '0') {
 
 // ==================== NOTIFICATIONS ====================
 function loadNotifications() {
-    fetch('be/notifications/get_notifications.php?limit=10')
+    const path = window.location.pathname;
+    let notifPath = 'be/notifications/get_notifications.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        notifPath = '../notifications/get_notifications.php';
+    } else if (path.includes('/fe/pages/')) {
+        notifPath = '../../be/notifications/get_notifications.php';
+    }
+    
+    fetch(notifPath + '?limit=10')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -422,7 +528,7 @@ function loadNotifications() {
 }
 
 function displayNotifications(notifications) {
-    const container = document.getElementById('notificationsList');
+    const container = document.getElementById('notificationList');
     if (!container) return;
     
     if (notifications.length === 0) {
@@ -432,29 +538,41 @@ function displayNotifications(notifications) {
     
     let html = '';
     notifications.forEach(notif => {
-        const avatar = notif.avatar_url || 'fe/assets/img/default-avatar.png';
+        const avatar = getAvatarUrl(notif.avatar_url);
         let message = '';
+        let clickAction = '';
         
         switch(notif.type) {
             case 'like':
                 message = `<strong>${notif.username}</strong> liked your post`;
+                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             case 'comment':
                 message = `<strong>${notif.username}</strong> commented on your post`;
+                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             case 'follow':
                 message = `<strong>${notif.username}</strong> started following you`;
-                break;
+                clickAction = `onclick="window.location.href='be/users/profile.php?id=${notif.from_user_id}'"`;                break;
             case 'friend_request':
                 message = `<strong>${notif.username}</strong> sent you a friend request`;
+                clickAction = `onclick="window.location.href='be/friends/list_requests.php'"`;
+                break;
+            case 'friend_accepted':
+                message = `<strong>${notif.username}</strong> accepted your friend request`;
+                clickAction = `onclick="window.location.href='be/users/profile.php?id=${notif.from_user_id}'"`;                break;
+            case 'new_post':
+                message = `<strong>${notif.username}</strong> shared a new post`;
+                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             default:
                 message = `<strong>${notif.username}</strong> performed an action`;
+                clickAction = '';
         }
         
         const readClass = notif.is_read ? '' : 'bg-light';
         html += `
-            <div class="dropdown-item ${readClass} notification-item" onclick="handleNotificationClick(${notif.id}, ${notif.post_id})">
+            <div class="dropdown-item ${readClass} notification-item" ${clickAction} style="cursor: pointer;">
                 <div class="d-flex gap-2">
                     <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
                     <div class="flex-grow-1">
@@ -516,6 +634,18 @@ if (document.body.dataset.userId && document.body.dataset.userId != '0') {
     loadNotifications();
     setInterval(loadNotifications, 30000); // Refresh every 30 seconds
 }
+
+// Close search dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    
+    if (searchInput && searchResults) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.add('d-none');
+        }
+    }
+});
 
 // ==================== UTILITIES ====================
 function formatDate(dateString) {

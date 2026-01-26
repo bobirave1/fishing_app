@@ -2,6 +2,7 @@
 require '../../config/security.php';
 secureSession();
 require '../../config/database.php';
+require '../../config/avatar_helper.php';
 setSecurityHeaders();
 
 if (!isset($_SESSION['user_id'])) {
@@ -92,7 +93,7 @@ if ($action === 'add') {
         'success' => true,
         'comment_id' => $commentId,
         'username' => $user['username'],
-        'avatar' => $user['avatar_url'] ?? 'fe/assets/img/default-avatar.png',
+        'avatar' => $user['avatar_url'] ?? getDefaultAvatarPath(),
         'content' => htmlspecialchars($content),
         'created_at' => date('M d, Y H:i')
     ]));

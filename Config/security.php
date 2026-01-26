@@ -52,9 +52,11 @@ function validateEmail($email) {
 
 function validatePassword($password) {
     // Minimum 8 characters, at least one letter and one number
-    return strlen($password) >= 8 && 
-           preg_match('/[A-Za-z]/', $password) && 
-           preg_match('/[0-9]/', $password);
+    $length = strlen($password);
+    $hasLetter = preg_match('/[A-Za-z]/', $password);
+    $hasNumber = preg_match('/[0-9]/', $password);
+    
+    return $length >= 8 && $hasLetter && $hasNumber;
 }
 
 function validateUsername($username) {
@@ -110,10 +112,9 @@ function setSecurityHeaders() {
     header('Referrer-Policy: strict-origin-when-cross-origin');
     // Allow geolocation for weather widget, block microphone and camera
     header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
-    // Only add CSP if not already set
+    // Updated CSP - allow unsafe-eval for development and Bootstrap compatibility
     if (!headers_sent()) {
-        // Allow connections to weather API and CDNs
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https: https://openweathermap.org; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://cdn.jsdelivr.net;");
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https: http:; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://nominatim.openstreetmap.org https://api.openweathermap.org https://cdn.jsdelivr.net;");
     }
 }
 

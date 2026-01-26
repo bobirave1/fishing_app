@@ -1,6 +1,7 @@
 <?php
 session_start();
 require '../../config/database.php';
+require '../../config/security.php';
 
 $profileId = (int)($_GET['id'] ?? 0);
 $currentUser = $_SESSION['user_id'] ?? 0;
@@ -44,11 +45,37 @@ if ($isFriend || $currentUser === $profileId) {
 }
 
 // Get friend count
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM friends WHERE user_id = ? OR friend_id = ?");
-$stmt->execute([$profileId, $profileId]);
+$stmt = $pdo->prepare("
+    SELECT COUNT(DISTINCT CASE 
+        WHEN user_id = ? THEN friend_id 
+        WHEN friend_id = ? THEN user_id 
+    END) as count 
+    FROM friends 
+    WHERE user_id = ? OR friend_id = ?
+");
+$stmt->execute([$profileId, $profileId, $profileId, $profileId]);
 $friendCount = $stmt->fetch()['count'];
 
-$avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
+// Get friends list (first 6 for preview)
+$friends = [];
+$stmt = $pdo->prepare("
+    SELECT DISTINCT u.id, u.username, u.full_name, up.avatar_url
+    FROM (
+        SELECT friend_id as friend FROM friends WHERE user_id = ?
+        UNION
+        SELECT user_id as friend FROM friends WHERE friend_id = ?
+    ) f
+    JOIN users u ON u.id = f.friend
+    LEFT JOIN user_profiles up ON u.id = up.user_id
+    LIMIT 6
+");
+$stmt->execute([$profileId, $profileId]);
+$friends = $stmt->fetchAll();
+
+require_once '../../config/avatar_helper.php';
+
+// Avatar for the profile being viewed (not current user!)
+$profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -60,38 +87,26 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
+    <style>
+        .hover-card {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+        .hover-card:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
-<body>
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 
-<!-- HEADER -->
-<nav class="navbar navbar-expand navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center" href="../../index.php">
-            <img src="../../fe/assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-            <span class="fw-bold fs-4 brand-color">FISHINGLORY</span>
-        </a>
-        <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item">
-                <?php if ($currentUser): ?>
-                    <a href="../../be/users/profile.php?id=<?= $currentUser ?>" class="d-flex align-items-center text-dark text-decoration-none">
-                        <img src="../../fe/assets/img/default-avatar.png" width="40" height="40" class="rounded-circle me-1">
-                        <?= htmlspecialchars($_SESSION['username']) ?>
-                    </a>
-                <?php else: ?>
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
-                        <i class="fa fa-sign-in-alt me-1"></i> Login
-                    </button>
-                <?php endif; ?>
-            </li>
-        </ul>
-    </div>
-</nav>
+<?php include '../../fe/components/navbar.php'; ?>
 
 <div class="container my-5 py-5">
     <!-- Profile Header -->
     <div class="card mb-4 shadow">
         <div class="card-body text-center">
-            <img src="../../<?= htmlspecialchars($avatar) ?>" width="150" height="150" class="rounded-circle mb-3 border border-primary" style="border-width: 4px !important; object-fit: cover;">
+            <img src="<?= htmlspecialchars($profileAvatar) ?>" width="150" height="150" class="rounded-circle mb-3 border border-primary" style="border-width: 4px !important; object-fit: cover;">
             <h2 class="fw-bold text-primary"><?= htmlspecialchars($user['username']) ?></h2>
             <p class="text-muted fs-5"><?= htmlspecialchars($user['full_name']) ?></p>
             
@@ -122,16 +137,17 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
                 <div><strong><?= $friendCount ?></strong> Friends</div>
             </div>
             <?php if ($currentUser && $currentUser !== $profileId): ?>
-                <?php if ($isFriend): ?>
-                    <span class="badge bg-success fs-6 px-3 py-2">Friends</span>
-                <?php elseif ($isPending): ?>
-                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">Request sent</span>
-                <?php else: ?>
-                    <form action="../../be/friends/send_request.php" method="post" class="d-inline">
-                        <input type="hidden" name="receiver_id" value="<?= $profileId ?>">
-                        <button class="btn btn-primary btn-lg"><i class="fas fa-user-plus"></i> Add Friend</button>
-                    </form>
-                <?php endif; ?>
+                <div id="friendActionContainer">
+                    <?php if ($isFriend): ?>
+                        <span class="badge bg-success fs-6 px-3 py-2">Friends</span>
+                    <?php elseif ($isPending): ?>
+                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">Request sent</span>
+                    <?php else: ?>
+                        <button onclick="sendFriendRequest(<?= $profileId ?>)" class="btn btn-primary btn-lg" id="addFriendBtn">
+                            <i class="fas fa-user-plus"></i> Add Friend
+                        </button>
+                    <?php endif; ?>
+                </div>
             <?php elseif ($currentUser === $profileId): ?>
                 <a href="../../fe/pages/edit_profile.php" class="btn btn-outline-primary btn-lg">
                     <i class="fas fa-edit"></i> Edit Profile
@@ -172,13 +188,47 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
             </div>
         </div>
         <div class="col-md-4">
-            <!-- Sidebar -->
+            <!-- Friends Sidebar -->
             <div class="card">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-users"></i> Friends</h5>
+                    <span class="badge bg-light text-success"><?= $friendCount ?></span>
                 </div>
                 <div class="card-body">
-                    <p>Friends list coming soon...</p>
+                    <?php if (empty($friends)): ?>
+                        <p class="text-center text-muted">
+                            <i class="fas fa-user-friends fa-2x mb-2 d-block"></i>
+                            No friends yet
+                        </p>
+                    <?php else: ?>
+                        <div class="row g-2">
+                            <?php foreach ($friends as $friend): 
+                                $friendAvatar = getUserAvatar($friend['avatar_url'] ?? null);
+                            ?>
+                                <div class="col-6">
+                                    <a href="profile.php?id=<?= $friend['id'] ?>" class="text-decoration-none">
+                                        <div class="text-center p-2 hover-card">
+                                            <img src="<?= htmlspecialchars($friendAvatar) ?>" 
+                                                 class="rounded-circle mb-2" 
+                                                 width="60" height="60" 
+                                                 style="object-fit: cover; border: 2px solid #10b981;">
+                                            <div class="small text-dark fw-bold text-truncate"><?= htmlspecialchars($friend['username']) ?></div>
+                                            <?php if (!empty($friend['full_name'])): ?>
+                                                <div class="small text-muted text-truncate"><?= htmlspecialchars($friend['full_name']) ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if ($friendCount > 6): ?>
+                            <div class="text-center mt-3">
+                                <a href="../friends/list_friends.php?user_id=<?= $profileId ?>" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-arrow-right"></i> View All Friends (<?= $friendCount ?>)
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -193,6 +243,8 @@ $avatar = $user['avatar_url'] ?? '../../fe/assets/img/default-avatar.png';
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>
+<script src="../../fe/assets/js/app.js?v=<?= time() ?>"></script>
 
 </body>
 </html>

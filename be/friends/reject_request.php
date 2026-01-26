@@ -18,12 +18,12 @@ if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
 $userId = $_SESSION['user_id'];
 $requestId = (int)$_POST['request_id'];
 
+// Delete the rejected request so it can be sent again
 $stmt = $pdo->prepare(
-    "UPDATE friend_requests
-     SET status = 'rejected'
+    "DELETE FROM friend_requests
      WHERE id = ? AND receiver_id = ?"
 );
 $stmt->execute([$requestId, $userId]);
 
-header("Location: ../../fe/friends/list_requests.php");
+header("Location: list_requests.php");
 exit;

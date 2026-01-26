@@ -2,6 +2,7 @@
 require 'config/security.php';
 secureSession();
 require 'config/database.php';
+require 'config/avatar_helper.php';
 setSecurityHeaders();
 
 $posts = [];
@@ -163,93 +164,34 @@ if (isset($_SESSION['user_id'])) {
 </head>
 <body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 
-<!-- HEADER -->
-<nav class="navbar navbar-expand navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-4">
+<?php include 'fe/components/navbar.php'; ?>
 
-        <!-- Logo + Search -->
-        <div class="d-flex align-items-center gap-3">
-            <a class="navbar-brand d-flex align-items-center" href="index.php">
-                <img src="fe/assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-                <span class="fw-bold fs-4 brand-color">FISHINGLORY</span>
-            </a>
-            <div class="position-relative" style="width: 300px;">
-                <input type="text" id="searchInput" class="form-control form-control-sm rounded-pill bg-light border-0"
-                       placeholder="Търси риболовци, водоеми..." oninput="performSearch(this.value)">
-                <div id="searchResults" class="search-results-dropdown d-none"></div>
+<div class="container-fluid my-5 py-3">
+    <div class="row">
+        <!-- Left Sidebar -->
+        <?php if (isset($_SESSION['user_id'])): ?>
+        <div class="col-md-3 col-lg-2">
+            <div class="sticky-top" style="top: 70px;">
+                <div class="list-group">
+                    <a href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0">
+                        <i class="fas fa-user-circle text-primary" style="font-size: 24px;"></i>
+                        <span style="font-weight: 500;">My Profile</span>
+                    </a>
+                    <a href="be/friends/list_friends.php" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0">
+                        <i class="fas fa-user-friends text-success" style="font-size: 24px;"></i>
+                        <span style="font-weight: 500;">Friends</span>
+                    </a>
+                    <a href="be/friends/list_requests.php" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0">
+                        <i class="fas fa-user-plus text-warning" style="font-size: 24px;"></i>
+                        <span style="font-weight: 500;">Friend Requests</span>
+                    </a>
+                </div>
             </div>
         </div>
+        <?php endif; ?>
 
-        <!-- Main Navigation -->
-        <ul class="navbar-nav mx-auto d-none d-md-flex flex-row gap-4">
-            <li class="nav-item"><a class="nav-link active"><i class="fas fa-home fs-4"></i></a></li>
-            <li class="nav-item"><a class="nav-link" href="fe/pages/messages.php"><i class="fas fa-comments fs-4"></i></a></li>
-            <li class="nav-item"><a class="nav-link" href="fe/pages/activity_feed.php"><i class="fas fa-stream fs-4"></i></a></li>
-            <li class="nav-item"><a class="nav-link"><i class="fas fa-map-marked-alt fs-4"></i></a></li>
-            <li class="nav-item"><a class="nav-link"><i class="fas fa-fish fs-4"></i></a></li>
-        </ul>
-
-        <!-- Notifications & Profile -->
-        <ul class="navbar-nav ms-auto align-items-center">
-            <?php if (isset($_SESSION['user_id'])): ?>
-            <li class="nav-item">
-                <div class="dropdown">
-                    <button class="btn btn-light position-relative" type="button" data-bs-toggle="dropdown" title="Notifications">
-                        <i class="fas fa-bell fs-5"></i>
-                        <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" style="width: 320px; max-height: 400px; overflow-y: auto;">
-                        <li><h6 class="dropdown-header">Notifications</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li id="notificationsList">
-                            <p class="dropdown-item text-center text-muted">Loading...</p>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-            <?php endif; ?>
-            <li class="nav-item d-flex gap-2">
-                <?php if (isset($_SESSION['user_id'])): 
-                    // Get user avatar
-                    $stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
-                    $stmt->execute([$_SESSION['user_id']]);
-                    $profile = $stmt->fetch();
-                    $avatar = $profile['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
-                ?>
-                    <div class="dropdown">
-                        <button class="btn btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <img src="<?= htmlspecialchars($avatar) ?>" width="32" height="32" class="rounded-circle" style="object-fit: cover;">
-                            <?= htmlspecialchars($_SESSION['username']) ?>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>">
-                                <i class="fas fa-user"></i> My Profile
-                            </a></li>
-                            <li><a class="dropdown-item" href="fe/pages/edit_profile.php">
-                                <i class="fas fa-edit"></i> Edit Profile
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="be/auth/logout.php">
-                                <i class="fa fa-sign-out-alt me-1"></i> Logout
-                            </a></li>
-                        </ul>
-                    </div>
-                <?php else: ?>
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
-                        <i class="fa fa-sign-in-alt me-1"></i> Login
-                    </button>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
-                        <i class="fa fa-user-plus me-1"></i> Register
-                    </button>
-                <?php endif; ?>
-            </li>
-        </ul>
-
-    </div>
-</nav>
-
-
-<div class="container my-5 py-5">
+        <!-- Main Content -->
+        <div class="<?= isset($_SESSION['user_id']) ? 'col-md-9 col-lg-10' : 'col-12' ?>">
 
 <!-- Weather Widget -->
 <div class="card mb-4 shadow-sm">
@@ -262,50 +204,6 @@ if (isset($_SESSION['user_id'])) {
 </div>
 
 <?php if (isset($_SESSION['user_id'])): ?>
-    <div class="row g-4 justify-content-center">
-
-        <!-- Profile -->
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center">
-                <div class="card-body">
-                    <i class="fa fa-user fa-3x mb-3 text-primary"></i>
-                    <h5>My Profile</h5>
-                    <a href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>" class="btn btn-primary w-100">
-                        View Profile
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Friends -->
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center">
-                <div class="card-body">
-                    <i class="fa fa-users fa-3x mb-3 text-success"></i>
-                    <h5>Friends</h5>
-                    <a href="be/friends/list_friends.php" class="btn btn-success w-100">
-                        My Friends
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Friend Requests -->
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center">
-                <div class="card-body">
-                    <i class="fa fa-user-plus fa-3x mb-3 text-warning"></i>
-                    <h5>Friend Requests</h5>
-                    <a href="be/friends/list_requests.php" class="btn btn-warning w-100">
-                        View Requests
-                    </a>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-<?php else: ?>
     <div class="text-center py-5">
         <div class="hero-section">
             <i class="fas fa-fish fa-5x text-primary mb-4"></i>
@@ -346,7 +244,7 @@ if (isset($_SESSION['user_id'])) {
 
 <!-- Posts feed -->
 <?php foreach ($posts as $p): 
-    $avatar = $p['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
+    $avatar = getUserAvatar($p['avatar_url'] ?? null);
 ?>
     <div class="card mb-4 shadow-sm post-card">
         <div class="card-body">
@@ -527,7 +425,8 @@ if (isset($_SESSION['user_id'])) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="fe/assets/js/app.js"></script>
+<script src="fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>
+<script src="fe/assets/js/app.js?v=<?= time() ?>"></script>
 <script>
     // Load edit post form
     function loadEditPost(postId) {
@@ -774,6 +673,10 @@ if (isset($_SESSION['user_id'])) {
         `;
     }
 </script>
+
+        </div><!-- Close main content -->
+    </div><!-- Close row -->
+</div><!-- Close container-fluid -->
 
 <!-- Footer -->
 <footer class="footer">

@@ -2,6 +2,7 @@
 session_start();
 require '../../config/database.php';
 require '../../config/security.php';
+require '../../config/avatar_helper.php';
 setSecurityHeaders();
 
 if (!isset($_SESSION['user_id'])) {
@@ -26,7 +27,7 @@ if (!$user) {
     exit;
 }
 
-$avatar = $user['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
+$avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -39,25 +40,16 @@ $avatar = $user['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="icon" href="../assets/img/logo_rounded.png">
+    <style>
+        body {
+            padding-top: 70px;
+            background: #f8f9fa;
+        }
+    </style>
 </head>
 <body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand navbar-light shadow-sm sticky-top">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="../../index.php">
-            <img src="../assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-            <span class="fw-bold fs-4">FISHINGLORY</span>
-        </a>
-        <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-                <a class="btn btn-outline-primary" href="../../index.php">
-                    <i class="fas fa-arrow-left"></i> Back to Home
-                </a>
-            </li>
-        </ul>
-    </div>
-</nav>
+<?php include '../components/navbar.php'; ?>
 
 <!-- Main Content -->
 <div class="container my-5">
@@ -80,7 +72,7 @@ $avatar = $user['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
                         <!-- Avatar Section -->
                         <div class="mb-4 text-center">
                             <div class="mb-3">
-                                <img id="avatarPreview" src="../../<?= htmlspecialchars($avatar) ?>" 
+                                <img id="avatarPreview" src="<?= htmlspecialchars(getUserAvatar($avatar)) ?>" 
                                      class="rounded-circle shadow-lg" width="150" height="150" 
                                      style="object-fit: cover; border: 5px solid var(--primary-color);">
                             </div>
@@ -195,6 +187,7 @@ $avatar = $user['avatar_url'] ?? 'fe/assets/img/default-avatar.png';
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/avatar_helper.js"></script>
 
 <script>
 // Character counter for bio

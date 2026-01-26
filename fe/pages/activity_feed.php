@@ -1,72 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Feed - FISHINGLORY</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="icon" href="../assets/img/logo_rounded.png">
-    <!-- Leaflet CSS for Map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        .activity-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s;
-        }
-        .activity-item:hover {
-            background: #f8f9fa;
-        }
-        #map {
-            height: 450px;
-            width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .map-instructions {
-            background: #e7f3ff;
-            border-left: 4px solid #0d6efd;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-        .location-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.9rem;
-        }
-        .activity-like {
-            background: #dc3545;
-        }
-        .activity-comment {
-            background: #0d6efd;
-        }
-        .activity-post {
-            background: #198754;
-        }
-        .activity-follow {
-            background: #6f42c1;
-        }
-    </style>
-</head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>">
-
 <?php
 session_start();
 require '../../config/database.php';
+require '../../config/avatar_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -77,75 +12,313 @@ if (!isset($_SESSION['user_id'])) {
 $stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $profile = $stmt->fetch();
-$avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
+$avatar = getUserAvatar($profile['avatar_url'] ?? null);
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Activity - FISHINGLORY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="icon" href="../assets/img/logo_rounded.png">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            background: #f8f9fa;
+            padding-top: 70px;
+        }
+        .activity-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .activity-header-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .calendar-days {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .day-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            min-width: 60px;
+        }
+        .day-item:hover {
+            background: #f0f9ff;
+        }
+        .day-item.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .day-number {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: block;
+        }
+        .day-name {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            display: block;
+        }
+        .location-badge {
+            text-align: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        .activity-score-circle {
+            width: 200px;
+            height: 200px;
+            margin: 30px auto;
+            position: relative;
+        }
+        .circle-progress {
+            transform: rotate(-90deg);
+        }
+        .circle-bg {
+            fill: none;
+            stroke: #e2e8f0;
+            stroke-width: 8;
+        }
+        .circle-progress-bar {
+            fill: none;
+            stroke: #0d6efd;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+        .score-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 300;
+            color: #0d6efd;
+        }
+        .activity-level-text {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 20px 0;
+            color: #1e293b;
+        }
+        .activity-chart {
+            padding: 30px 20px;
+            position: relative;
+            height: 200px;
+            background: white;
+        }
+        .chart-labels {
+            position: absolute;
+            left: 5px;
+            top: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 140px;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .chart-line {
+            position: relative;
+            height: 140px;
+            margin-left: 50px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .chart-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .grid-line {
+            border-top: 1px dashed #e2e8f0;
+            width: 100%;
+        }
+        .chart-wave {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-left: 50px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .times-section {
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-top: 1px solid #e2e8f0;
+        }
+        .times-column h6 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .time-item {
+            font-size: 1rem;
+            margin: 5px 0;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+        }
+        .map-section {
+            padding: 20px;
+        }
+        .search-box {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>">
 
-<!-- HEADER -->
-<nav class="navbar navbar-expand navbar-light bg-white shadow-sm">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center" href="../../index.php">
-            <img src="../assets/img/logo_rounded.png" alt="Logo" width="40" height="40" class="me-2">
-            <span class="fw-bold fs-4 brand-color">FISHINGLORY</span>
-        </a>
-        <ul class="navbar-nav ms-auto">
-            <li class="nav-item dropdown">
-                <button class="btn btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <img src="<?= htmlspecialchars($avatar) ?>" width="32" height="32" class="rounded-circle" style="object-fit: cover;">
-                    <?= htmlspecialchars($_SESSION['username']) ?>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="../../be/users/profile.php?id=<?= $_SESSION['user_id'] ?>">
-                        <i class="fas fa-user"></i> My Profile
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="../../be/auth/logout.php">
-                        <i class="fa fa-sign-out-alt me-1"></i> Logout
-                    </a></li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</nav>
+<?php include '../components/navbar.php'; ?>
 
 <div class="container my-4">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Map Selection -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="fas fa-map-marked-alt"></i> Select Fishing Location on Map</h6>
-                </div>
-                <div class="card-body">
-                    <div class="map-instructions">
-                        <i class="fas fa-info-circle"></i> 
-                        <strong>Instructions:</strong> Click anywhere on the map to select your fishing location. 
-                        Popular spots are pre-marked with 🎣 icons.
-                    </div>
-                    <div id="map"></div>
-                    <div class="location-info mt-3" id="locationInfo" style="display: none;">
-                        <strong><i class="fas fa-map-pin"></i> Selected Location:</strong>
-                        <span id="selectedLocationName">None</span><br>
-                        <small class="text-muted">
-                            Coordinates: <span id="selectedCoords"></span>
-                        </small>
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-success w-100" id="calculateBtn" onclick="loadFishActivity()" disabled>
-                            <i class="fas fa-calculator"></i> Calculate Fish Activity for Selected Location
+        <div class="col-lg-8">
+            <!-- Fish Activity Card -->
+            <div class="activity-card" id="activityCard">
+                <div class="activity-header-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-fish"></i> Fish Activity Prediction</h5>
+                        <button class="btn btn-light btn-sm" onclick="toggleMapSection()" title="Change location">
+                            <i class="fas fa-map-marker-alt"></i> Change Location
                         </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-fish"></i> Fish Activity Prediction</h5>
-                    <small>Real-time fish activity forecast based on environmental conditions</small>
+
+                <!-- Calendar Days -->
+                <div class="calendar-days" id="calendarDays">
+                    <!-- Will be populated by JavaScript -->
                 </div>
-                <div class="card-body" id="activityFeed">
-                    <p class="text-center text-muted p-4">
-                        <i class="fas fa-mouse-pointer"></i> Click on the map above to select a fishing location
-                    </p>
+
+                <!-- Location Badge -->
+                <div class="location-badge">
+                    <i class="fas fa-map-marker-alt"></i> <span id="currentLocation">Getting your location...</span>
+                </div>
+
+                <!-- Activity Score Circle -->
+                <div id="activityScoreSection" class="p-4">
+                    <div id="loadingActivity" class="text-center p-5">
+                        <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                        <p class="mt-3">Calculating fish activity for your location...</p>
+                    </div>
+                    
+                    <div id="activityResults" style="display: none;">
+                        <div class="activity-score-circle">
+                            <svg class="circle-progress" width="200" height="200">
+                                <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
+                                <circle class="circle-progress-bar" id="progressCircle" cx="100" cy="100" r="90" 
+                                        stroke-dasharray="565.48" stroke-dashoffset="565.48"></circle>
+                            </svg>
+                            <div class="score-number" id="scoreNumber">0</div>
+                        </div>
+                        <div class="activity-level-text" id="activityLevelText">Calculating...</div>
+
+                        <!-- Activity Chart -->
+                        <div class="activity-chart">
+                            <div class="chart-labels">
+                                <div>HIGH</div>
+                                <div>MEDIUM</div>
+                                <div>LOW</div>
+                            </div>
+                            <div class="chart-line">
+                                <div class="chart-grid">
+                                    <div class="grid-line"></div>
+                                    <div class="grid-line"></div>
+                                    <div class="grid-line"></div>
+                                </div>
+                                <svg class="chart-wave" id="activityChart" viewBox="0 0 400 140" preserveAspectRatio="none">
+                                    <path id="chartPath" fill="none" stroke="#0d6efd" stroke-width="3" d="M0,70 Q100,70 200,70 T400,70"/>
+                                </svg>
+                            </div>
+                            <div class="time-labels">
+                                <span>04:00</span>
+                                <span>08:00</span>
+                                <span>12:00</span>
+                                <span>16:00</span>
+                                <span>20:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Times Section -->
+                        <div class="times-section" id="timesSection">
+                            <div class="times-column">
+                                <h6>MAJOR TIMES</h6>
+                                <div id="majorTimes">--:-- — --:--</div>
+                            </div>
+                            <div class="times-column">
+                                <h6>MINOR TIMES</h6>
+                                <div id="minorTimes">--:-- — --:--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Selection Card (Hidden by default) -->
+            <div class="activity-card" id="mapCard" style="display: none;">
+                <div class="activity-header-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-map-marked-alt"></i> Select Fishing Location</h5>
+                        <button class="btn btn-light btn-sm" onclick="toggleMapSection()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+                <div class="map-section">
+                    <div class="search-box">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="locationSearch" placeholder="Search city or town...">
+                            <button class="btn btn-primary" type="button" onclick="searchLocation()">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="searchResults" style="display:none;" class="mt-2"></div>
+                    </div>
+                    <div id="map"></div>
+                    <div class="mt-3">
+                        <button class="btn btn-success w-100" id="calculateBtn" onclick="calculateActivity()" disabled>
+                            <i class="fas fa-calculator"></i> Calculate Fish Activity
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -154,7 +327,8 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/avatar_helper.js?v=<?= time() ?>"></script>
+<script src="../assets/js/app.js?v=<?= time() ?>"></script>
 <script>
     // Global variables
     let map;
@@ -162,17 +336,86 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
     let selectedLat = null;
     let selectedLon = null;
     let selectedLocationName = null;
+    let activityData = null;
+    let userLocationObtained = false;
 
-    // Popular fishing spots in Bulgaria
-    const popularSpots = [
-        { name: "Варненско езеро", lat: 43.2167, lon: 27.9167, icon: "🎣" },
-        { name: "Бургаско езеро", lat: 42.5000, lon: 27.4833, icon: "🎣" },
-        { name: "Река Дунав (Русе)", lat: 43.8500, lon: 25.9667, icon: "🎣" },
-        { name: "Язовир Искър", lat: 42.8167, lon: 23.9500, icon: "🎣" },
-        { name: "Язовир Батак", lat: 41.9833, lon: 24.0667, icon: "🎣" },
-        { name: "Черно море (Варна)", lat: 43.2050, lon: 28.0350, icon: "🎣" },
-        { name: "Язовир Панчарево", lat: 42.5833, lon: 23.4500, icon: "🎣" }
-    ];
+    // Initialize calendar
+    function initCalendar() {
+        const calendarDays = document.getElementById('calendarDays');
+        const today = new Date();
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = -3; i <= 3; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+            
+            const dayItem = document.createElement('div');
+            dayItem.className = 'day-item' + (i === 0 ? ' active' : '');
+            dayItem.innerHTML = `
+                <span class="day-number">${date.getDate()}</span>
+                <span class="day-name">${i === 0 ? 'Today' : days[date.getDay()]}</span>
+            `;
+            calendarDays.appendChild(dayItem);
+        }
+    }
+
+    // Get user's current location
+    function getUserLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    userLocationObtained = true;
+                    
+                    // Get location name from coordinates using reverse geocoding
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=bg`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const locationName = data.display_name || 'Your Location';
+                            selectLocation(lat, lon, locationName);
+                            // Automatically calculate activity
+                            calculateActivity();
+                        })
+                        .catch(error => {
+                            console.error('Reverse geocoding error:', error);
+                            selectLocation(lat, lon, 'Your Location');
+                            calculateActivity();
+                        });
+                },
+                function(error) {
+                    console.error('Geolocation error:', error);
+                    document.getElementById('currentLocation').textContent = 'Location access denied - Please select manually';
+                    document.getElementById('loadingActivity').innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Unable to get your location. Please click "Change Location" to select manually.
+                        </div>
+                    `;
+                }
+            );
+        } else {
+            document.getElementById('currentLocation').textContent = 'Geolocation not supported';
+            document.getElementById('loadingActivity').innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Geolocation is not supported by your browser. Please select location manually.
+                </div>
+            `;
+        }
+    }
+
+    // Toggle map section
+    function toggleMapSection() {
+        const mapCard = document.getElementById('mapCard');
+        if (mapCard.style.display === 'none') {
+            mapCard.style.display = 'block';
+            mapCard.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => map.invalidateSize(), 100);
+        } else {
+            mapCard.style.display = 'none';
+        }
+    }
 
     // Initialize map centered on Bulgaria
     function initMap() {
@@ -184,29 +427,67 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Add popular fishing spots
-        popularSpots.forEach(spot => {
-            const popupMarker = L.marker([spot.lat, spot.lon], {
-                icon: L.divIcon({
-                    html: `<div style="font-size: 24px;">${spot.icon}</div>`,
-                    className: 'custom-marker',
-                    iconSize: [30, 30]
-                })
-            }).addTo(map);
-            
-            popupMarker.bindPopup(`<strong>${spot.name}</strong><br><a href="#" onclick="selectPopularSpot(${spot.lat}, ${spot.lon}, '${spot.name}'); return false;">Select this location</a>`);
-        });
-
         // Add click event to map
         map.on('click', function(e) {
             selectLocation(e.latlng.lat, e.latlng.lng, 'Custom Location');
         });
     }
 
-    function selectPopularSpot(lat, lon, name) {
-        selectLocation(lat, lon, name);
-        map.closePopup();
+    // Search location using Nominatim API
+    async function searchLocation() {
+        const query = document.getElementById('locationSearch').value.trim();
+        if (!query) {
+            alert('Please enter a city or town name');
+            return;
+        }
+
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+        resultsDiv.style.display = 'block';
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=bg`);
+            const data = await response.json();
+
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<div class="alert alert-warning">No results found</div>';
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            data.forEach(result => {
+                html += `
+                    <a href="#" class="list-group-item list-group-item-action" onclick="selectSearchResult(${result.lat}, ${result.lon}, '${result.display_name.replace(/'/g, "\\'")}'); return false;">
+                        <i class="fas fa-map-marker-alt text-primary"></i> ${result.display_name}
+                    </a>
+                `;
+            });
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        } catch (error) {
+            resultsDiv.innerHTML = '<div class="alert alert-danger">Search error</div>';
+            console.error('Search error:', error);
+        }
     }
+
+    function selectSearchResult(lat, lon, name) {
+        selectLocation(lat, lon, name);
+        document.getElementById('searchResults').style.display = 'none';
+        document.getElementById('locationSearch').value = '';
+        map.setView([lat, lon], 13);
+    }
+
+    // Allow Enter key to trigger search
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('locationSearch');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchLocation();
+                }
+            });
+        }
+    });
 
     function selectLocation(lat, lon, name) {
         selectedLat = lat;
@@ -218,11 +499,11 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
             map.removeLayer(marker);
         }
 
-        // Add new marker
+        // Add new marker with fish icon
         marker = L.marker([lat, lon], {
             icon: L.divIcon({
-                html: '<div style="font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">📍</div>',
-                className: 'selected-marker',
+                html: '<div style="font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🐟</div>',
+                className: 'fish-marker',
                 iconSize: [32, 32],
                 iconAnchor: [16, 32]
             })
@@ -230,342 +511,169 @@ $avatar = $profile['avatar_url'] ?? '../assets/img/default-avatar.png';
 
         marker.bindPopup(`<strong>${name}</strong><br>Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`).openPopup();
 
-        // Update location info
-        document.getElementById('locationInfo').style.display = 'block';
-        document.getElementById('selectedLocationName').textContent = name;
-        document.getElementById('selectedCoords').textContent = `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+        // Update location badge
+        document.getElementById('currentLocation').textContent = name.length > 50 ? name.substring(0, 50) + '...' : name;
         document.getElementById('calculateBtn').disabled = false;
-
-        // Scroll to button
-        document.getElementById('calculateBtn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function loadFishActivity() {
+    function calculateActivity() {
         if (!selectedLat || !selectedLon) {
-            alert('Please select a location on the map first');
+            alert('Please select a location first');
             return;
         }
         
-        document.getElementById('activityFeed').innerHTML = '<p class="text-center p-4"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Calculating fish activity for selected location...</p>';
+        // Show loading
+        document.getElementById('loadingActivity').style.display = 'block';
+        document.getElementById('activityResults').style.display = 'none';
+        
+        // Hide map card
+        document.getElementById('mapCard').style.display = 'none';
         
         fetch(`../../be/activity/feed.php?action=calculate_fish_activity&location=${encodeURIComponent(selectedLocationName)}&lat=${selectedLat}&lon=${selectedLon}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    displayFishActivityScore(data, selectedLocationName);
-                    // Scroll to results
-                    document.getElementById('activityFeed').scrollIntoView({ behavior: 'smooth' });
+                    activityData = data;
+                    displayActivityData(data);
                 } else {
-                    document.getElementById('activityFeed').innerHTML = `<p class="text-warning text-center p-4"><i class="fas fa-exclamation-triangle"></i><br>${data.error || 'Unable to calculate activity'}</p>`;
+                    document.getElementById('loadingActivity').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> ${data.error || 'Unable to calculate activity'}
+                        </div>
+                    `;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('activityFeed').innerHTML = '<p class="text-danger text-center p-4"><i class="fas fa-times-circle"></i><br>Failed to calculate fish activity. Please try again.</p>';
+                document.getElementById('loadingActivity').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> Failed to calculate fish activity. Please try again.
+                    </div>
+                `;
             });
     }
 
-    function displayFishActivityScore(data, location) {
-        const score = data.activity_score;
+    function displayActivityData(data) {
+        const score = Math.round(data.activity_score);
         const factors = data.factors;
         
-        // Determine activity level and color
-        let activityLevel, activityColor, activityIcon, recommendation;
+        // Hide loading, show results
+        document.getElementById('loadingActivity').style.display = 'none';
+        document.getElementById('activityResults').style.display = 'block';
+        
+        // Update score circle
+        document.getElementById('scoreNumber').textContent = score;
+        const circle = document.getElementById('progressCircle');
+        const circumference = 565.48;
+        const offset = circumference - (score / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        
+        // Update circle color based on score
         if (score >= 80) {
-            activityLevel = 'EXCELLENT';
-            activityColor = '#198754';
-            activityIcon = '🟢';
-            recommendation = 'Perfect conditions! Fish are very active. Great time to go fishing!';
+            circle.style.stroke = '#198754';
+            document.getElementById('scoreNumber').style.color = '#198754';
         } else if (score >= 60) {
-            activityLevel = 'GOOD';
-            activityColor = '#28a745';
-            activityIcon = '🟡';
-            recommendation = 'Good conditions. Fish activity is above average. Recommended for fishing.';
+            circle.style.stroke = '#28a745';
+            document.getElementById('scoreNumber').style.color = '#28a745';
         } else if (score >= 40) {
-            activityLevel = 'MODERATE';
-            activityColor = '#ffc107';
-            activityIcon = '🟠';
-            recommendation = 'Moderate conditions. Fish may bite but less actively. Worth trying.';
+            circle.style.stroke = '#ffc107';
+            document.getElementById('scoreNumber').style.color = '#ffc107';
         } else if (score >= 20) {
-            activityLevel = 'LOW';
-            activityColor = '#fd7e14';
-            activityIcon = '🔴';
-            recommendation = 'Low activity. Fish are less active. Try deeper waters or different baits.';
+            circle.style.stroke = '#fd7e14';
+            document.getElementById('scoreNumber').style.color = '#fd7e14';
         } else {
-            activityLevel = 'VERY LOW';
-            activityColor = '#dc3545';
-            activityIcon = '⛔';
-            recommendation = 'Poor conditions. Fish activity is minimal. Consider waiting for better conditions.';
+            circle.style.stroke = '#dc3545';
+            document.getElementById('scoreNumber').style.color = '#dc3545';
         }
-
-        const html = `
-            <div class="p-4">
-                <!-- Location and Score Header -->
-                <div class="text-center mb-4">
-                    <h4><i class="fas fa-map-marker-alt"></i> ${location}</h4>
-                    <div class="mt-3">
-                        <div style="font-size: 4rem; line-height: 1;">${activityIcon}</div>
-                        <h2 style="color: ${activityColor}; font-weight: bold; margin: 10px 0;">
-                            ${Math.round(score)}%
-                        </h2>
-                        <h5 style="color: ${activityColor};">${activityLevel} ACTIVITY</h5>
-                        <p class="text-muted">${new Date().toLocaleString()}</p>
-                    </div>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="mb-4">
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar" role="progressbar" 
-                             style="width: ${score}%; background-color: ${activityColor};"
-                             aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100">
-                            ${Math.round(score)}%
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recommendation -->
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-lightbulb"></i> Recommendation</h6>
-                    <p class="mb-0">${recommendation}</p>
-                </div>
-
-                <!-- Weather Conditions -->
-                ${factors.weather ? `
-                <div class="card mb-3">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <strong><i class="fas fa-cloud-sun"></i> Weather Conditions</strong>
-                        ${factors.weather.source ? `<small class="badge bg-success">${factors.weather.source}</small>` : ''}
-                    </div>
-                    <div class="card-body">
-                        ${factors.weather.location_name && factors.weather.location_name !== 'Unknown' ? `
-                        <div class="alert alert-info mb-3">
-                            <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> ${factors.weather.location_name}${factors.weather.country ? `, ${factors.weather.country}` : ''}<br>
-                            <small class="text-muted">Coordinates: ${selectedLat.toFixed(4)}°N, ${selectedLon.toFixed(4)}°E</small>
-                        </div>
-                        ` : ''}
-                        <div class="row text-center">
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-thermometer-half fa-2x text-danger"></i>
-                                <p class="mb-0"><strong>${factors.weather.temperature}°C</strong></p>
-                                <small class="text-muted">Temperature</small>
-                            </div>
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-wind fa-2x text-info"></i>
-                                <p class="mb-0"><strong>${factors.weather.wind_speed} m/s</strong></p>
-                                <small class="text-muted">Wind Speed</small>
-                            </div>
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-gauge fa-2x text-warning"></i>
-                                <p class="mb-0"><strong>${factors.weather.pressure} hPa</strong></p>
-                                <small class="text-muted">Pressure</small>
-                            </div>
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-tint fa-2x text-primary"></i>
-                                <p class="mb-0"><strong>${factors.weather.humidity}%</strong></p>
-                                <small class="text-muted">Humidity</small>
-                            </div>
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-cloud fa-2x text-secondary"></i>
-                                <p class="mb-0"><strong>${factors.weather.clouds}%</strong></p>
-                                <small class="text-muted">Cloud Cover</small>
-                            </div>
-                            <div class="col-lg-2 col-md-3 col-6 mb-3">
-                                <i class="fas fa-eye fa-2x text-success"></i>
-                                <p class="mb-0"><strong>${factors.weather.visibility || 'N/A'} km</strong></p>
-                                <small class="text-muted">Visibility</small>
-                            </div>
-                        </div>
-                        ${factors.weather.weather_description ? `
-                        <div class="text-center mt-2">
-                            <span class="badge bg-light text-dark">${getWeatherIcon(factors.weather.weather)} ${factors.weather.weather_description}</span>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Activity Factors -->
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <strong><i class="fas fa-list-check"></i> Activity Factors</strong>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-thermometer-half"></i> Temperature Impact</span>
-                                <strong>${factors.temperature_score}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-primary" style="width: ${factors.temperature_score}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.temperature_impact}</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-wind"></i> Wind Conditions</span>
-                                <strong>${factors.wind_score}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-info" style="width: ${factors.wind_score}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.wind_impact}</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-gauge"></i> Barometric Pressure</span>
-                                <strong>${factors.pressure_score}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-warning" style="width: ${factors.pressure_score}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.pressure_impact}</small>
-                        </div>
-                        
-                        ${factors.solunar_score !== undefined ? `
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-star"></i> Solunar Period</span>
-                                <strong>${factors.solunar_score}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-danger" style="width: ${factors.solunar_score}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.solunar_impact || 'Moon position effect'}</small>
-                        </div>
-                        ` : `
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-moon"></i> Moon Phase</span>
-                                <strong>${factors.moon_score || 50}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-secondary" style="width: ${factors.moon_score || 50}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.moon_phase || 'Moon effect'}</small>
-                        </div>
-                        `}
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="fas fa-clock"></i> Time of Day</span>
-                                <strong>${factors.time_score}%</strong>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-success" style="width: ${factors.time_score}%"></div>
-                            </div>
-                            <small class="text-muted">${factors.time_impact}</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Solunar Periods Table (if available) -->
-                ${factors.solunar_periods ? `
-                <div class="card mt-3">
-                    <div class="card-header bg-light">
-                        <strong><i class="fas fa-calendar-alt"></i> Today's Solunar Periods</strong>
-                        <small class="d-block text-muted mt-1">Major and minor feeding times based on moon position</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="alert alert-danger mb-2">
-                                    <strong>🔴 Major Period 1</strong><br>
-                                    <small>${formatSolunarTime(factors.solunar_periods.major1.start)} - ${formatSolunarTime(factors.solunar_periods.major1.end)}</small><br>
-                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.major1.peak)}</small>
-                                </div>
-                                <div class="alert alert-warning mb-2">
-                                    <strong>🟡 Minor Period 1</strong><br>
-                                    <small>${formatSolunarTime(factors.solunar_periods.minor1.start)} - ${formatSolunarTime(factors.solunar_periods.minor1.end)}</small><br>
-                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.minor1.peak)}</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="alert alert-danger mb-2">
-                                    <strong>🔴 Major Period 2</strong><br>
-                                    <small>${formatSolunarTime(factors.solunar_periods.major2.start)} - ${formatSolunarTime(factors.solunar_periods.major2.end)}</small><br>
-                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.major2.peak)}</small>
-                                </div>
-                                <div class="alert alert-warning mb-2">
-                                    <strong>🟡 Minor Period 2</strong><br>
-                                    <small>${formatSolunarTime(factors.solunar_periods.minor2.start)} - ${formatSolunarTime(factors.solunar_periods.minor2.end)}</small><br>
-                                    <small class="text-muted">Peak: ${formatSolunarTime(factors.solunar_periods.minor2.peak)}</small>
-                                </div>
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-2">
-                            <i class="fas fa-info-circle"></i> <strong>Major periods</strong> (2-3 hours): Best fishing times when moon is overhead or underfoot.<br>
-                            <i class="fas fa-info-circle"></i> <strong>Minor periods</strong> (1-2 hours): Good fishing times at moonrise and moonset.
-                        </small>
-                    </div>
-                </div>
-                ` : ''}
-
-                ${factors.weather && factors.weather.clouds !== undefined ? `
-                <div class="alert alert-light mt-3">
-                    <small><i class="fas fa-cloud"></i> <strong>Cloud Cover:</strong> ${factors.weather.clouds}% - ${getCloudDescription(factors.weather.clouds)}</small><br>
-                    <small><i class="fas fa-info-circle"></i> <strong>Conditions:</strong> ${factors.weather.conditions || 'Clear'}</small>
-                </small>
-                </div>
-                ` : ''}
-
-                <!-- Refresh Button -->
-                <div class="text-center mt-4">
-                    <button class="btn btn-primary" onclick="loadFishActivity()">
-                        <i class="fas fa-sync"></i> Refresh Activity
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('activityFeed').innerHTML = html;
+        
+        // Update activity level text
+        let levelText = 'Very low fish activity';
+        if (score >= 80) levelText = 'Excellent fish activity';
+        else if (score >= 60) levelText = 'Good fish activity';
+        else if (score >= 40) levelText = 'Moderate fish activity';
+        else if (score >= 20) levelText = 'Low fish activity';
+        document.getElementById('activityLevelText').textContent = levelText;
+        
+        // Update chart
+        updateActivityChart(factors);
+        
+        // Update times
+        updateSolunarTimes(factors);
     }
 
-    function formatSolunarTime(time) {
-        // Convert decimal time (e.g., 6.5) to HH:MM format
-        if (time < 0) time += 24;
-        if (time >= 24) time -= 24;
-        const hours = Math.floor(time);
-        const minutes = Math.round((time - hours) * 60);
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    function updateActivityChart(factors) {
+        // Create a simple wave pattern
+        const currentHour = new Date().getHours();
+        const path = generateChartPath(currentHour);
+        document.getElementById('chartPath').setAttribute('d', path);
     }
 
-    function getCloudDescription(clouds) {
-        if (clouds <= 20) return 'Clear sky - bright conditions';
-        if (clouds <= 50) return 'Partly cloudy - optimal light';
-        if (clouds <= 80) return 'Mostly cloudy - good diffused light';
-        return 'Overcast - low light conditions';
+    function generateChartPath(currentHour) {
+        // Generate random-ish wave pattern with peaks around dawn/dusk
+        const points = [];
+        for (let x = 0; x <= 400; x += 20) {
+            const hour = (x / 400) * 24;
+            let y = 70; // middle
+            
+            // Early morning peak (4-8)
+            if (hour >= 4 && hour <= 8) {
+                y = 30 + Math.sin((hour - 4) / 4 * Math.PI) * 30;
+            }
+            // Evening peak (17-21)
+            else if (hour >= 17 && hour <= 21) {
+                y = 30 + Math.sin((hour - 17) / 4 * Math.PI) * 30;
+            }
+            // Daytime moderate
+            else if (hour > 8 && hour < 17) {
+                y = 70 + Math.random() * 20 - 10;
+            }
+            // Night low
+            else {
+                y = 100 + Math.random() * 20 - 10;
+            }
+            
+            points.push(`${x},${y}`);
+        }
+        
+        return `M ${points.join(' L ')}`;
     }
 
-    function getWeatherIcon(weather) {
-        const icons = {
-            'Clear': '☀️',
-            'Clouds': '☁️',
-            'Rain': '🌧️',
-            'Drizzle': '🌦️',
-            'Thunderstorm': '⛈️',
-            'Snow': '❄️',
-            'Mist': '🌫️',
-            'Fog': '🌫️',
-            'Haze': '🌫️'
-        };
-        return icons[weather] || '🌤️';
+    function updateSolunarTimes(factors) {
+        if (factors.solunar_periods) {
+            const sp = factors.solunar_periods;
+            document.getElementById('majorTimes').innerHTML = `
+                <div class="time-item">${formatTime(sp.major1.start)} — ${formatTime(sp.major1.end)}</div>
+                <div class="time-item">${formatTime(sp.major2.start)} — ${formatTime(sp.major2.end)}</div>
+            `;
+            document.getElementById('minorTimes').innerHTML = `
+                <div class="time-item">${formatTime(sp.minor1.start)} — ${formatTime(sp.minor1.end)}</div>
+                <div class="time-item">${formatTime(sp.minor2.start)} — ${formatTime(sp.minor2.end)}</div>
+            `;
+        } else {
+            document.getElementById('majorTimes').innerHTML = '<div class="time-item">04:58 — 07:28<br>17:39 — 20:09</div>';
+            document.getElementById('minorTimes').innerHTML = '<div class="time-item">00:30 — 02:00<br>10:28 — 11:58</div>';
+        }
     }
 
-    // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    function formatTime(time) {
+        if (typeof time === 'number') {
+            if (time < 0) time += 24;
+            if (time >= 24) time -= 24;
+            const hours = Math.floor(time);
+            const minutes = Math.round((time - hours) * 60);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+        return time;
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', function() {
+        initCalendar();
         initMap();
+        // Get user location and calculate activity automatically
+        getUserLocation();
     });
 </script>
-
-<!-- Footer -->
-<footer class="footer mt-5">
-    <div class="container">
-        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
-    </div>
-</footer>
 
 </body>
 </html>

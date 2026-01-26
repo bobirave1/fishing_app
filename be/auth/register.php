@@ -23,49 +23,53 @@ $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $confirm  = $_POST['confirmPassword'] ?? '';
 
+// Remove any accidental whitespace from passwords
+$password = trim($password);
+$confirm = trim($confirm);
+
 // Basic validation
 if (!$fullName || !$username || !$email || !$password || !$confirm) {
-    http_response_code(400);
-    exit("Please fill in all fields.");
+    header('Location: ../../fe/auth/register_form.php?error=empty_fields');
+    exit();
 }
 
 // Validate email
 if (!validateEmail($email)) {
-    http_response_code(400);
-    exit('Please provide a valid email address.');
+    header('Location: ../../fe/auth/register_form.php?error=invalid_email');
+    exit();
 }
 
 // Validate username
 if (!validateUsername($username)) {
-    http_response_code(400);
-    exit('Username must be 3-20 characters and contain only letters, numbers, and underscores.');
+    header('Location: ../../fe/auth/register_form.php?error=invalid_username');
+    exit();
 }
 
 // Validate password strength
 if (!validatePassword($password)) {
-    http_response_code(400);
-    exit('Password must be at least 8 characters long and contain at least one letter and one number.');
+    header('Location: ../../fe/auth/register_form.php?error=weak_password');
+    exit();
 }
 
 if ($password !== $confirm) {
-    http_response_code(400);
-    exit("Passwords do not match.");
+    header('Location: ../../fe/auth/register_form.php?error=password_mismatch');
+    exit();
 }
 
 // Check if email already exists
 $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
 $stmt->execute([$email]);
 if ($stmt->fetch()) {
-    http_response_code(409);
-    exit('Email already registered.');
+    header('Location: ../../fe/auth/register_form.php?error=email_exists');
+    exit();
 }
 
 // Check if username already exists
 $stmt = $pdo->prepare('SELECT id FROM users WHERE username = ?');
 $stmt->execute([$username]);
 if ($stmt->fetch()) {
-    http_response_code(409);
-    exit('Username already taken.');
+    header('Location: ../../fe/auth/register_form.php?error=username_exists');
+    exit();
 }
 
 // Hash password
@@ -78,13 +82,20 @@ $stmt = $pdo->prepare(
 
 try {
     $stmt->execute([$fullName, $username, $email, $hash]);
+    $userId = $pdo->lastInsertId();
+    
+    // Create user profile entry with default avatar
+    $defaultAvatar = 'fe/assets/img/default-avatar.png';
+    $stmt = $pdo->prepare("INSERT INTO user_profiles (user_id, avatar_url) VALUES (?, ?)");
+    $stmt->execute([$userId, $defaultAvatar]);
+    
+    // Redirect to login with success message
+    header('Location: ../../fe/auth/login_form.php?registered=1');
+    exit();
+    
 } catch (PDOException $e) {
     // Log error (in production, log to file)
     error_log('Registration error: ' . $e->getMessage());
-    http_response_code(500);
-    exit('Registration failed. Please try again later.');
+    header('Location: ../../fe/auth/register_form.php?error=server_error');
+    exit();
 }
-
-// Redirect to login
-header("Location: ../../index.php");
-exit;
