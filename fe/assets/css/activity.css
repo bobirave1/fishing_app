@@ -1,0 +1,36 @@
+/* ============================================
+   FISH ACTIVITY FEED STYLES
+   ============================================ */
+
+/* Activity Results */
+.activity-results {
+    display: none;
+}
+
+.activity-results.show {
+    display: block;
+}
+
+/* Map Card */
+.map-card {
+    display: none;
+}
+
+.map-card.show {
+    display: block;
+}
+
+/* Location Search Results */
+.location-search-results {
+    display: none;
+}
+
+.location-search-results.show {
+    display: block;
+}
+
+/* Custom Map Marker */
+.map-fish-marker {
+    font-size: 32px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}

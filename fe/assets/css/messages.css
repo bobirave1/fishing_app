@@ -1,0 +1,20 @@
+/* ============================================
+   MESSAGING COMPONENT STYLES
+   ============================================ */
+
+/* Conversation List */
+.conversations-container {
+    min-height: 100%;
+}
+
+/* Message Thread */
+.message-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Message Bubble */
+.message-bubble {
+    max-width: 70%;
+}

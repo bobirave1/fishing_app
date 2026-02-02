@@ -17,44 +17,8 @@ if (isset($_SESSION['user_id'])) {
     <title>Login - FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/auth_forms.css">
     <link rel="icon" href="../assets/img/logo_rounded.png">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            max-width: 400px;
-            width: 100%;
-        }
-        .login-header {
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .login-body {
-            padding: 30px;
-        }
-        .custom-btn {
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            border: none;
-            padding: 12px;
-            font-weight: 600;
-        }
-        .custom-btn:hover {
-            background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
-            color: white;
-        }
-    </style>
 </head>
 <body>
 

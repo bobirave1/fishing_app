@@ -1,0 +1,9 @@
+/* Friends List Inline Styles */
+.friend-card {
+    transition: all 0.3s ease;
+}
+
+.friend-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+}

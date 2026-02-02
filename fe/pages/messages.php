@@ -7,54 +7,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/navbar.css">
+    <link rel="stylesheet" href="../assets/css/messages.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/modern-theme.css">
+    <link rel="stylesheet" href="../assets/css/messages_inline.css">
     <link rel="icon" href="../assets/img/logo_rounded.png">
-    <style>
-        body {
-            padding-top: 70px;
-        }
-        .messages-container {
-            display: flex;
-            height: 80vh;
-            gap: 0;
-        }
-        .conversation-list {
-            width: 300px;
-            border-right: 1px solid #ddd;
-            overflow-y: auto;
-        }
-        .conversation-item {
-            cursor: pointer;
-            transition: background 0.2s;
-            border-bottom: 1px solid #eee;
-        }
-        .conversation-item:hover {
-            background: #f8f9fa;
-        }
-        .conversation-item.active {
-            background: #e7f3ff;
-            border-left: 3px solid #0d6efd;
-        }
-        .conversation-thread {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            padding: 20px;
-            background: white;
-        }
-        .message-input-area {
-            border-top: 1px solid #ddd;
-            padding: 15px;
-            background: #f8f9fa;
-        }
-        .message-group {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .message-group.own {
-            justify-content: flex-end;
-        }
-    </style>
 </head>
 <body>
 <?php
@@ -115,65 +73,7 @@ if (!isset($_SESSION['user_id'])) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/avatar_helper.js?v=<?= time() ?>"></script>
 <script src="../assets/js/app.js?v=<?= time() ?>"></script>
-<script>
-    let currentConversationUserId = null;
-
-    function openConversation(userId) {
-        currentConversationUserId = userId;
-        
-        // Update active state
-        document.querySelectorAll('.conversation-item').forEach(el => {
-            el.classList.remove('active');
-        });
-        event.target.closest('.conversation-item').classList.add('active');
-
-        // Load conversation
-        fetch('../../be/messages/message.php?action=get_conversation&receiver_id=' + userId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    displayConversationView(data.messages, data.current_user_id, userId);
-                    document.getElementById('conversationView').classList.remove('d-none');
-                    document.getElementById('noConversationView').classList.add('d-none');
-                }
-            });
-    }
-
-    function displayConversationView(messages, currentUserId, otherId) {
-        const container = document.getElementById('conversationThread');
-        let html = '';
-        
-        messages.forEach(msg => {
-            const isOwn = msg.sender_id == currentUserId;
-            const alignment = isOwn ? 'text-end' : 'text-start';
-            const bgClass = isOwn ? 'bg-primary text-white' : 'bg-light';
-            
-            html += `
-                <div class="${alignment}">
-                    <div class="d-inline-block ${bgClass} p-2 rounded-3" style="max-width: 70%;">
-                        <p class="mb-0">${msg.content}</p>
-                        <small class="${isOwn ? 'text-white-50' : 'text-muted'}">${formatDate(msg.created_at)}</small>
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html || '<p class="text-center text-muted">No messages yet</p>';
-        container.parentElement.scrollTop = container.parentElement.scrollHeight;
-    }
-
-    function sendMessageToCurrentUser() {
-        if (!currentConversationUserId) {
-            alert('Please select a conversation');
-            return;
-        }
-        sendMessage(currentConversationUserId);
-    }
-
-    // Load conversations on page load
-    loadConversations();
-    setInterval(loadConversations, 10000);
-</script>
+<script src="../assets/js/messages.js?v=<?= time() ?>"></script>
 
 <!-- Footer -->
 <footer class="footer mt-5">

@@ -1,0 +1,53 @@
+/* Auth Forms Inline Styles */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card,
+.register-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    max-width: 400px;
+    width: 100%;
+}
+
+.register-card {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.login-header,
+.register-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.login-body,
+.register-body {
+    padding: 30px;
+}
+
+.custom-btn {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+}
+
+.custom-btn:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+    color: white;
+}
+
+body.register-page {
+    padding: 20px 0;
+}

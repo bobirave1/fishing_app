@@ -536,6 +536,20 @@ function displayNotifications(notifications) {
         return;
     }
     
+    // Determine correct paths based on current location
+    const path = window.location.pathname;
+    const isInFePages = path.includes('/fe/pages/');
+    const isInBe = path.includes('/be/');
+    
+    let profilePath, friendRequestPath;
+    if (isInFePages || isInBe) {
+        profilePath = '../../be/users/profile.php';
+        friendRequestPath = '../../be/friends/list_requests.php';
+    } else {
+        profilePath = 'be/users/profile.php';
+        friendRequestPath = 'be/friends/list_requests.php';
+    }
+    
     let html = '';
     notifications.forEach(notif => {
         const avatar = getAvatarUrl(notif.avatar_url);
@@ -553,14 +567,16 @@ function displayNotifications(notifications) {
                 break;
             case 'follow':
                 message = `<strong>${notif.username}</strong> started following you`;
-                clickAction = `onclick="window.location.href='be/users/profile.php?id=${notif.from_user_id}'"`;                break;
+                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
+                break;
             case 'friend_request':
                 message = `<strong>${notif.username}</strong> sent you a friend request`;
-                clickAction = `onclick="window.location.href='be/friends/list_requests.php'"`;
+                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${friendRequestPath}')"`;
                 break;
             case 'friend_accepted':
                 message = `<strong>${notif.username}</strong> accepted your friend request`;
-                clickAction = `onclick="window.location.href='be/users/profile.php?id=${notif.from_user_id}'"`;                break;
+                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
+                break;
             case 'new_post':
                 message = `<strong>${notif.username}</strong> shared a new post`;
                 clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
@@ -620,13 +636,127 @@ function markNotificationRead(notificationId) {
     });
 }
 
-function handleNotificationClick(notificationId, postId) {
-    markNotificationRead(notificationId);
-    if (postId) {
-        // Scroll to post or navigate to post
-        // For now, just reload to show updated notifications
-        loadNotifications();
+function markAllNotificationsRead() {
+    const path = window.location.pathname;
+    let markReadPath = 'be/notifications/mark_read.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        markReadPath = '../notifications/mark_read.php';
+    } else if (path.includes('/fe/pages/')) {
+        markReadPath = '../../be/notifications/mark_read.php';
     }
+    
+    const formData = new FormData();
+    formData.append('action', 'mark_all_read');
+    formData.append('csrf_token', getCsrfToken());
+    
+    fetch(markReadPath, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update badge immediately
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                badge.classList.add('d-none');
+            }
+            // Reload notifications list
+            loadNotifications();
+        }
+    })
+    .catch(error => console.error('Error marking all read:', error));
+}
+
+function handleNotificationClick(notificationId, postId) {
+    const path = window.location.pathname;
+    let markReadPath = 'be/notifications/mark_read.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        markReadPath = '../notifications/mark_read.php';
+    } else if (path.includes('/fe/pages/')) {
+        markReadPath = '../../be/notifications/mark_read.php';
+    }
+    
+    const formData = new FormData();
+    formData.append('notification_id', notificationId);
+    formData.append('action', 'mark_read');
+    formData.append('csrf_token', getCsrfToken());
+    
+    fetch(markReadPath, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Immediately update the badge count
+            const badge = document.getElementById('notificationBadge');
+            if (badge && !badge.classList.contains('d-none')) {
+                const currentCount = parseInt(badge.textContent);
+                const newCount = Math.max(0, currentCount - 1);
+                if (newCount > 0) {
+                    badge.textContent = newCount > 99 ? '99+' : newCount;
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+            // Then reload full list
+            loadNotifications();
+            if (postId) {
+                // Scroll to post or navigate to post if needed
+            }
+        }
+    })
+    .catch(error => console.error('Error marking notification read:', error));
+}
+
+function handleNotificationClickAndNavigate(notificationId, url) {
+    const path = window.location.pathname;
+    let markReadPath = 'be/notifications/mark_read.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        markReadPath = '../notifications/mark_read.php';
+    } else if (path.includes('/fe/pages/')) {
+        markReadPath = '../../be/notifications/mark_read.php';
+    }
+    
+    const formData = new FormData();
+    formData.append('notification_id', notificationId);
+    formData.append('action', 'mark_read');
+    formData.append('csrf_token', getCsrfToken());
+    
+    fetch(markReadPath, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Immediately update the badge count
+            const badge = document.getElementById('notificationBadge');
+            if (badge && !badge.classList.contains('d-none')) {
+                const currentCount = parseInt(badge.textContent);
+                const newCount = Math.max(0, currentCount - 1);
+                if (newCount > 0) {
+                    badge.textContent = newCount > 99 ? '99+' : newCount;
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+            // Navigate to URL
+            window.location.href = url;
+        }
+    })
+    .catch(error => {
+        console.error('Error marking notification read:', error);
+        // Navigate anyway
+        window.location.href = url;
+    });
 }
 
 // Load notifications when page loads and refresh periodically

@@ -1,0 +1,12 @@
+/* Profile Page Inline Styles */
+.hover-card {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.hover-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+}

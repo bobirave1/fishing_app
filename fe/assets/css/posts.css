@@ -1,0 +1,52 @@
+/* ============================================
+   POSTS & FEED COMPONENT STYLES
+   ============================================ */
+
+/* Post Images */
+.post-image {
+    max-height: 400px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.post-thumbnail {
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.post-edit-preview {
+    max-height: 150px;
+}
+
+/* User Avatars in Posts */
+.post-avatar {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+}
+
+/* Sticky Sidebar */
+.sidebar-sticky {
+    position: sticky;
+    top: 70px;
+}
+
+/* Sidebar Icons */
+.sidebar-icon {
+    font-size: 24px;
+}
+
+.sidebar-text {
+    font-weight: 500;
+}
+
+/* Friend Avatar Circles */
+.friend-avatar {
+    object-fit: cover;
+    border: 2px solid var(--success);
+}
+
+.friend-avatar-sm {
+    object-fit: cover;
+    border: 3px solid var(--success);
+}

@@ -1,0 +1,18 @@
+/* ============================================
+   SHARED COMPONENT STYLES
+   ============================================ */
+
+/* Weather Widget Icon */
+.weather-icon {
+    max-width: 80px;
+}
+
+/* Alert Boxes */
+.alert-custom {
+    margin-bottom: 1.5rem;
+}
+
+/* Delete Confirmation */
+.delete-alert {
+    border: 1px solid var(--danger);
+}

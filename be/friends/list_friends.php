@@ -47,14 +47,15 @@ $friends = $stmt->fetchAll();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css">
+    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
+    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
     <style>
-        .friend-card {
-            transition: all 0.3s ease;
-        }
-        .friend-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+        body {
+            background: #f8f9fa;
+            padding-top: 70px;
         }
     </style>
 </head>
@@ -67,8 +68,16 @@ $friends = $stmt->fetchAll();
         <h2 class="fw-bold">
             <i class="fas fa-user-friends text-success"></i> 
             <?= $isOwnProfile ? 'My Friends' : htmlspecialchars($viewUser['username']) . "'s Friends" ?>
+            <?php if (!empty($friends)): ?>
+                <span class="badge bg-success"><?= count($friends) ?></span>
+            <?php endif; ?>
         </h2>
         <div>
+            <?php if ($isOwnProfile): ?>
+                <a href="list_requests.php" class="btn btn-outline-warning me-2">
+                    <i class="fas fa-user-plus"></i> Friend Requests
+                </a>
+            <?php endif; ?>
             <?php if (!$isOwnProfile): ?>
                 <a href="../users/profile.php?id=<?= $viewUserId ?>" class="btn btn-outline-primary me-2">
                     <i class="fas fa-user"></i> Back to Profile
@@ -81,13 +90,15 @@ $friends = $stmt->fetchAll();
     </div>
 
     <?php if (empty($friends)): ?>
-        <div class="card text-center py-5">
+        <div class="card text-center py-5 shadow-sm">
             <div class="card-body">
                 <i class="fas fa-users fa-4x text-muted mb-3"></i>
                 <h4 class="text-muted">No friends yet</h4>
                 <p class="text-muted"><?= $isOwnProfile ? 'Start connecting with other anglers!' : 'This user has no friends yet.' ?></p>
                 <?php if ($isOwnProfile): ?>
-                    <a href="../../index.php" class="btn btn-primary">Find Friends</a>
+                    <a href="../../index.php" class="btn btn-primary mt-2">
+                        <i class="fas fa-search"></i> Find Friends
+                    </a>
                 <?php endif; ?>
             </div>
         </div>
@@ -117,6 +128,13 @@ $friends = $stmt->fetchAll();
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Footer -->
+<footer class="footer mt-5">
+    <div class="container">
+        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>

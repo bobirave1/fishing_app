@@ -1,0 +1,27 @@
+/* ============================================
+   PROFILE PAGE STYLES
+   ============================================ */
+
+/* Profile Header */
+.profile-header-gradient {
+    background: linear-gradient(135deg, var(--primary-600), var(--accent-ocean));
+}
+
+/* Profile Avatar */
+.profile-avatar-main {
+    width: 150px;
+    height: 150px;
+    border-width: 4px !important;
+    object-fit: cover;
+}
+
+.profile-avatar-edit {
+    object-fit: cover;
+    border: 5px solid var(--primary-600);
+}
+
+/* Profile Bio */
+.profile-bio {
+    font-style: italic;
+    margin: 1rem 0;
+}

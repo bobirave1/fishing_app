@@ -6,6 +6,28 @@ A modern social networking platform designed specifically for fishing enthusiast
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple)
 
+## 🚀 Quick Start - Database Setup
+
+After cloning this repository:
+
+1. **Import the database:**
+   ```bash
+   # Option 1: Using MySQL command line
+   mysql -u root -p < fishing_app.sql
+   
+   # Option 2: Using phpMyAdmin
+   # - Open phpMyAdmin (http://localhost/phpmyadmin)
+   # - Create a new database called 'fishing_app'
+   # - Go to Import tab and select fishing_app.sql
+   ```
+
+2. **Update database credentials** if needed in `config/database.php`
+
+3. **Run migrations** (if any):
+   ```bash
+   mysql -u root -p fishing_app < migrations/add_notifications.sql
+   ```
+
 ## ✨ Features
 
 ### 🔐 User Management
@@ -218,7 +240,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@bobirave1](https://github.com/bobirave1)
 - Email: your.email@example.com
 
 ## 🙏 Acknowledgments

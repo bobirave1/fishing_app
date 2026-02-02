@@ -30,7 +30,25 @@ $requests = $stmt->fetchAll();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css">
+    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
+    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
+    <style>
+        body {
+            background: #f8f9fa;
+            padding-top: 70px;
+        }
+        .request-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #ffc107;
+        }
+        .request-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+        }
+    </style>
 </head>
 <body data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 
@@ -38,18 +56,31 @@ $requests = $stmt->fetchAll();
 
 <div class="container my-5 py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="fas fa-user-plus text-warning"></i> Friend Requests</h2>
-        <a href="../../index.php" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Home
-        </a>
+        <h2 class="fw-bold">
+            <i class="fas fa-user-plus text-warning"></i> Friend Requests
+            <?php if (!empty($requests)): ?>
+                <span class="badge bg-warning text-dark"><?= count($requests) ?></span>
+            <?php endif; ?>
+        </h2>
+        <div>
+            <a href="list_friends.php" class="btn btn-outline-success me-2">
+                <i class="fas fa-user-friends"></i> My Friends
+            </a>
+            <a href="../../index.php" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Home
+            </a>
+        </div>
     </div>
 
     <?php if (empty($requests)): ?>
-        <div class="card text-center py-5">
+        <div class="card text-center py-5 shadow-sm">
             <div class="card-body">
                 <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
                 <h4 class="text-muted">No pending requests</h4>
                 <p class="text-muted">You're all caught up!</p>
+                <a href="../../index.php" class="btn btn-primary mt-3">
+                    <i class="fas fa-home"></i> Go to Home
+                </a>
             </div>
         </div>
     <?php else: ?>
@@ -58,7 +89,7 @@ $requests = $stmt->fetchAll();
                 $senderAvatar = getUserAvatar($r['avatar_url'] ?? null);
             ?>
                 <div class="col-12">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm request-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-3">
@@ -102,6 +133,13 @@ $requests = $stmt->fetchAll();
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Footer -->
+<footer class="footer mt-5">
+    <div class="container">
+        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>

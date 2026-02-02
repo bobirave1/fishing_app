@@ -86,17 +86,14 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
+    <link rel="stylesheet" href="../../fe/assets/css/profile.css">
+    <link rel="stylesheet" href="../../fe/assets/css/posts.css">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css">
+    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
+    <link rel="stylesheet" href="../../fe/assets/css/profile_inline.css">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
-    <style>
-        .hover-card {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-        }
-        .hover-card:hover {
-            background-color: #f8f9fa;
-            transform: translateY(-2px);
-        }
-    </style>
+
 </head>
 <body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
 

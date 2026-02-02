@@ -11,19 +11,20 @@ This document provides a comprehensive overview of all features implemented for 
 ### Backend
 - **File**: `be/posts/like.php`
 - **Functionality**:
-  - Like/unlike posts
+  - Like/unlike posts with toggle functionality
   - Automatic notification to post owner
   - Activity feed logging
   - Like count tracking
   - User like status tracking
 
 ### Frontend
-- **File**: `index.php`
+- **Files**: `index.php`, `fe/assets/js/app.js`, `fe/assets/css/modern-theme.css`
 - **Components**:
-  - Heart icon button with like count
+  - Heart icon button with like count (no "Likes" text)
   - Real-time like count updates
-  - Visual feedback (red heart when liked)
+  - Visual feedback with red gradient when liked (`.action-btn.liked`)
   - Toggle between like/unlike states
+  - Clean minimal UI design
 
 ### Database
 - **Table**: `post_likes` (id, post_id, user_id)
