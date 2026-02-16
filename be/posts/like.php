@@ -43,32 +43,19 @@ if ($action === 'like') {
     $stmt = $pdo->prepare("SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?");
     $stmt->execute([$postId, $userId]);
     
-    if ($stmt->fetch()) {
-        http_response_code(400);
-        header('Content-Type: application/json');
-        exit(json_encode(['error' => 'Already liked']));
-    }
-    
-    // Add like
-    $stmt = $pdo->prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)");
-    $stmt->execute([$postId, $userId]);
-    
-    // Create notification
-    if ($post['user_id'] != $userId) {
-        $stmt = $pdo->prepare("
-            INSERT INTO notifications (user_id, type, related_id, sender_id) 
-            VALUES (?, 'like', ?, ?)
-        ");
-        $stmt->execute([$post['user_id'], $postId, $userId]);
+    if (!$stmt->fetch()) {
+        // Add like only if not already liked
+        $stmt = $pdo->prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)");
+        $stmt->execute([$postId, $userId]);
         
-        // Log activity (optional - table may not exist)
-        /*
-        $stmt = $pdo->prepare("
-            INSERT INTO activity_feed (user_id, action_type, post_id, created_at)
-            VALUES (?, 'like', ?, NOW())
-        ");
-        $stmt->execute([$userId, $postId]);
-        */
+        // Create notification
+        if ($post['user_id'] != $userId) {
+            $stmt = $pdo->prepare("
+                INSERT INTO notifications (user_id, type, related_id, sender_id) 
+                VALUES (?, 'like', ?, ?)
+            ");
+            $stmt->execute([$post['user_id'], $postId, $userId]);
+        }
     }
     
 } else if ($action === 'unlike') {

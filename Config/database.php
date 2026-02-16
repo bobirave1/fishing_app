@@ -26,6 +26,19 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    // If database doesn't exist, try to set it up
+    if (strpos($e->getMessage(), 'Unknown database') !== false) {
+        echo '<div style="font-family: Arial; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; margin: 20px;">';
+        echo '<h3 style="margin-top: 0;">⚠️ Database Not Found</h3>';
+        echo '<p>The database needs to be set up. Please run the setup script:</p>';
+        echo '<ol>';
+        echo '<li>Open your browser and go to: <strong><a href="' . (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/setup.php">setup.php</a></strong></li>';
+        echo '<li>Or run in terminal: <code>php setup.php</code></li>';
+        echo '</ol>';
+        echo '</div>';
+        exit;
+    }
+    
     // Don't expose sensitive info in production
     error_log("DB Connection Error: " . $e->getMessage());
     http_response_code(500);

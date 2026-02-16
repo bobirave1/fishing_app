@@ -28,19 +28,19 @@ if (!in_array($visibility, ['public', 'friends', 'private'])) {
     exit('Invalid visibility setting');
 }
 
-// Handle file upload
-if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-    $validationErrors = validateImageUpload($_FILES['image']);
+// Handle file upload (image or video)
+if (isset($_FILES['media']) && $_FILES['media']['error'] === 0) {
+    $validationErrors = validateMediaUpload($_FILES['media']);
     if (!empty($validationErrors)) {
         exit(implode(', ', $validationErrors));
     }
     
-    $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+    $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
     $filename = uniqid() . '.' . $ext;
     $target = '../../fe/assets/img/' . $filename;
     
-    if (!move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-        exit('Failed to upload image');
+    if (!move_uploaded_file($_FILES['media']['tmp_name'], $target)) {
+        exit('Failed to upload file');
     }
     $imagePath = 'fe/assets/img/' . $filename;
 }

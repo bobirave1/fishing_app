@@ -6,14 +6,27 @@ function getCsrfToken() {
 }
 
 // ==================== LIKES ====================
+const likingInProgress = new Set();
+
 function toggleLike(postId, button) {
+    // Prevent multiple simultaneous requests
+    if (likingInProgress.has(postId)) {
+        return;
+    }
+    
     const isLiked = button.classList.contains('liked');
     const action = isLiked ? 'unlike' : 'like';
+    
+    likingInProgress.add(postId);
     
     const formData = new FormData();
     formData.append('post_id', postId);
     formData.append('action', action);
     formData.append('csrf_token', getCsrfToken());
+    
+    // Optimistic UI update
+    const originalHTML = button.innerHTML;
+    const originalClass = button.className;
     
     fetch('be/posts/like.php', {
         method: 'POST',
@@ -22,7 +35,7 @@ function toggleLike(postId, button) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update button state
+            // Update button state based on server response
             if (data.liked) {
                 button.classList.add('liked');
                 button.innerHTML = '<i class="fas fa-heart"></i> <span id="like-count-' + postId + '">' + data.like_count + '</span>';
@@ -31,10 +44,21 @@ function toggleLike(postId, button) {
                 button.innerHTML = '<i class="far fa-heart"></i> <span id="like-count-' + postId + '">' + data.like_count + '</span>';
             }
         } else if (data.error) {
-            alert('Error: ' + data.error);
+            // Revert on error
+            button.innerHTML = originalHTML;
+            button.className = originalClass;
+            console.error('Error:', data.error);
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Revert on error
+        button.innerHTML = originalHTML;
+        button.className = originalClass;
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        likingInProgress.delete(postId);
+    });
 }
 
 // ==================== COMMENTS ====================

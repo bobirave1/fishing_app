@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages - FISHINGLORY</title>
+    <title>Messages | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/navbar.css">
-    <link rel="stylesheet" href="../assets/css/messages.css">
-    <link rel="stylesheet" href="../assets/css/components.css">
-    <link rel="stylesheet" href="../assets/css/modern-theme.css">
-    <link rel="stylesheet" href="../assets/css/messages_inline.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/messages.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/modern-theme.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/messages_inline.css?v=<?= time() ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
 <body>

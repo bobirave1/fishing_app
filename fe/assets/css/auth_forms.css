@@ -9,7 +9,7 @@ body {
 
 .login-card,
 .register-card {
-    background: white;
+    background: #92afd7;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     overflow: hidden;
@@ -25,7 +25,7 @@ body {
 .login-header,
 .register-header {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: white;
+    color: #c5d1eb;
     padding: 30px;
     text-align: center;
 }
@@ -37,7 +37,7 @@ body {
 
 .custom-btn {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: white;
+    color: #c5d1eb;
     border: none;
     padding: 12px;
     font-weight: 600;
@@ -45,9 +45,47 @@ body {
 
 .custom-btn:hover {
     background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
-    color: white;
+    color: #c5d1eb;
 }
 
 body.register-page {
     padding: 20px 0;
+}
+
+/* No-white overrides */
+.login-card,
+.register-card {
+    background: #f2f5f9 !important;
+}
+
+.login-header,
+.register-header,
+.custom-btn {
+    color: #f8fafc !important;
+}
+
+/* Solid palette overrides (no gradients, no pure white) */
+body {
+    background: #c5d1eb !important;
+}
+
+.login-card,
+.register-card {
+    background: #92afd7 !important;
+}
+
+.login-header,
+.register-header {
+    background: #16002f !important;
+    color: #c5d1eb !important;
+}
+
+.custom-btn {
+    background: #16002f !important;
+    color: #c5d1eb !important;
+}
+
+.custom-btn:hover {
+    background: #395b50 !important;
+    color: #c5d1eb !important;
 }

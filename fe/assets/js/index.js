@@ -89,38 +89,7 @@ function confirmDeletePost() {
     });
 }
 
-// Load login form
-document.getElementById('loginModal').addEventListener('show.bs.modal', function () {
-    fetch('fe/auth/login_form.php')
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('loginModalBody').innerHTML = html;
-        })
-        .catch(() => {
-            document.getElementById('loginModalBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
-        });
-});
 
-// Load register form
-document.getElementById('registerModal').addEventListener('show.bs.modal', function () {
-    fetch('fe/auth/register_form.php')
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('registerModalBody').innerHTML = html;
-        })
-        .catch(() => {
-            document.getElementById('registerModalBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
-        });
-});
-
-// Clear bodies when modals close
-['loginModal', 'registerModal'].forEach(id => {
-    document.getElementById(id).addEventListener('hidden.bs.modal', function () {
-        document.getElementById(
-            id === 'loginModal' ? 'loginModalBody' : 'registerModalBody'
-        ).innerHTML = '<p class="text-center">Loading form...</p>';
-    });
-});
 
 // Clear edit and delete modals when closed
 document.getElementById('editPostModal').addEventListener('hidden.bs.modal', function () {

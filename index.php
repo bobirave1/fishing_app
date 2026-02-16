@@ -121,12 +121,12 @@ if (isset($_SESSION['user_id'])) {
             <p class="lead fs-4">The ultimate fishing community and marketplace.</p>
             <p class="mb-4">Connect with anglers, share catches, track weather, and explore fishing spots.</p>
             <div class="d-flex justify-content-center gap-3">
-                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#loginModal">
+                <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg">
                     <i class="fas fa-sign-in-alt"></i> Login
-                </button>
-                <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#registerModal">
+                </a>
+                <a href="fe/auth/register_form.php" class="btn btn-success btn-lg">
                     <i class="fas fa-user-plus"></i> Register
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -145,7 +145,7 @@ if (isset($_SESSION['user_id'])) {
                     <option value="friends">👥 Friends</option>
                     <option value="private">🔒 Only me</option>
                 </select>
-                <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" style="border-radius: 12px;">
+                <input type="file" name="media" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/avi,video/mov" style="border-radius: 12px;">
             </div>
             <button class="btn btn-primary w-100 mt-3" style="border-radius: 12px; padding: 1rem; font-size: 1.1rem; font-weight: 700;">
                 <i class="fas fa-paper-plane"></i> Post Now
@@ -168,8 +168,17 @@ if (isset($_SESSION['user_id'])) {
                             <?= htmlspecialchars($p['username']) ?>
                         </a>
                     </h6>
-                    <div class="post-timestamp">
-                        <i class="fas fa-clock"></i> <?= date('M d, Y \a\t g:i A', strtotime($p['created_at'])) ?>
+                    <div class="post-timestamp d-flex align-items-center justify-content-between">
+                        <span>
+                            <i class="fas fa-clock"></i> <?= date('M d, Y \a\t g:i A', strtotime($p['created_at'])) ?>
+                        </span>
+                        <span class="badge bg-light text-dark ms-3" style="font-size: 0.85rem;">
+                            <?php 
+                            $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
+                            echo $icons[$p['visibility']] ?? '🌍';
+                            ?>
+                            <?= ucfirst($p['visibility']) ?>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -186,25 +195,28 @@ if (isset($_SESSION['user_id'])) {
                 </div>
             <?php endif; ?>
         </div>
-        
+
         <div class="post-content">
-            <h5 class="fw-bold mb-3"><?= htmlspecialchars($p['title']) ?></h5>
-            <p><?= nl2br(htmlspecialchars($p['content'])) ?></p>
-        </div>
-        
-        <div class="d-flex justify-content-end mb-2">
-            <span class="badge bg-light text-dark" style="font-size: 0.85rem;">
-                <?php 
-                $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
-                echo $icons[$p['visibility']] ?? '🌍';
-                ?>
-                <?= ucfirst($p['visibility']) ?>
-            </span>
+            <?php if (!empty($p['title'])): ?>
+                <h6 class="mb-2"><?= htmlspecialchars($p['title']) ?></h6>
+            <?php endif; ?>
+            <p class="mb-0"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
         </div>
         
         <?php if (!empty($p['image'])): ?>
             <div class="post-image-wrapper">
-                <img src="<?= htmlspecialchars($p['image']) ?>" class="post-image-modern">
+                <?php 
+                $ext = strtolower(pathinfo($p['image'], PATHINFO_EXTENSION));
+                $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
+                if (in_array($ext, $videoExtensions)): 
+                ?>
+                    <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
+                        <source src="<?= htmlspecialchars($p['image']) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
+                        Your browser does not support the video tag.
+                    </video>
+                <?php else: ?>
+                    <img src="<?= htmlspecialchars($p['image']) ?>" class="post-image-modern">
+                <?php endif; ?>
             </div>
         <?php endif; ?>
         
@@ -260,35 +272,7 @@ if (isset($_SESSION['user_id'])) {
     </div> <!-- Close row -->
 </div> <!-- Close container-fluid -->
 
-<!-- Login Modal -->
-<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded shadow custom-bg">
-            <div class="modal-header border-0 text-center d-block position-relative">
-                <h5 class="modal-title" id="loginModalLabel">Login to FISHINGLORY</h5>
-                <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="loginModalBody">
-                <p class="text-center">Loading login form...</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Register Modal -->
-<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded shadow custom-bg">
-            <div class="modal-header border-0 text-center d-block position-relative">
-                <h5 class="modal-title" id="registerModalLabel">Register for FISHINGLORY</h5>
-                <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="registerModalBody">
-                <p class="text-center">Loading registration form...</p>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Edit Post Modal -->
 <div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">

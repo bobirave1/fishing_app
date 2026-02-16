@@ -104,6 +104,38 @@ function validateImageUpload($file, $maxSize = 5242880) { // 5MB default
     return $errors;
 }
 
+// Media Upload Validation (Images + Videos)
+function validateMediaUpload($file, $maxSize = 20971520) { // 20MB default
+    $errors = [];
+    
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $errors[] = 'File upload error';
+        return $errors;
+    }
+    
+    // Check file size
+    if ($file['size'] > $maxSize) {
+        $errors[] = 'File is too large (max 20MB)';
+    }
+    
+    // Check MIME type
+    $allowedMimes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/avi', 'video/quicktime'
+    ];
+    if (!in_array($file['type'], $allowedMimes)) {
+        $errors[] = 'Invalid file type. Only images (JPG, PNG, GIF, WebP) and videos (MP4, WebM, AVI, MOV) are allowed';
+    }
+    
+    // Check file extension
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'avi', 'mov'];
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($extension, $allowedExtensions)) {
+        $errors[] = 'Invalid file extension';
+    }
+    
+    return $errors;
+}
 // Security Headers
 function setSecurityHeaders() {
     header('X-Frame-Options: DENY');

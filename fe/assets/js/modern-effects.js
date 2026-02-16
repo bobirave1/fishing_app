@@ -1,30 +1,28 @@
 // Ultra Modern Visual Effects & Interactions
 
-// Smooth scroll to top button
+// Scroll to Top Button
 document.addEventListener('DOMContentLoaded', function() {
-    // Create scroll to top button
-    const scrollTopBtn = document.createElement('button');
-    scrollTopBtn.className = 'scroll-top-btn';
-    scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-    scrollTopBtn.style.display = 'none';
-    document.body.appendChild(scrollTopBtn);
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
     
-    // Show/hide scroll to top button
-    window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-            scrollTopBtn.style.display = 'block';
-        } else {
-            scrollTopBtn.style.display = 'none';
-        }
-    });
-    
-    // Scroll to top on click
-    scrollTopBtn.addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
+    if (scrollTopBtn) {
+        // Show/hide button on scroll
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
         });
-    });
+        
+        // Smooth scroll to top on click
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
+
     
     // Add animation observer for cards
     const observerOptions = {
