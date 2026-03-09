@@ -25,9 +25,13 @@ $content = trim($_POST['content'] ?? '');
 header('Content-Type: application/json');
 
 if ($action === 'send') {
-    if (!$receiverId || !$content) {
+    $files = $_FILES['files'] ?? [];
+    $hasContent = !empty($content);
+    $hasFiles = !empty($files['name'][0]);
+    
+    if (!$receiverId || (!$hasContent && !$hasFiles)) {
         http_response_code(400);
-        exit(json_encode(['error' => 'Receiver and message content required']));
+        exit(json_encode(['error' => 'Receiver and message content or files required']));
     }
     
     if (strlen($content) > 2000) {
@@ -43,18 +47,54 @@ if ($action === 'send') {
         exit(json_encode(['error' => 'Receiver not found']));
     }
     
+    // Handle file uploads
+    $attachmentUrls = [];
+    if ($hasFiles) {
+        $uploadDir = '../../fe/assets/uploads/messages/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        foreach ($files['name'] as $key => $fileName) {
+            if ($files['error'][$key] !== UPLOAD_ERR_OK) continue;
+            
+            $fileTmp = $files['tmp_name'][$key];
+            $fileSize = $files['size'][$key];
+            $fileType = $files['type'][$key];
+            
+            // Validate file type and size
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/avi', 'video/mov'];
+            $maxSize = 50 * 1024 * 1024; // 50MB
+            
+            if (!in_array($fileType, $allowedTypes) || $fileSize > $maxSize) {
+                continue;
+            }
+            
+            // Generate unique filename
+            $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+            $newFileName = uniqid('msg_') . '_' . time() . '.' . $extension;
+            $filePath = $uploadDir . $newFileName;
+            
+            if (move_uploaded_file($fileTmp, $filePath)) {
+                $attachmentUrls[] = 'assets/uploads/messages/' . $newFileName;
+            }
+        }
+    }
+    
     // Save message
+    $attachmentJson = !empty($attachmentUrls) ? json_encode($attachmentUrls) : null;
     $stmt = $pdo->prepare("
-        INSERT INTO messages (sender_id, receiver_id, content, created_at)
-        VALUES (?, ?, ?, NOW())
+        INSERT INTO messages (sender_id, receiver_id, content, attachment_urls, created_at)
+        VALUES (?, ?, ?, ?, NOW())
     ");
-    $stmt->execute([$userId, $receiverId, $content]);
+    $stmt->execute([$userId, $receiverId, $content, $attachmentJson]);
     $messageId = $pdo->lastInsertId();
     
     exit(json_encode([
         'success' => true,
         'message_id' => $messageId,
-        'created_at' => date('M d, Y H:i')
+        'created_at' => date('M d, Y H:i'),
+        'attachments' => $attachmentUrls
     ]));
     
 } else if ($action === 'get_conversation') {

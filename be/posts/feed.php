@@ -25,8 +25,13 @@ $posts = $stmt->fetchAll();
 <head>
     <title>Feed</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/posts.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css?v=<?= time() ?>">
 </head>
-<body class="bg-light">
+<body>
 
 <div class="container mt-4">
     <h3 class="mb-4">📰 Feed</h3>

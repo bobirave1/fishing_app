@@ -19,20 +19,28 @@ $imagePath = null;
 
 // Input validation
 if (empty($title) || strlen($title) > 200) {
-    exit('Title must be between 1 and 200 characters');
+    $_SESSION['post_error'] = 'Title must be between 1 and 200 characters';
+    header('Location: ../../index.php');
+    exit;
 }
 if (empty($content) || strlen($content) > 5000) {
-    exit('Content must be between 1 and 5000 characters');
+    $_SESSION['post_error'] = 'Content must be between 1 and 5000 characters';
+    header('Location: ../../index.php');
+    exit;
 }
 if (!in_array($visibility, ['public', 'friends', 'private'])) {
-    exit('Invalid visibility setting');
+    $_SESSION['post_error'] = 'Invalid visibility setting';
+    header('Location: ../../index.php');
+    exit;
 }
 
 // Handle file upload (image or video)
 if (isset($_FILES['media']) && $_FILES['media']['error'] === 0) {
     $validationErrors = validateMediaUpload($_FILES['media']);
     if (!empty($validationErrors)) {
-        exit(implode(', ', $validationErrors));
+        $_SESSION['post_error'] = implode(', ', $validationErrors);
+        header('Location: ../../index.php');
+        exit;
     }
     
     $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
@@ -40,7 +48,9 @@ if (isset($_FILES['media']) && $_FILES['media']['error'] === 0) {
     $target = '../../fe/assets/img/' . $filename;
     
     if (!move_uploaded_file($_FILES['media']['tmp_name'], $target)) {
-        exit('Failed to upload file');
+        $_SESSION['post_error'] = 'Failed to upload file';
+        header('Location: ../../index.php');
+        exit;
     }
     $imagePath = 'fe/assets/img/' . $filename;
 }

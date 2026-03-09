@@ -1,6 +1,7 @@
 <?php
 // Get user avatar for navbar
 require_once dirname(__DIR__, 2) . '/config/avatar_helper.php';
+require_once dirname(__DIR__, 2) . '/config/languages.php'; // Add language support
 
 if (isset($_SESSION['user_id'])) {
     $stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
@@ -18,7 +19,16 @@ if (isset($_SESSION['user_id'])) {
         <?php
         $currentPath = $_SERVER['PHP_SELF'];
         
-        // Determine paths based on current location
+        // Determine base path based on current location
+        if (strpos($currentPath, '/fe/pages/') !== false) {
+            $basePath = '../../';
+        } elseif (strpos($currentPath, '/be/') !== false) {
+            $basePath = '../../';
+        } else {
+            $basePath = '';
+        }
+        
+        // Determine logo and index paths based on current location
         if (strpos($currentPath, '/fe/pages/') !== false) {
             $indexPath = '../../index.php';
             $logoPath = '../assets/img/logo_rounded.png';
@@ -38,12 +48,12 @@ if (isset($_SESSION['user_id'])) {
         <div class="dropdown">
             <button class="fb-search-input search-container" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" 
                     onclick="this.nextElementSibling.querySelector('input').focus()">
-                Search Fishinglory
+                <?= __('search_placeholder') ?>
             </button>
             <div class="dropdown-menu fb-search-dropdown p-0">
                 <div class="p-2">
                     <input type="text" id="searchInput" class="form-control border-0 search-input-field" 
-                           placeholder="Search Fishinglory" oninput="performSearch(this.value)">
+                           placeholder="<?= __('search_placeholder') ?>" oninput="performSearch(this.value)">
                 </div>
                 <div id="searchResults"></div>
             </div>
@@ -53,7 +63,7 @@ if (isset($_SESSION['user_id'])) {
     
     <!-- Center: Main Nav -->
     <?php if (isset($_SESSION['user_id'])): ?>
-    <div class="fb-navbar-center d-none d-md-flex">
+    <div class="fb-navbar-center">
         <?php
         $currentPage = basename($_SERVER['PHP_SELF']);
         $currentPath = $_SERVER['PHP_SELF'];
@@ -132,14 +142,38 @@ if (isset($_SESSION['user_id'])) {
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="<?= $profilePath ?>?id=<?= $_SESSION['user_id'] ?>">
-                    <i class="fas fa-user me-2"></i> My Profile
+                    <i class="fas fa-user me-2"></i> <?= __('my_profile') ?>
                 </a></li>
                 <li><a class="dropdown-item" href="<?= $editProfilePath ?>">
-                    <i class="fas fa-edit me-2"></i> Edit Profile
+                    <i class="fas fa-edit me-2"></i> <?= __('edit_profile') ?>
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
+                <!-- Theme Toggle -->
+                <li>
+                    <div class="dropdown-item d-flex align-items-center justify-content-between">
+                        <span><i class="fas fa-palette me-2"></i> <?= __('theme') ?></span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="themeToggle" 
+                                   <?= (($_SESSION['theme'] ?? 'light') === 'dark') ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="themeToggle">
+                                <span class="theme-label"><?= (($_SESSION['theme'] ?? 'light') === 'dark') ? __('dark_mode') : __('light_mode') ?></span>
+                            </label>
+                        </div>
+                    </div>
+                </li>
+                <!-- Language Toggle -->
+                <li>
+                    <div class="dropdown-item d-flex align-items-center justify-content-between">
+                        <span><i class="fas fa-language me-2"></i> <?= __('language') ?></span>
+                        <select class="form-select form-select-sm" id="langSelect" style="width: auto;">
+                            <option value="bg" <?= getCurrentLang() === 'bg' ? 'selected' : '' ?>>🇧🇬 Български</option>
+                            <option value="en" <?= getCurrentLang() === 'en' ? 'selected' : '' ?>>🇺🇸 English</option>
+                        </select>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="<?= $logoutPath ?>">
-                    <i class="fa fa-sign-out-alt me-2"></i> Logout
+                    <i class="fa fa-sign-out-alt me-2"></i> <?= __('logout') ?>
                 </a></li>
             </ul>
         </div>
@@ -157,8 +191,8 @@ if (isset($_SESSION['user_id'])) {
             $registerPath = 'fe/auth/register_form.php';
         }
         ?>
-        <a href="<?= $loginPath ?>" class="btn btn-outline-primary me-2">Login</a>
-        <a href="<?= $registerPath ?>" class="btn btn-primary">Sign Up</a>
+        <a href="<?= $loginPath ?>" class="btn btn-outline-primary me-2"><?= __('login') ?></a>
+        <a href="<?= $registerPath ?>" class="btn btn-primary"><?= __('sign_up') ?></a>
         <?php endif; ?>
     </div>
 </nav>

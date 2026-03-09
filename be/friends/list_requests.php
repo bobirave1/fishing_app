@@ -3,6 +3,25 @@ require '../../config/security.php';
 secureSession();
 require '../../config/database.php';
 require '../../config/avatar_helper.php';
+require '../../config/languages.php'; // Add language support
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -29,34 +48,19 @@ $requests = $stmt->fetchAll();
     <title>Friend Requests | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../../fe/assets/css/style.css">
-    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
-    <link rel="stylesheet" href="../../fe/assets/css/components.css">
-    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
-    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css">
+    <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css?v=<?= time() ?>">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
-    <style>
-        body {
-            background: #f8f9fa;
-            padding-top: 70px;
-        }
-        .request-card {
-            transition: all 0.3s ease;
-            border-left: 4px solid #ffc107;
-        }
-        .request-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
-        }
-    </style>
 </head>
-<body data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>">
+<body class="requests-page" data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../../fe/components/navbar.php'; ?>
 
 <div class="container my-5 py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">
+        <h2 class="fw-bold page-title">
             <i class="fas fa-user-plus text-warning"></i> Friend Requests
             <?php if (!empty($requests)): ?>
                 <span class="badge bg-warning text-dark"><?= count($requests) ?></span>
@@ -73,7 +77,7 @@ $requests = $stmt->fetchAll();
     </div>
 
     <?php if (empty($requests)): ?>
-        <div class="card text-center py-5 shadow-sm">
+        <div class="card text-center py-5 shadow-sm requests-empty">
             <div class="card-body">
                 <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
                 <h4 class="text-muted">No pending requests</h4>
@@ -94,9 +98,9 @@ $requests = $stmt->fetchAll();
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-3">
                                     <img src="<?= htmlspecialchars($senderAvatar) ?>" 
-                                         class="rounded-circle" 
+                                         class="rounded-circle request-avatar" 
                                          width="60" height="60" 
-                                         style="object-fit: cover;">
+                                         >
                                     <div>
                                         <h5 class="mb-0 fw-bold"><?= htmlspecialchars($r['username']) ?></h5>
                                         <?php if (!empty($r['full_name'])): ?>

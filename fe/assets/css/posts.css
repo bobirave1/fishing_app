@@ -1,12 +1,17 @@
 /* ============================================
-   POSTS & FEED COMPONENT STYLES
+   POSTS & FEED COMPONENT STYLES - MODERN PROFESSIONAL
    ============================================ */
 
 /* Post Images */
 .post-image {
-    max-height: 400px;
+    max-height: 500px;
     width: 100%;
     object-fit: cover;
+    transition: transform 300ms ease-in-out;
+}
+
+.post-image:hover {
+    transform: scale(1.02);
 }
 
 .post-thumbnail {
@@ -16,6 +21,7 @@
 
 .post-edit-preview {
     max-height: 150px;
+    object-fit: cover;
 }
 
 /* User Avatars in Posts */
@@ -23,12 +29,14 @@
     width: 48px;
     height: 48px;
     object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
 }
 
 /* Sticky Sidebar */
 .sidebar-sticky {
     position: sticky;
-    top: 70px;
+    top: 90px;
 }
 
 /* Sidebar Icons */
@@ -43,10 +51,286 @@
 /* Friend Avatar Circles */
 .friend-avatar {
     object-fit: cover;
-    border: 2px solid var(--success);
+    border: 3px solid #10B981;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
 }
 
 .friend-avatar-sm {
     object-fit: cover;
-    border: 3px solid var(--success);
+    border: 3px solid #10B981;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+}
+
+/* Modern Post Card */
+.modern-post {
+    margin-bottom: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 250ms ease-in-out;
+    animation: slideInUp 400ms ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modern-post:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #3B82F6;
+}
+
+/* Post Header */
+.post-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-avatar-modern {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3B82F6;
+    margin-right: 12px;
+    flex-shrink: 0;
+    transition: transform 150ms ease-in-out;
+}
+
+.post-avatar-modern:hover {
+    transform: scale(1.1);
+}
+
+.post-user-info h6 {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.post-user-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.post-timestamp {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+/* Post Action Buttons */
+.post-action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.post-action-buttons button {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 150ms ease-in-out;
+    font-weight: 500;
+}
+
+.post-action-buttons button:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+}
+
+.post-action-buttons button.delete:hover {
+    background: #FEE2E2;
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+/* Post Content */
+.post-content {
+    padding: 16px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.post-content h4 {
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.post-content p {
+    margin-bottom: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Post Image Wrapper */
+.post-image-wrapper {
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+}
+
+.post-image-modern {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    max-height: 500px;
+}
+
+/* Post Actions */
+.post-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #F3F4F6;
+    background: #F9FAFB;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #E5E7EB;
+    background: white;
+    color: #6B7280;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 150ms ease-in-out;
+}
+
+.action-btn:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+    color: #3B82F6;
+}
+
+.action-btn.liked {
+    background: #EFF6FF;
+    color: #3B82F6;
+    border-color: #3B82F6;
+}
+
+.action-btn i {
+    font-size: 14px;
+}
+
+/* Comment Section */
+.comment-section {
+    padding: 16px;
+    border-top: 1px solid #F3F4F6;
+    background: #F9FAFB;
+}
+
+.comment-input {
+    width: 100%;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: white;
+    color: #111827;
+    font-family: inherit;
+}
+
+.comment-input::placeholder {
+    color: #9CA3AF;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Engagement Buttons */
+.engagement-buttons {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #F3F4F6;
+    background: white;
+}
+
+.engagement-btn {
+    flex: 1;
+    border: 1px solid #E5E7EB;
+    background: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #6B7280;
+    font-size: 13px;
+    transition: all 150ms ease-in-out;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.engagement-btn:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+    color: #3B82F6;
+}
+
+.engagement-btn.active {
+    background: #EFF6FF;
+    color: #3B82F6;
+    border-color: #3B82F6;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .modern-post {
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+
+    .post-header {
+        padding: 12px;
+    }
+
+    .post-content {
+        padding: 12px;
+    }
+
+    .post-actions {
+        padding: 8px 12px;
+    }
+
+    .engagement-buttons {
+        padding: 8px 12px;
+    }
+
+    .action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .post-image {
+        max-height: 400px;
+    }
 }

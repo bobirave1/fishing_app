@@ -3,7 +3,26 @@ session_start();
 require '../../config/database.php';
 require '../../config/security.php';
 require '../../config/avatar_helper.php';
+require '../../config/languages.php'; // Add language support
 setSecurityHeaders();
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -42,10 +61,9 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
     <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../assets/css/profile.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/modern-theme.css?v=<?= time() ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
-<body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>">
+<body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../components/navbar.php'; ?>
 
@@ -53,8 +71,8 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-light));">
+            <div class="card shadow-lg border-0 profile-section-card">
+                <div class="card-header edit-profile-header">
                     <h4 class="mb-0">
                         <i class="fas fa-user-edit"></i> Edit Your Profile
                     </h4>

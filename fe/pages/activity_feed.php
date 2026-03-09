@@ -2,6 +2,25 @@
 session_start();
 require '../../config/database.php';
 require '../../config/avatar_helper.php';
+require '../../config/languages.php'; // Add language support
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -15,24 +34,22 @@ $profile = $stmt->fetch();
 $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= getCurrentLang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Activity - FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/navbar.css">
-    <link rel="stylesheet" href="../assets/css/activity.css">
-    <link rel="stylesheet" href="../assets/css/components.css">
-    <link rel="stylesheet" href="../assets/css/modern-theme.css">
-    <link rel="stylesheet" href="../assets/css/activity_feed_inline.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/activity.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>">
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../components/navbar.php'; ?>
 

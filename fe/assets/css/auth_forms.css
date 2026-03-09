@@ -1,91 +1,250 @@
-/* Auth Forms Inline Styles */
+/* ============================================
+   AUTHENTICATION FORMS - MODERN PROFESSIONAL
+   ============================================ */
+
 body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* Auth Cards */
 .login-card,
 .register-card {
-    background: #92afd7;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
     overflow: hidden;
-    max-width: 400px;
+    max-width: 420px;
     width: 100%;
+    transition: all 250ms ease-in-out;
 }
 
 .register-card {
-    max-width: 500px;
+    max-width: 480px;
     margin: 20px auto;
 }
 
+.login-card:hover,
+.register-card:hover {
+    box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+    border-color: #3B82F6;
+}
+
+/* Auth Headers */
 .login-header,
 .register-header {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: #c5d1eb;
-    padding: 30px;
+    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    color: white;
+    padding: 40px 30px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
+.login-header::before,
+.register-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.login-header h2,
+.register-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.login-header p,
+.register-header p {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Form Bodies */
 .login-body,
 .register-body {
-    padding: 30px;
+    padding: 40px 30px;
 }
 
-.custom-btn {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: #c5d1eb;
-    border: none;
-    padding: 12px;
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
     font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    transition: all 150ms ease-in-out;
+    background: #F9FAFB;
+}
+
+.form-control:focus {
+    background: white;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: #D1D5DB;
+}
+
+/* Auth Buttons */
+.custom-btn {
+    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 150ms ease-in-out;
+    width: 100%;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .custom-btn:hover {
-    background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
-    color: #c5d1eb;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
+.custom-btn:active {
+    transform: translateY(0);
+}
+
+/* Link Styling */
+.form-link {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 150ms ease-in-out;
+}
+
+.form-link:hover {
+    color: #0EA5E9;
+    text-decoration: underline;
+}
+
+/* Form Text */
+.form-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #6B7280;
+}
+
+.form-text a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.form-text a:hover {
+    color: #0EA5E9;
+    text-decoration: underline;
+}
+
+/* Register Page */
 body.register-page {
     padding: 20px 0;
 }
 
-/* No-white overrides */
-.login-card,
-.register-card {
-    background: #f2f5f9 !important;
+/* Error Messages */
+.alert-danger {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FEV2E2 100%);
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-weight: 500;
 }
 
-.login-header,
-.register-header,
-.custom-btn {
-    color: #f8fafc !important;
+.alert-success {
+    background: linear-gradient(135deg, #DCFCE7 0%, #D1FAE5 100%);
+    border: 1px solid #BBIF9B;
+    color: #166534;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-weight: 500;
 }
 
-/* Solid palette overrides (no gradients, no pure white) */
-body {
-    background: #c5d1eb !important;
+/* Password Strength Indicator */
+.password-strength {
+    margin-top: 8px;
+    height: 4px;
+    background: #E5E7EB;
+    border-radius: 99px;
+    overflow: hidden;
 }
 
-.login-card,
-.register-card {
-    background: #92afd7 !important;
+.password-strength-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #EF4444 0%, #F97316 50%, #22C55E 100%);
+    width: 0%;
+    transition: width 250ms ease-in-out;
 }
 
-.login-header,
-.register-header {
-    background: #16002f !important;
-    color: #c5d1eb !important;
-}
+/* Responsive */
+@media (max-width: 576px) {
+    .login-card,
+    .register-card {
+        border-radius: 12px;
+        max-width: 100%;
+    }
 
-.custom-btn {
-    background: #16002f !important;
-    color: #c5d1eb !important;
-}
+    .login-header,
+    .register-header {
+        padding: 30px 20px;
+    }
 
-.custom-btn:hover {
-    background: #395b50 !important;
-    color: #c5d1eb !important;
+    .login-header h2,
+    .register-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .login-body,
+    .register-body {
+        padding: 30px 20px;
+    }
+
+    .form-control {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+    }
+
+    .custom-btn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
 }

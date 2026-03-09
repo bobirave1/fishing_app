@@ -1,9 +1,27 @@
 <?php
 require 'config/security.php';
 secureSession();
+// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
 require 'config/database.php';
 require 'config/avatar_helper.php';
+require 'config/languages.php'; // Add language support
 setSecurityHeaders();
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 $posts = [];
 
@@ -45,22 +63,21 @@ if (isset($_SESSION['user_id'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= getCurrentLang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISHINGLORY - Home</title>
+    <title>FISHINGLORY - <?= __('home') ?></title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="fe/assets/css/style.css">
-    <link rel="stylesheet" href="fe/assets/css/navbar.css">
-    <link rel="stylesheet" href="fe/assets/css/posts.css">
-    <link rel="stylesheet" href="fe/assets/css/components.css">
-    <link rel="stylesheet" href="fe/assets/css/modern-theme.css">
+    <link rel="stylesheet" href="fe/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="fe/assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="fe/assets/css/posts.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="fe/assets/css/components.css?v=<?= time() ?>">
     <link rel="icon" href="fe/assets/img/logo_rounded.png">
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include 'fe/components/navbar.php'; ?>
 
@@ -69,49 +86,39 @@ if (isset($_SESSION['user_id'])) {
         <!-- Left Sidebar -->
         <?php if (isset($_SESSION['user_id'])): ?>
         <div class="col-md-3 col-lg-2">
-            <div class="sidebar-modern">
+            <div class="sidebar-modern sidebar-sticky">
                 <div class="sidebar-card">
                     <div class="sidebar-title">
                         <i class="fas fa-compass"></i>
-                        <span>Quick Links</span>
+                        <span><?= __('quick_links') ?></span>
                     </div>
                     <a href="be/users/profile.php?id=<?= $_SESSION['user_id'] ?>" class="sidebar-item">
                         <i class="fas fa-user-circle"></i>
-                        <span class="sidebar-item-text">My Profile</span>
+                        <span class="sidebar-item-text"><?= __('my_profile') ?></span>
                     </a>
                     <a href="be/friends/list_friends.php" class="sidebar-item">
                         <i class="fas fa-user-friends"></i>
-                        <span class="sidebar-item-text">Friends</span>
+                        <span class="sidebar-item-text"><?= __('friends') ?></span>
                     </a>
                     <a href="be/friends/list_requests.php" class="sidebar-item">
                         <i class="fas fa-user-plus"></i>
-                        <span class="sidebar-item-text">Requests</span>
+                        <span class="sidebar-item-text"><?= __('requests') ?></span>
                     </a>
                     <a href="fe/pages/messages.php" class="sidebar-item">
                         <i class="fas fa-envelope"></i>
-                        <span class="sidebar-item-text">Messages</span>
+                        <span class="sidebar-item-text"><?= __('messages') ?></span>
                     </a>
                     <a href="fe/pages/activity_feed.php" class="sidebar-item">
                         <i class="fas fa-fish"></i>
-                        <span class="sidebar-item-text">Fish Activity</span>
+                        <span class="sidebar-item-text"><?= __('fish_activity') ?></span>
                     </a>
                 </div>
             </div>
         </div>
         <?php endif; ?>
 
-        <!-- Main Content -->
-        <div class="<?= isset($_SESSION['user_id']) ? 'col-md-9 col-lg-10' : 'col-12' ?>">
-
-<!-- Weather Widget -->
-<div class="weather-widget glass-card">
-    <div class="weather-content">
-        <h5 class="sidebar-title"><i class="fas fa-cloud-sun"></i> Local Fishing Weather</h5>
-        <div id="weather-info">
-            <p>Fetching weather based on your location...</p>
-        </div>
-    </div>
-</div>
+        <!-- Main Content - Posts Only -->
+        <div class="col-12 col-md-<?= isset($_SESSION['user_id']) ? '6' : '8' ?> col-lg-<?= isset($_SESSION['user_id']) ? '7' : '8' ?>">
 
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="text-center py-5">
@@ -122,10 +129,10 @@ if (isset($_SESSION['user_id'])) {
             <p class="mb-4">Connect with anglers, share catches, track weather, and explore fishing spots.</p>
             <div class="d-flex justify-content-center gap-3">
                 <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg">
-                    <i class="fas fa-sign-in-alt"></i> Login
+                    <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
                 </a>
                 <a href="fe/auth/register_form.php" class="btn btn-success btn-lg">
-                    <i class="fas fa-user-plus"></i> Register
+                    <i class="fas fa-user-plus"></i> <?= __('sign_up') ?>
                 </a>
             </div>
         </div>
@@ -134,21 +141,30 @@ if (isset($_SESSION['user_id'])) {
 
 <!-- Create post form -->
 <?php if (isset($_SESSION['user_id'])): ?>
+    <?php if (isset($_SESSION['post_error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <?= htmlspecialchars($_SESSION['post_error']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['post_error']); ?>
+    <?php endif; ?>
+    
     <div class="create-post-modern glass-card mb-4 mt-4">
         <form action="be/posts/create.php" method="post" enctype="multipart/form-data">
             <?= getCsrfField() ?>
             <input type="text" name="title" class="create-post-input mb-3" placeholder="What's on your mind?" required maxlength="200">
-            <textarea name="content" class="create-post-input mb-3" placeholder="Share your catch story..." required maxlength="5000" style="border-radius: 16px; min-height: 100px;"></textarea>
+            <textarea name="content" class="create-post-input mb-3" placeholder="<?= __('post_placeholder') ?>" required maxlength="5000" style="border-radius: 16px; min-height: 100px;"></textarea>
             <div class="create-post-actions">
                 <select name="visibility" class="form-select" style="border-radius: 12px;">
-                    <option value="public">🌍 Public</option>
-                    <option value="friends">👥 Friends</option>
-                    <option value="private">🔒 Only me</option>
+                    <option value="public">🌍 <?= __('public') ?></option>
+                    <option value="friends">👥 <?= __('friends') ?></option>
+                    <option value="private">🔒 <?= __('private') ?></option>
                 </select>
                 <input type="file" name="media" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/avi,video/mov" style="border-radius: 12px;">
             </div>
             <button class="btn btn-primary w-100 mt-3" style="border-radius: 12px; padding: 1rem; font-size: 1.1rem; font-weight: 700;">
-                <i class="fas fa-paper-plane"></i> Post Now
+                <i class="fas fa-paper-plane"></i> <?= __('post') ?>
             </button>
         </form>
     </div>
@@ -269,6 +285,21 @@ if (isset($_SESSION['user_id'])) {
 <?php endforeach; ?>
 
         </div> <!-- Close main content column -->
+
+        <!-- Right Sidebar -->
+        <div class="col-md-3 col-lg-3">
+            <div class="sidebar-modern sidebar-sticky">
+                <!-- Weather Widget -->
+                <div class="weather-widget glass-card mb-4">
+                    <div class="weather-content">
+                        <h5 class="sidebar-title"><i class="fas fa-cloud-sun"></i> <?= __('current_weather') ?></h5>
+                        <div id="weather-info">
+                            <p>Fetching weather based on your location...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div> <!-- Close row -->
 </div> <!-- Close container-fluid -->
 
@@ -324,11 +355,6 @@ if (isset($_SESSION['user_id'])) {
 <script src="fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>
 <script src="fe/assets/js/app.js?v=<?= time() ?>"></script>
 <script src="fe/assets/js/index.js?v=<?= time() ?>"></script>
-<script src="fe/assets/js/modern-effects.js"></script>
-
-        </div><!-- Close main content -->
-    </div><!-- Close row -->
-</div><!-- Close container-fluid -->
 
 <!-- Footer -->
 <footer class="footer">

@@ -419,7 +419,17 @@ function viewSpot(spotId) {
 
 // ==================== MESSAGING ====================
 function loadConversations() {
-    fetch('be/messages/message.php?action=get_conversations')
+    const path = window.location.pathname;
+    let messagesPath = 'be/messages/message.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        messagesPath = '../messages/message.php';
+    } else if (path.includes('/fe/pages/')) {
+        messagesPath = '../../be/messages/message.php';
+    }
+    
+    fetch(messagesPath + '?action=get_conversations')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -444,7 +454,7 @@ function displayConversations(conversations) {
         const unreadClass = conv.unread_count > 0 ? 'fw-bold' : '';
         const lastMsg = conv.last_message ? conv.last_message.substring(0, 45) + (conv.last_message.length > 45 ? '...' : '') : 'No messages';
         html += `
-            <div class="conversation-item p-3" onclick="openConversation(${conv.other_user_id})">
+            <div class="conversation-item p-3" data-user-id="${conv.other_user_id}" onclick="openConversation(${conv.other_user_id})">
                 <div class="d-flex gap-2">
                     <img src="${avatar}" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
                     <div class="flex-grow-1 min-width-0">
@@ -462,7 +472,17 @@ function displayConversations(conversations) {
 
 function openConversation(userId) {
     // Load and display conversation
-    fetch('be/messages/message.php?action=get_conversation&receiver_id=' + userId)
+    const path = window.location.pathname;
+    let messagesPath = 'be/messages/message.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        messagesPath = '../messages/message.php';
+    } else if (path.includes('/fe/pages/')) {
+        messagesPath = '../../be/messages/message.php';
+    }
+    
+    fetch(messagesPath + '?action=get_conversation&receiver_id=' + userId)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -481,10 +501,24 @@ function displayConversation(messages, currentUserId, otherId) {
         const alignment = isOwn ? 'text-end' : 'text-start';
         const bgClass = isOwn ? 'bg-primary text-white' : 'bg-light';
         
+        let attachmentsHtml = '';
+        if (msg.attachment_urls) {
+            const attachments = JSON.parse(msg.attachment_urls);
+            attachments.forEach(url => {
+                const fileExt = url.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+                    attachmentsHtml += `<img src="${url}" class="img-fluid rounded mb-2" style="max-width: 200px; max-height: 200px;" onclick="window.open(this.src)">`;
+                } else if (['mp4', 'avi', 'mov'].includes(fileExt)) {
+                    attachmentsHtml += `<video controls class="mb-2" style="max-width: 200px; max-height: 200px;"><source src="${url}" type="video/${fileExt}"></video>`;
+                }
+            });
+        }
+        
         html += `
             <div class="message-group mb-2 ${alignment}">
                 <div class="d-inline-block ${bgClass} p-2 rounded" style="max-width: 70%;">
-                    <p class="mb-0">${msg.content}</p>
+                    ${attachmentsHtml}
+                    ${msg.content ? `<p class="mb-0">${msg.content}</p>` : ''}
                     <small class="${isOwn ? 'text-white-50' : 'text-muted'}">${formatDate(msg.created_at)}</small>
                 </div>
             </div>
@@ -497,9 +531,22 @@ function displayConversation(messages, currentUserId, otherId) {
 
 function sendMessage(receiverId) {
     const input = document.getElementById('messageInput');
+    const fileInput = document.getElementById('fileInput');
     const content = input.value.trim();
+    const files = fileInput ? fileInput.files : [];
     
-    if (!content) return;
+    // Allow sending if there's content or files
+    if (!content && files.length === 0) return;
+    
+    const path = window.location.pathname;
+    let messagesPath = 'be/messages/message.php';
+    
+    // Adjust path based on current location
+    if (path.includes('/be/')) {
+        messagesPath = '../messages/message.php';
+    } else if (path.includes('/fe/pages/')) {
+        messagesPath = '../../be/messages/message.php';
+    }
     
     const formData = new FormData();
     formData.append('action', 'send');
@@ -507,7 +554,12 @@ function sendMessage(receiverId) {
     formData.append('content', content);
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('be/messages/message.php', {
+    // Add files
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files[]', files[i]);
+    }
+    
+    fetch(messagesPath, {
         method: 'POST',
         body: formData
     })
@@ -515,6 +567,10 @@ function sendMessage(receiverId) {
     .then(data => {
         if (data.success) {
             input.value = '';
+            if (fileInput) {
+                fileInput.value = '';
+                document.getElementById('filePreview').innerHTML = '';
+            }
             openConversation(receiverId);
         }
     });

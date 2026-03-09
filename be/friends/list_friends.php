@@ -3,6 +3,25 @@ session_start();
 require '../../config/database.php';
 require '../../config/security.php';
 require '../../config/avatar_helper.php';
+require '../../config/languages.php'; // Add language support
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -46,26 +65,19 @@ $friends = $stmt->fetchAll();
     <title><?= $isOwnProfile ? 'My Friends' : htmlspecialchars($viewUser['username']) . "'s Friends" ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../../fe/assets/css/style.css">
-    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
-    <link rel="stylesheet" href="../../fe/assets/css/components.css">
-    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
-    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css">
+    <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/friends_list.css?v=<?= time() ?>">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
-    <style>
-        body {
-            background: #f8f9fa;
-            padding-top: 70px;
-        }
-    </style>
 </head>
-<body data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>">
+<body class="friends-page" data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../../fe/components/navbar.php'; ?>
 
 <div class="container my-5 py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">
+        <h2 class="fw-bold page-title">
             <i class="fas fa-user-friends text-success"></i> 
             <?= $isOwnProfile ? 'My Friends' : htmlspecialchars($viewUser['username']) . "'s Friends" ?>
             <?php if (!empty($friends)): ?>
@@ -90,7 +102,7 @@ $friends = $stmt->fetchAll();
     </div>
 
     <?php if (empty($friends)): ?>
-        <div class="card text-center py-5 shadow-sm">
+        <div class="card text-center py-5 shadow-sm friends-empty">
             <div class="card-body">
                 <i class="fas fa-users fa-4x text-muted mb-3"></i>
                 <h4 class="text-muted">No friends yet</h4>
@@ -111,9 +123,9 @@ $friends = $stmt->fetchAll();
                     <div class="card h-100 shadow-sm friend-card">
                         <div class="card-body text-center">
                             <img src="<?= htmlspecialchars($friendAvatar) ?>" 
-                                 class="rounded-circle mb-3" 
+                                   class="rounded-circle mb-3 friend-avatar-lg" 
                                  width="100" height="100" 
-                                 style="object-fit: cover; border: 3px solid #10b981;">
+                                   >
                             <h5 class="fw-bold mb-1"><?= htmlspecialchars($f['username']) ?></h5>
                             <?php if (!empty($f['full_name'])): ?>
                                 <p class="text-muted small mb-3"><?= htmlspecialchars($f['full_name']) ?></p>

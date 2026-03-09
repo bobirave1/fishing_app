@@ -2,6 +2,25 @@
 session_start();
 require '../../config/database.php';
 require '../../config/security.php';
+require '../../config/languages.php'; // Add language support
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 $profileId = (int)($_GET['id'] ?? 0);
 $currentUser = $_SESSION['user_id'] ?? 0;
@@ -85,25 +104,23 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     <title><?= htmlspecialchars($user['username']) ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../../fe/assets/css/style.css">
-    <link rel="stylesheet" href="../../fe/assets/css/navbar.css">
-    <link rel="stylesheet" href="../../fe/assets/css/profile.css">
-    <link rel="stylesheet" href="../../fe/assets/css/posts.css">
-    <link rel="stylesheet" href="../../fe/assets/css/components.css">
-    <link rel="stylesheet" href="../../fe/assets/css/modern-theme.css">
-    <link rel="stylesheet" href="../../fe/assets/css/profile_inline.css">
+    <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/profile.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/posts.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../fe/assets/css/components.css?v=<?= time() ?>">
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
 
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>">
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../../fe/components/navbar.php'; ?>
 
 <div class="container my-5 py-5">
     <!-- Profile Header -->
-    <div class="card mb-4 shadow">
+    <div class="card mb-4 shadow profile-main-card">
         <div class="card-body text-center">
-            <img src="<?= htmlspecialchars($profileAvatar) ?>" width="150" height="150" class="rounded-circle mb-3 border border-primary" style="border-width: 4px !important; object-fit: cover;">
+            <img src="<?= htmlspecialchars($profileAvatar) ?>" width="150" height="150" class="rounded-circle mb-3 border border-primary profile-avatar-main">
             <h2 class="fw-bold text-primary"><?= htmlspecialchars($user['username']) ?></h2>
             <p class="text-muted fs-5"><?= htmlspecialchars($user['full_name']) ?></p>
             
@@ -114,7 +131,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <?php endif; ?>
             
             <?php if (!empty($user['bio'])): ?>
-                <p class="text-muted" style="font-style: italic; margin: 1rem 0;">
+                <p class="text-muted profile-bio">
                     "<?= htmlspecialchars($user['bio']) ?>"
                 </p>
             <?php endif; ?>
@@ -129,9 +146,9 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <?php endif; ?>
 
             <p class="text-muted"><i class="fas fa-calendar-alt"></i> Joined <?= date('F Y', strtotime($user['created_at'])) ?></p>
-            <div class="d-flex justify-content-center gap-4 mb-3">
-                <div><strong><?= count($posts) ?></strong> Posts</div>
-                <div><strong><?= $friendCount ?></strong> Friends</div>
+            <div class="profile-stats">
+                <div class="profile-stat-item"><strong><?= count($posts) ?></strong> Posts</div>
+                <div class="profile-stat-item"><strong><?= $friendCount ?></strong> Friends</div>
             </div>
             <?php if ($currentUser && $currentUser !== $profileId): ?>
                 <div id="friendActionContainer">
@@ -157,7 +174,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     <div class="row">
         <div class="col-md-8">
             <!-- Posts Section -->
-            <div class="card">
+            <div class="card profile-section-card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="fas fa-file-alt"></i> Posts</h5>
                 </div>
@@ -186,7 +203,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
         </div>
         <div class="col-md-4">
             <!-- Friends Sidebar -->
-            <div class="card">
+            <div class="card profile-section-card">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-users"></i> Friends</h5>
                     <span class="badge bg-light text-success"><?= $friendCount ?></span>

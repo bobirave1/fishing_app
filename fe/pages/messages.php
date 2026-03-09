@@ -1,30 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages | FISHINGLORY</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/messages.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/modern-theme.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/messages_inline.css?v=<?= time() ?>">
-    <link rel="icon" href="../assets/img/logo_rounded.png">
-</head>
-<body>
 <?php
 session_start();
 require '../../config/database.php';
+require '../../config/security.php';
+require '../../config/languages.php'; // Add language support
+
+// Set default language to Bulgarian for diploma project
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'bg';
+}
+
+// Handle language/theme switches via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
+        $_SESSION['lang'] = $_POST['lang'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
+        $_SESSION['theme'] = $_POST['theme'];
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
     exit;
 }
 ?>
-
+<!DOCTYPE html>
+<html lang="<?= getCurrentLang() ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= __('messages') ?> | FISHINGLORY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/messages.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
+    <link rel="icon" href="../assets/img/logo_rounded.png">
+</head>
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 <?php include '../components/navbar.php'; ?>
 
 <div class="container-fluid my-4">
@@ -49,11 +66,16 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <div class="message-input-area">
                             <div class="input-group">
+                                <input type="file" id="fileInput" class="d-none" accept="image/*,video/*" multiple>
+                                <button class="btn btn-outline-secondary" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
                                 <input type="text" id="messageInput" class="form-control" placeholder="Type a message...">
                                 <button class="btn btn-primary" onclick="sendMessageToCurrentUser()">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
+                            <div id="filePreview" class="mt-2"></div>
                         </div>
                     </div>
 
