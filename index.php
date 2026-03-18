@@ -12,13 +12,28 @@ setSecurityHeaders();
 
 // Handle language/theme switches via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
-        $_SESSION['lang'] = $_POST['lang'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    $csrf = $_POST['csrf_token'] ?? '';
+    if (!verifyCsrfToken($csrf)) {
+        http_response_code(400);
+        die('Invalid CSRF token');
+    }
+
+    $action = $_POST['action'];
+    if ($action === 'switch_lang' && isset($_POST['lang'])) {
+        $newLang = (string) $_POST['lang'];
+        if (in_array($newLang, ['bg', 'en'], true)) {
+            $_SESSION['lang'] = $newLang;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
-    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
-        $_SESSION['theme'] = $_POST['theme'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    }
+
+    if ($action === 'switch_theme' && isset($_POST['theme'])) {
+        $newTheme = (string) $_POST['theme'];
+        if (in_array($newTheme, ['light', 'dark'], true)) {
+            $_SESSION['theme'] = $newTheme;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
     }
 }
@@ -71,10 +86,10 @@ if (isset($_SESSION['user_id'])) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="fe/assets/css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="fe/assets/css/navbar.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="fe/assets/css/posts.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="fe/assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="fe/assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="fe/assets/css/navbar.css?v=<?= assetVersion('fe/assets/css/navbar.css') ?>">
+    <link rel="stylesheet" href="fe/assets/css/posts.css?v=<?= assetVersion('fe/assets/css/posts.css') ?>">
+    <link rel="stylesheet" href="fe/assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="fe/assets/img/logo_rounded.png">
 </head>
 <body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
@@ -123,10 +138,7 @@ if (isset($_SESSION['user_id'])) {
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="text-center py-5">
         <div class="hero-section">
-            <i class="fas fa-fish fa-5x text-primary mb-4"></i>
-            <h1 class="display-4 fw-bold text-primary">Welcome to FISHINGLORY</h1>
-            <p class="lead fs-4">The ultimate fishing community and marketplace.</p>
-            <p class="mb-4">Connect with anglers, share catches, track weather, and explore fishing spots.</p>
+            <h2 class="fw-bold text-primary mb-3">Welcome to FISHINGLORY</h2>
             <div class="d-flex justify-content-center gap-3">
                 <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg">
                     <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
@@ -352,9 +364,9 @@ if (isset($_SESSION['user_id'])) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="fe/assets/js/avatar_helper.js?v=<?= time() ?>"></script>
-<script src="fe/assets/js/app.js?v=<?= time() ?>"></script>
-<script src="fe/assets/js/index.js?v=<?= time() ?>"></script>
+<script src="fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="fe/assets/js/index.js?v=<?= assetVersion('fe/assets/js/index.js') ?>"></script>
 
 <!-- Footer -->
 <footer class="footer">

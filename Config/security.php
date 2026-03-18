@@ -16,6 +16,15 @@ function getCsrfField() {
     return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token) . '">';
 }
 
+function assetVersion(string $relativePath): string {
+    $relativePath = ltrim($relativePath, "/\\");
+    $fullPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . $relativePath;
+    if (is_file($fullPath)) {
+        return (string) filemtime($fullPath);
+    }
+    return (string) time();
+}
+
 // Rate Limiting
 function checkRateLimit($key, $maxAttempts = 5, $timeWindow = 900) {
     if (!isset($_SESSION['rate_limit'])) {
@@ -153,10 +162,17 @@ function setSecurityHeaders() {
 // Session Security
 function secureSession() {
     if (session_status() === PHP_SESSION_NONE) {
+        $isHttps = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (!empty($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443')
+        );
+
+        ini_set('session.use_only_cookies', 1);
         ini_set('session.cookie_httponly', 1);
-        ini_set('session.cookie_secure', 1);
+        ini_set('session.cookie_secure', $isHttps ? '1' : '0');
         ini_set('session.use_strict_mode', 1);
-        ini_set('session.cookie_samesite', 'Strict');
+        // Lax works well for typical web navigation flows while still mitigating CSRF in many cases.
+        ini_set('session.cookie_samesite', 'Lax');
         session_start();
     }
 }

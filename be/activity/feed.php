@@ -1,5 +1,6 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
 require '../../config/database.php';
 require '../../config/weather_api.php'; // Load unified weather functions
 

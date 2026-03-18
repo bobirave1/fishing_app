@@ -1,25 +1,40 @@
 <?php
-session_start();
-require '../../config/database.php';
 require '../../config/security.php';
-require '../../config/avatar_helper.php';
-require '../../config/languages.php'; // Add language support
+secureSession();
 setSecurityHeaders();
 
-// Set default language to Bulgarian for diploma project
+require '../../config/database.php';
+require '../../config/avatar_helper.php';
+// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
 if (!isset($_SESSION['lang'])) {
     $_SESSION['lang'] = 'bg';
 }
+require '../../config/languages.php'; // Add language support
 
 // Handle language/theme switches via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
-        $_SESSION['lang'] = $_POST['lang'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    $csrf = $_POST['csrf_token'] ?? '';
+    if (!verifyCsrfToken($csrf)) {
+        http_response_code(400);
+        die('Invalid CSRF token');
+    }
+
+    $action = $_POST['action'];
+    if ($action === 'switch_lang' && isset($_POST['lang'])) {
+        $newLang = (string) $_POST['lang'];
+        if (in_array($newLang, ['bg', 'en'], true)) {
+            $_SESSION['lang'] = $newLang;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
-    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
-        $_SESSION['theme'] = $_POST['theme'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    }
+
+    if ($action === 'switch_theme' && isset($_POST['theme'])) {
+        $newTheme = (string) $_POST['theme'];
+        if (in_array($newTheme, ['light', 'dark'], true)) {
+            $_SESSION['theme'] = $newTheme;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
     }
 }
@@ -57,10 +72,10 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/profile.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= assetVersion('fe/assets/css/navbar.css') ?>">
+    <link rel="stylesheet" href="../assets/css/profile.css?v=<?= assetVersion('fe/assets/css/profile.css') ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
 <body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
@@ -203,8 +218,8 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/avatar_helper.js"></script>
-<script src="../assets/js/edit_profile.js?v=<?= time() ?>"></script>
+<script src="../assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../assets/js/edit_profile.js?v=<?= assetVersion('fe/assets/js/edit_profile.js') ?>"></script>
 
 </body>
 </html>

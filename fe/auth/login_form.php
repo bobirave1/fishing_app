@@ -1,7 +1,7 @@
 <?php
-session_start();
 require_once '../../config/security.php';
 secureSession();
+setSecurityHeaders();
 
 // If already logged in, redirect to index
 if (isset($_SESSION['user_id'])) {
@@ -17,8 +17,8 @@ if (isset($_SESSION['user_id'])) {
     <title>Login - FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/auth_forms.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="../assets/css/auth_forms.css?v=<?= assetVersion('fe/assets/css/auth_forms.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
 <body>

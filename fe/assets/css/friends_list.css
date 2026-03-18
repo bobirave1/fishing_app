@@ -4,7 +4,7 @@
 
 .friends-page,
 .requests-page {
-    background: #F9FAFB;
+    background-color: var(--bg-primary);
     padding-top: 72px !important;
     min-height: 100vh;
 }

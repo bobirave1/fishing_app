@@ -3,7 +3,7 @@
    ============================================ */
 
 body {
-    background: var(--bg-primary);
+    background-color: var(--bg-primary);
     padding-top: 72px !important;
 }
 

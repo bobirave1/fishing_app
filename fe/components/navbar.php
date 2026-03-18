@@ -2,6 +2,7 @@
 // Get user avatar for navbar
 require_once dirname(__DIR__, 2) . '/config/avatar_helper.php';
 require_once dirname(__DIR__, 2) . '/config/languages.php'; // Add language support
+require_once dirname(__DIR__, 2) . '/config/security.php';
 
 if (isset($_SESSION['user_id'])) {
     $stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
@@ -198,5 +199,5 @@ if (isset($_SESSION['user_id'])) {
 </nav>
 
 <?php if (isset($_SESSION['user_id'])): ?>
-<script src="<?= $basePath ?>fe/assets/js/navbar.js?v=<?= time() ?>"></script>
+<script src="<?= $basePath ?>fe/assets/js/navbar.js?v=<?= assetVersion('fe/assets/js/navbar.js') ?>"></script>
 <?php endif; ?>

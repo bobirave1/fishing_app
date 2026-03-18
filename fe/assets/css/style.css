@@ -11,25 +11,25 @@
     --accent-warning: #F59E0B;          /* Orange for warnings */
     --accent-danger: #EF4444;           /* Red for errors */
     
-    /* Background Colors - Teal Theme */
-    --bg-primary: #EBF4F6;              /* Very Light Teal - main background */
-    --bg-secondary: #F0F9FA;            /* Light Teal background */
-    --bg-tertiary: #D1E7E7;             /* Medium Light Teal */
-    --bg-card: #FFFFFF;                /* White for cards */
-    --bg-sidebar: #F0F9FA;             /* Light Teal for sidebars */
-    --bg-post: #FEFEFE;                /* Off-White for posts */
+    /* Background Colors - Ocean (Template) */
+    --bg-primary: #04161D;              /* Deep ocean */
+    --bg-secondary: rgba(4, 22, 29, 0.75);
+    --bg-tertiary: rgba(8, 131, 149, 0.18);
+    --bg-card: rgba(0, 0, 0, 0.35);    /* Glass surfaces */
+    --bg-sidebar: rgba(0, 0, 0, 0.28);
+    --bg-post: rgba(0, 0, 0, 0.30);
     
     /* Text Colors */
-    --text-primary: #0F172A;            /* Very Dark Blue */
-    --text-secondary: #334155;          /* Dark Gray-Blue */
-    --text-tertiary: #64748B;           /* Medium Gray-Blue */
-    --border-color: #B8D4D4;            /* Light Teal Border */
+    --text-primary: #ECFBFF;            /* Near-white for dark UI */
+    --text-secondary: rgba(236, 251, 255, 0.78);
+    --text-tertiary: rgba(236, 251, 255, 0.62);
+    --border-color: rgba(255, 255, 255, 0.16);
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #088395 0%, #7AB2B2 100%);
     --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    --gradient-sidebar: linear-gradient(135deg, #F0F9FA 0%, #EBF4F6 100%);
-    --gradient-post: linear-gradient(135deg, #FEFEFE 0%, #F8FAFC 100%);
+    --gradient-sidebar: linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(8,131,149,0.12) 100%);
+    --gradient-post: linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(8,131,149,0.14) 100%);
     
     /* Shadows - Professional */
     --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -77,17 +77,6 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
-    --text-secondary: #D1D5DB;          /* Lighter Gray */
-    --text-tertiary: #9CA3AF;           /* Medium Light Gray */
-    --border-color: #4B5563;            /* Dark Border */
-    
-    /* Adjust shadows for dark mode */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-}
 
 /* Global Styles */
 * {
@@ -100,6 +89,12 @@ html {
 
 body {
     background-color: var(--bg-primary);
+    background-image:
+        linear-gradient(120deg, rgba(0,0,0,0.75) 0%, rgba(8,131,149,0.25) 45%, rgba(0,0,0,0.70) 100%),
+        url('../img/fishinglory_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
@@ -129,11 +124,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glass Card - Modern Design */
 .glass-card {
-    background: var(--bg-primary);
+    background: rgba(0, 0, 0, 0.38);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
+    backdrop-filter: blur(12px);
 }
 
 .glass-card:hover {
@@ -157,7 +153,7 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--primary-color);
 }
 
-/* Hero Section - Professional */
+/* Hero Section - Professional (guest homepage) */
 .hero-section {
     background: var(--gradient-primary);
     border-radius: var(--radius-xl);
@@ -165,6 +161,7 @@ h1, h2, h3, h4, h5, h6 {
     color: white;
     text-align: center;
     box-shadow: var(--shadow-lg);
+    margin: 0 auto;
 }
 
 .hero-section h1 {
@@ -173,16 +170,189 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem;
 }
 
+.hero-section h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 1.25rem;
+}
+
 .hero-section p {
     font-size: 1.25rem;
     opacity: 0.95;
     margin-bottom: 2rem;
 }
 
+/* Landing Hero – Canva-inspired full-screen section */
+.landing-hero {
+    position: relative;
+    min-height: calc(100vh - 72px);
+    margin-top: -40px;
+    border-radius: 32px;
+    overflow: hidden;
+    background-image: url('../img/fishinglory_bg.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 64px;
+    color: #ffffff;
+}
+
+.landing-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
+    z-index: 0;
+}
+
+.landing-hero__nav {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.landing-hero__nav-left {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.landing-hero__logo {
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.landing-hero__links a {
+    margin-right: 24px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.landing-hero__links a:last-child {
+    margin-right: 0;
+}
+
+.landing-hero__links a.active,
+.landing-hero__links a:hover {
+    color: #ffffff;
+}
+
+.landing-hero__nav-right {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.landing-hero__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 48px;
+    padding-bottom: 40px;
+}
+
+.landing-hero__copy {
+    max-width: 560px;
+}
+
+.landing-hero__eyebrow {
+    font-size: 0.95rem;
+    max-width: 420px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 1.5rem;
+}
+
+.landing-hero__title {
+    margin: 0 0 1.5rem;
+}
+
+.landing-hero__title-outline {
+    font-size: clamp(3.5rem, 9vw, 6rem);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    display: inline-block;
+    padding: 0.1em 0;
+    -webkit-text-stroke: 3px #ffffff;
+    color: transparent;
+}
+
+.landing-hero__description {
+    font-size: 1rem;
+    line-height: 1.8;
+    max-width: 480px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+}
+
+.landing-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+}
+
+.landing-hero__primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 32px;
+    border-radius: 999px;
+    background: #000000;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+}
+
+.landing-hero__primary-btn:hover {
+    background: #111827;
+    color: #ffffff;
+}
+
+.landing-hero__secondary-link {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.landing-hero__secondary-link:hover {
+    color: #ffffff;
+}
+
+.landing-hero__next {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.landing-hero__next:hover {
+    background: rgba(0, 0, 0, 0.85);
+}
+
 /* Footer - Professional */
 .footer {
-    background: var(--text-primary);
-    color: var(--bg-secondary);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
     padding: 3rem 0 1rem;
     margin-top: 4rem;
     border-top: 1px solid var(--border-color);
@@ -196,26 +366,27 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Bootstrap Overrides */
 .btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
+    background: rgba(0, 0, 0, 0.72);
+    border-color: rgba(255, 255, 255, 0.22);
     font-weight: 600;
-    border-radius: var(--radius-md);
+    border-radius: 999px;
     padding: 10px 24px;
     transition: all var(--transition-fast);
+    color: #fff;
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.35);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
 
 .btn-success {
-    background: var(--accent-success);
-    border-color: var(--accent-success);
+    background: rgba(16, 185, 129, 0.92);
+    border-color: rgba(16, 185, 129, 0.92);
     font-weight: 600;
-    border-radius: var(--radius-md);
+    border-radius: 999px;
     transition: all var(--transition-fast);
 }
 
@@ -271,4 +442,70 @@ h1, h2, h3, h4, h5, h6 {
     .hero-section h1 {
         font-size: 4rem;
     }
+}
+
+/* ============================================
+   Canva Ocean Theme Overrides (Global)
+   ============================================ */
+
+/* Shared surfaces */
+.sidebar-card,
+.create-post-modern,
+.modern-post,
+.profile-main-card,
+.profile-section-card,
+.messages-container,
+.conversation-list,
+.conversation-thread,
+.activity-card,
+.friend-card,
+.request-card,
+.login-card,
+.register-card,
+.glass-card {
+    background: rgba(0, 0, 0, 0.38) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* Make the post/message internals readable */
+.post-header,
+.post-content,
+.post-actions,
+.comment-section,
+.message-input-area,
+.conversation-list-header,
+.activity-header-section,
+.profile-section-card,
+.friends-page .page-title,
+.requests-page .page-title {
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Outline heading vibe (template-like) */
+h1, h2, h3 {
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Secondary buttons should match dark template */
+.btn-secondary,
+.btn-outline-primary,
+.btn-outline-success {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+}
+
+/* If any page sets pure white backgrounds for cards, override them */
+.modern-post,
+.profile-main-card,
+.profile-section-card,
+.messages-container,
+.activity-card,
+.friend-card,
+.request-card {
+    background-image: none !important;
 }

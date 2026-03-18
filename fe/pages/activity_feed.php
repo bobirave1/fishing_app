@@ -1,23 +1,40 @@
 <?php
-session_start();
+require '../../config/security.php';
+secureSession();
+setSecurityHeaders();
+
 require '../../config/database.php';
 require '../../config/avatar_helper.php';
-require '../../config/languages.php'; // Add language support
-
-// Set default language to Bulgarian for diploma project
+// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
 if (!isset($_SESSION['lang'])) {
     $_SESSION['lang'] = 'bg';
 }
+require '../../config/languages.php'; // Add language support
 
 // Handle language/theme switches via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'switch_lang' && isset($_POST['lang'])) {
-        $_SESSION['lang'] = $_POST['lang'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    $csrf = $_POST['csrf_token'] ?? '';
+    if (!verifyCsrfToken($csrf)) {
+        http_response_code(400);
+        die('Invalid CSRF token');
+    }
+
+    $action = $_POST['action'];
+    if ($action === 'switch_lang' && isset($_POST['lang'])) {
+        $newLang = (string) $_POST['lang'];
+        if (in_array($newLang, ['bg', 'en'], true)) {
+            $_SESSION['lang'] = $newLang;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
-    } elseif ($_POST['action'] === 'switch_theme' && isset($_POST['theme'])) {
-        $_SESSION['theme'] = $_POST['theme'];
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+    }
+
+    if ($action === 'switch_theme' && isset($_POST['theme'])) {
+        $newTheme = (string) $_POST['theme'];
+        if (in_array($newTheme, ['light', 'dark'], true)) {
+            $_SESSION['theme'] = $newTheme;
+        }
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
         exit;
     }
 }
@@ -41,15 +58,15 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
     <title>Fish Activity - FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/activity.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="../assets/css/components.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="../assets/css/navbar.css?v=<?= assetVersion('fe/assets/css/navbar.css') ?>">
+    <link rel="stylesheet" href="../assets/css/activity.css?v=<?= assetVersion('fe/assets/css/activity.css') ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../components/navbar.php'; ?>
 
@@ -171,9 +188,9 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/avatar_helper.js?v=<?= time() ?>"></script>
-<script src="../assets/js/app.js?v=<?= time() ?>"></script>
-<script src="../assets/js/activity_feed.js?v=<?= time() ?>"></script>
+<script src="../assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../assets/js/activity_feed.js?v=<?= assetVersion('fe/assets/js/activity_feed.js') ?>"></script>
 
 </body>
 </html>
