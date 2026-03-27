@@ -95,7 +95,7 @@ if ($action === 'add') {
         'username' => $user['username'],
         'avatar' => $user['avatar_url'] ?? getDefaultAvatarPath(),
         'content' => htmlspecialchars($content),
-        'created_at' => date('M d, Y H:i')
+        'created_at' => date('c')
     ]));
     
 } else if ($action === 'get') {
@@ -112,6 +112,13 @@ if ($action === 'add') {
     ");
     $stmt->execute([$postId]);
     $comments = $stmt->fetchAll();
+    
+    // Ensure consistent ISO timestamps for front-end localization/parsing
+    foreach ($comments as &$c) {
+        if (!empty($c['created_at'])) {
+            $c['created_at'] = date('c', strtotime($c['created_at']));
+        }
+    }
     
     exit(json_encode([
         'success' => true,

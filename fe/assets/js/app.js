@@ -860,15 +860,35 @@ document.addEventListener('click', function(e) {
 // ==================== UTILITIES ====================
 function formatDate(dateString) {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+
     const now = new Date();
     const diff = now - date;
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    
-    if (days > 0) return days + 'd ago';
-    if (hours > 0) return hours + 'h ago';
-    if (minutes > 0) return minutes + 'm ago';
-    return 'just now';
+
+    const lang = (document.documentElement.lang || '').toLowerCase();
+    const isBg = lang.startsWith('bg');
+
+    if (days > 0) return isBg ? `преди ${days} дни` : `${days}d ago`;
+    if (hours > 0) return isBg ? `преди ${hours} часа` : `${hours}h ago`;
+    if (minutes > 0) return isBg ? `преди ${minutes} мин` : `${minutes}m ago`;
+    return isBg ? 'току-що' : 'just now';
+}
+
+function localizeIsoDates() {
+    document.querySelectorAll('[data-iso-date]').forEach(el => {
+        const iso = el.getAttribute('data-iso-date');
+        if (!iso) return;
+        el.textContent = formatDate(iso);
+    });
+}
+
+// If DOM is already ready, run immediately (scripts can be loaded at end of body)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', localizeIsoDates);
+} else {
+    localizeIsoDates();
 }

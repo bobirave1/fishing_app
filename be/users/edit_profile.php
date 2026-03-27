@@ -51,19 +51,11 @@ $profileExists = $stmt->fetch();
 // Handle avatar upload
 $avatarPath = null;
 if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === 0) {
-    // Validate file size (max 5MB)
-    if ($_FILES['avatar']['size'] > 5 * 1024 * 1024) {
+    $validationErrors = validateImageUpload($_FILES['avatar']);
+    if (!empty($validationErrors)) {
         http_response_code(400);
         header('Content-Type: application/json');
-        exit(json_encode(['error' => 'Avatar file is too large (max 5MB)']));
-    }
-
-    // Validate file type
-    $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!in_array($_FILES['avatar']['type'], $allowed)) {
-        http_response_code(400);
-        header('Content-Type: application/json');
-        exit(json_encode(['error' => 'Invalid avatar format']));
+        exit(json_encode(['error' => implode(', ', $validationErrors)]));
     }
 
     // Get current avatar to delete old one

@@ -8,35 +8,9 @@ if (!isset($_SESSION['lang'])) {
 require 'config/database.php';
 require 'config/avatar_helper.php';
 require 'config/languages.php'; // Add language support
+require 'config/actions.php';
 setSecurityHeaders();
-
-// Handle language/theme switches via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $csrf = $_POST['csrf_token'] ?? '';
-    if (!verifyCsrfToken($csrf)) {
-        http_response_code(400);
-        die('Invalid CSRF token');
-    }
-
-    $action = $_POST['action'];
-    if ($action === 'switch_lang' && isset($_POST['lang'])) {
-        $newLang = (string) $_POST['lang'];
-        if (in_array($newLang, ['bg', 'en'], true)) {
-            $_SESSION['lang'] = $newLang;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-
-    if ($action === 'switch_theme' && isset($_POST['theme'])) {
-        $newTheme = (string) $_POST['theme'];
-        if (in_array($newTheme, ['light', 'dark'], true)) {
-            $_SESSION['theme'] = $newTheme;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-}
+handleGlobalActions();
 
 $posts = [];
 
@@ -198,14 +172,15 @@ if (isset($_SESSION['user_id'])) {
                     </h6>
                     <div class="post-timestamp d-flex align-items-center justify-content-between">
                         <span>
-                            <i class="fas fa-clock"></i> <?= date('M d, Y \a\t g:i A', strtotime($p['created_at'])) ?>
+                            <i class="fas fa-clock"></i>
+                            <span class="post-time-ago" data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"></span>
                         </span>
                         <span class="badge bg-light text-dark ms-3" style="font-size: 0.85rem;">
                             <?php 
                             $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
                             echo $icons[$p['visibility']] ?? '🌍';
                             ?>
-                            <?= ucfirst($p['visibility']) ?>
+                            <?= __($p['visibility']) ?>
                         </span>
                     </div>
                 </div>
@@ -258,12 +233,12 @@ if (isset($_SESSION['user_id'])) {
             </button>
             <button class="action-btn" onclick="toggleComments(<?= $p['id'] ?>)">
                 <i class="far fa-comment"></i> 
-                <span id="comment-count-<?= $p['id'] ?>"><?= $p['comment_count'] ?></span> Comments
+                <span id="comment-count-<?= $p['id'] ?>"><?= $p['comment_count'] ?></span> <?= __('comments') ?>
             </button>
             <?php if ($_SESSION['user_id'] != $p['user_id']): ?>
             <button class="action-btn" id="follow-btn-<?= $p['user_id'] ?>" 
                     onclick="toggleFollow(<?= $p['user_id'] ?>, this)">
-                <i class="fas fa-user-plus"></i> Follow
+                <i class="fas fa-user-plus"></i> <?= __('follow') ?>
             </button>
             <?php endif; ?>
         </div>
@@ -323,7 +298,7 @@ if (isset($_SESSION['user_id'])) {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editPostModalLabel">
-                    <i class="fas fa-edit"></i> Edit Post
+                    <i class="fas fa-edit"></i> <?= __('edit_post') ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -331,9 +306,9 @@ if (isset($_SESSION['user_id'])) {
                 <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
                 <button type="button" class="btn btn-primary" onclick="submitEditForm()">
-                    <i class="fas fa-save"></i> Save Changes
+                    <i class="fas fa-save"></i> <?= __('save') ?>
                 </button>
             </div>
         </div>
@@ -346,7 +321,7 @@ if (isset($_SESSION['user_id'])) {
         <div class="modal-content modal-danger">
             <div class="modal-header">
                 <h5 class="modal-title" id="deletePostModalLabel">
-                    <i class="fas fa-trash"></i> Delete Post
+                    <i class="fas fa-trash"></i> <?= __('delete_post') ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -354,7 +329,7 @@ if (isset($_SESSION['user_id'])) {
                 <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
                 <button type="button" class="btn btn-danger" onclick="confirmDeletePost()">
                     <i class="fas fa-trash-alt"></i> Delete Permanently
                 </button>

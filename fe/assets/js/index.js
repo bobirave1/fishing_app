@@ -101,7 +101,8 @@ document.getElementById('deletePostModal').addEventListener('hidden.bs.modal', f
 });
 
 // Weather widget with improved error handling
-if (navigator.geolocation) {
+const weatherInfoEl = document.getElementById('weather-info');
+if (weatherInfoEl && navigator.geolocation) {
     console.log('Geolocation supported - requesting position...');
     
     navigator.geolocation.getCurrentPosition(function(position) {
@@ -109,9 +110,52 @@ if (navigator.geolocation) {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         
-        document.getElementById('weather-info').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading weather...</p>';
+        weatherInfoEl.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading weather...</p>';
         
-        fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}`)
+        const lang = document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith('bg') ? 'bg' : 'en';
+        const isBg = lang === 'bg';
+        const ui = isBg ? {
+            temperature: 'Температура',
+            wind: 'Вятър',
+            humidity: 'Влажност',
+            visibility: 'Видимост',
+            pressure: 'Налягане',
+            seaLevel: 'Ниво на морето',
+            fishingTip: 'Съвет за риболов',
+            greatTip: 'Отличен ден за риболов! Ниски скорости на вятъра са идеални.',
+            moderateTip: 'Умерен вятър - все още подходящ за повечето видове риболов.',
+            highTip: 'Силен вятър може да затрудни (или да направи по-рисков) риболова.',
+            errorTitle: 'Грешка при зареждане на времето',
+            retry: 'Опритай пак',
+            locationDenied: 'Достъпът до локация беше отказан. Включете разрешение в настройките на браузъра.',
+            positionUnavailable: 'Информацията за местоположението не е налична. Проверете настройките на устройството.',
+            timeout: 'Заявката за местоположение изтече. Опитайте отново.',
+            unknownLocation: 'Възникна неизвестна грешка при получаване на местоположение.',
+            locationAccessNeeded: 'Достъп до местоположението',
+            browserNoGeo: 'Вашият браузър не поддържа геолокация.',
+            browserHint: 'Моля, използвайте модерен браузър като Chrome, Firefox или Edge.',
+        } : {
+            temperature: 'Temperature',
+            wind: 'Wind',
+            humidity: 'Humidity',
+            visibility: 'Visibility',
+            pressure: 'Pressure',
+            seaLevel: 'Sea Level',
+            fishingTip: 'Fishing Tip',
+            greatTip: 'Great day for fishing! Low wind speeds are ideal.',
+            moderateTip: 'Moderate wind, still suitable for most fishing activities.',
+            highTip: 'High wind speeds may make fishing challenging or unsafe.',
+            errorTitle: 'Error loading weather',
+            retry: 'Retry',
+            locationDenied: 'Location access was denied. Please enable location services in your browser settings.',
+            positionUnavailable: 'Location information is unavailable. Please check your device settings.',
+            timeout: 'Location request timed out. Please try again.',
+            unknownLocation: 'An unknown error occurred while getting your location.',
+            locationAccessNeeded: 'Location Access Needed',
+            browserNoGeo: "Your browser doesn't support geolocation.",
+            browserHint: 'Please use a modern browser like Chrome, Firefox, or Edge.',
+        };
+        fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}&lang=${encodeURIComponent(lang)}`)
             .then(response => {
                 console.log('Weather API response status:', response.status);
                 return response.json();
@@ -119,21 +163,21 @@ if (navigator.geolocation) {
             .then(data => {
                 console.log('Weather data:', data);
                 if (data.error) {
-                    document.getElementById('weather-info').innerHTML = `
+                    weatherInfoEl.innerHTML = `
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle"></i> ${data.error}
                             <button class="btn btn-sm btn-outline-primary mt-2 d-block" onclick="location.reload()">
-                                <i class="fas fa-sync"></i> Retry
+                                <i class="fas fa-sync"></i> ${ui.retry}
                             </button>
                         </div>
                     `;
                 } else {
                     let fishingTip = '';
-                    if (data.wind_speed < 5) fishingTip = 'Great day for fishing! Low wind speeds are ideal.';
-                    else if (data.wind_speed < 10) fishingTip = 'Moderate wind, still suitable for most fishing activities.';
-                    else fishingTip = 'High wind speeds may make fishing challenging or unsafe.';
+                    if (data.wind_speed < 5) fishingTip = ui.greatTip;
+                    else if (data.wind_speed < 10) fishingTip = ui.moderateTip;
+                    else fishingTip = ui.highTip;
 
-                    document.getElementById('weather-info').innerHTML = `
+                    weatherInfoEl.innerHTML = `
                         <div class="row text-center">
                             <div class="col-12 mb-3">
                                 <h5><i class="fas fa-map-marker-alt"></i> ${data.location}${data.country ? ', ' + data.country : ''}</h5>
@@ -141,18 +185,18 @@ if (navigator.geolocation) {
                                 <p class="mb-0 fs-5">${data.description}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><i class="fas fa-thermometer-half text-danger"></i> <strong>Temperature:</strong> ${data.temperature}°C</p>
-                                <p><i class="fas fa-wind text-info"></i> <strong>Wind:</strong> ${data.wind_speed} m/s (${data.wind_direction}°)</p>
-                                <p><i class="fas fa-tint text-primary"></i> <strong>Humidity:</strong> ${data.humidity}%</p>
+                                <p><i class="fas fa-thermometer-half text-danger"></i> <strong>${ui.temperature}:</strong> ${data.temperature}°C</p>
+                                <p><i class="fas fa-wind text-info"></i> <strong>${ui.wind}:</strong> ${data.wind_speed} m/s (${data.wind_direction}°)</p>
+                                <p><i class="fas fa-tint text-primary"></i> <strong>${ui.humidity}:</strong> ${data.humidity}%</p>
                             </div>
                             <div class="col-md-6">
-                                <p><i class="fas fa-eye text-success"></i> <strong>Visibility:</strong> ${data.visibility} km</p>
-                                <p><i class="fas fa-gauge text-warning"></i> <strong>Pressure:</strong> ${data.pressure} hPa</p>
-                                ${data.sea_level ? `<p><i class="fas fa-water"></i> <strong>Sea Level:</strong> ${data.sea_level} hPa</p>` : ''}
+                                <p><i class="fas fa-eye text-success"></i> <strong>${ui.visibility}:</strong> ${data.visibility} km</p>
+                                <p><i class="fas fa-gauge text-warning"></i> <strong>${ui.pressure}:</strong> ${data.pressure} hPa</p>
+                                ${data.sea_level ? `<p><i class="fas fa-water"></i> <strong>${ui.seaLevel}:</strong> ${data.sea_level} hPa</p>` : ''}
                             </div>
                             <div class="col-12 mt-3">
                                 <div class="alert alert-success mb-0">
-                                    <i class="fas fa-fish"></i> <strong>Fishing Tip:</strong> ${fishingTip}
+                                    <i class="fas fa-fish"></i> <strong>${ui.fishingTip}:</strong> ${fishingTip}
                                 </div>
                             </div>
                         </div>
@@ -161,12 +205,12 @@ if (navigator.geolocation) {
             })
             .catch((error) => {
                 console.error('Weather fetch error:', error);
-                document.getElementById('weather-info').innerHTML = `
+                weatherInfoEl.innerHTML = `
                     <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i> <strong>Error loading weather</strong><br>
+                        <i class="fas fa-exclamation-circle"></i> <strong>${ui.errorTitle}</strong><br>
                         ${error.message || 'Network error'}
                         <button class="btn btn-sm btn-outline-primary mt-2 d-block" onclick="location.reload()">
-                            <i class="fas fa-sync"></i> Retry
+                            <i class="fas fa-sync"></i> ${ui.retry}
                         </button>
                     </div>
                 `;
@@ -177,25 +221,25 @@ if (navigator.geolocation) {
         let errorMessage = '';
         switch(error.code) {
             case error.PERMISSION_DENIED:
-                errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+                errorMessage = ui.locationDenied;
                 break;
             case error.POSITION_UNAVAILABLE:
-                errorMessage = 'Location information is unavailable. Please check your device settings.';
+                errorMessage = ui.positionUnavailable;
                 break;
             case error.TIMEOUT:
-                errorMessage = 'Location request timed out. Please try again.';
+                errorMessage = ui.timeout;
                 break;
             default:
-                errorMessage = 'An unknown error occurred while getting your location.';
+                errorMessage = ui.unknownLocation;
         }
         
-        document.getElementById('weather-info').innerHTML = `
+        weatherInfoEl.innerHTML = `
             <div class="alert alert-warning">
                 <i class="fas fa-info-circle"></i> 
-                <strong>Location Access Needed</strong><br>
+                <strong>${ui.locationAccessNeeded}</strong><br>
                 ${errorMessage}
                 <button class="btn btn-sm btn-primary mt-2 d-block" onclick="location.reload()">
-                    <i class="fas fa-redo"></i> Try Again
+                    <i class="fas fa-redo"></i> ${ui.retry}
                 </button>
             </div>
         `;
@@ -204,12 +248,12 @@ if (navigator.geolocation) {
         timeout: 10000,
         maximumAge: 300000 // Cache for 5 minutes
     });
-} else {
+} else if (weatherInfoEl) {
     console.error('Geolocation not supported');
-    document.getElementById('weather-info').innerHTML = `
+    weatherInfoEl.innerHTML = `
         <div class="alert alert-secondary">
-            <i class="fas fa-times-circle"></i> Your browser doesn't support geolocation.
-            <br><small class="text-muted">Please use a modern browser like Chrome, Firefox, or Edge.</small>
+            <i class="fas fa-times-circle"></i> ${ui.browserNoGeo}
+            <br><small class="text-muted">${ui.browserHint}</small>
         </div>
     `;
 }

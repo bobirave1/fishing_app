@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;600;700;800&display=swap');
+
 :root {
     /* Primary Colors - Teal Oceanic Theme */
     --primary-color: #088395;           /* Medium Teal - main brand color */
@@ -96,7 +98,7 @@ body {
     background-position: center;
     background-attachment: fixed;
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     transition: background-color var(--transition-base);
@@ -114,6 +116,7 @@ a:hover {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     font-weight: 600;
     line-height: 1.2;
 }

@@ -93,7 +93,7 @@ if ($action === 'send') {
     exit(json_encode([
         'success' => true,
         'message_id' => $messageId,
-        'created_at' => date('M d, Y H:i'),
+        'created_at' => date('c'),
         'attachments' => $attachmentUrls
     ]));
     
@@ -124,6 +124,13 @@ if ($action === 'send') {
         WHERE receiver_id = ? AND sender_id = ? AND is_read = 0
     ");
     $stmt->execute([$userId, $receiverId]);
+    
+    // Ensure consistent ISO timestamps for front-end localization/parsing
+    foreach ($messages as &$m) {
+        if (!empty($m['created_at'])) {
+            $m['created_at'] = date('c', strtotime($m['created_at']));
+        }
+    }
     
     exit(json_encode([
         'success' => true,

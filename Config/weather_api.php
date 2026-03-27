@@ -15,16 +15,19 @@ if (!function_exists('getenv')) {
  * Get weather data from OpenWeatherMap API or fallback
  * @param float $lat Latitude
  * @param float $lon Longitude
+ * @param string $lang UI/API language code: 'bg' or 'en'
  * @return array Weather data
  */
-function getWeatherData($lat, $lon) {
+function getWeatherData($lat, $lon, $lang = 'en') {
+    $lang = ($lang === 'bg') ? 'bg' : 'en';
+
     // Get API key from environment
     $apiKey = getenv('OPENWEATHER_API_KEY');
     
     // Validate coordinates
     if (!is_numeric($lat) || !is_numeric($lon)) {
         error_log("Invalid coordinates: lat={$lat}, lon={$lon}");
-        return getWeatherDataFallback();
+        return getWeatherDataFallback($lang);
     }
     
     // Check if API key is configured
@@ -35,11 +38,11 @@ function getWeatherData($lat, $lon) {
     
     if (empty($apiKey)) {
         error_log("OpenWeatherMap API key not configured. Using fallback data.");
-        return getWeatherDataFallback();
+        return getWeatherDataFallback($lang);
     }
     
     // Build API URL
-    $url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&appid={$apiKey}&units=metric&lang=en";
+    $url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&appid={$apiKey}&units=metric&lang={$lang}";
     
     // Make API request with cURL
     $ch = curl_init();
@@ -57,13 +60,13 @@ function getWeatherData($lat, $lon) {
     // Check for cURL errors
     if ($error) {
         error_log("OpenWeatherMap API cURL error: {$error}");
-        return getWeatherDataFallback();
+        return getWeatherDataFallback($lang);
     }
     
     // Check HTTP status code
     if ($httpCode !== 200) {
         error_log("OpenWeatherMap API returned HTTP {$httpCode}: {$response}");
-        return getWeatherDataFallback();
+        return getWeatherDataFallback($lang);
     }
     
     // Parse JSON response
@@ -72,7 +75,7 @@ function getWeatherData($lat, $lon) {
     // Validate API response
     if (!$data || !isset($data['main']) || !isset($data['weather'])) {
         error_log("Invalid OpenWeatherMap API response: " . substr($response, 0, 200));
-        return getWeatherDataFallback();
+        return getWeatherDataFallback($lang);
     }
     
     // Extract weather data
@@ -87,7 +90,8 @@ function getWeatherData($lat, $lon) {
         'clouds' => $data['clouds']['all'] ?? 0,
         'weather' => $data['weather'][0]['main'] ?? 'Clear',
         'weather_description' => $data['weather'][0]['description'] ?? 'clear sky',
-        'description' => ucfirst($data['weather'][0]['description'] ?? 'clear sky'),
+        // OpenWeather already localizes description; avoid ucfirst in Bulgarian.
+        'description' => $data['weather'][0]['description'] ?? ($lang === 'bg' ? 'ясно небе' : 'clear sky'),
         'visibility' => isset($data['visibility']) ? round($data['visibility'] / 1000, 1) : 10,
         'sunrise' => $data['sys']['sunrise'] ?? null,
         'sunset' => $data['sys']['sunset'] ?? null,
@@ -105,7 +109,9 @@ function getWeatherData($lat, $lon) {
  * Fallback function for simulated weather data
  * @return array Simulated weather data
  */
-function getWeatherDataFallback() {
+function getWeatherDataFallback($lang = 'en') {
+    $lang = ($lang === 'bg') ? 'bg' : 'en';
+
     // Generate realistic weather data based on current season and time
     $month = (int)date('n');
     $hour = (int)date('H');
@@ -134,12 +140,21 @@ function getWeatherDataFallback() {
     $clouds = rand(0, 100);
     
     $weatherTypes = ['Clear', 'Clouds', 'Rain', 'Drizzle'];
-    $weatherDescriptions = [
-        'Clear' => 'clear sky',
-        'Clouds' => 'scattered clouds',
-        'Rain' => 'light rain',
-        'Drizzle' => 'light drizzle'
-    ];
+    if ($lang === 'bg') {
+        $weatherDescriptions = [
+            'Clear' => 'ясно небе',
+            'Clouds' => 'разпръснати облаци',
+            'Rain' => 'слаб дъжд',
+            'Drizzle' => 'слаб дъжд (ръмеж)'
+        ];
+    } else {
+        $weatherDescriptions = [
+            'Clear' => 'clear sky',
+            'Clouds' => 'scattered clouds',
+            'Rain' => 'light rain',
+            'Drizzle' => 'light drizzle'
+        ];
+    }
     $weatherIcons = [
         'Clear' => $hour >= 6 && $hour <= 18 ? '01d' : '01n',
         'Clouds' => '03d',
@@ -160,7 +175,7 @@ function getWeatherDataFallback() {
         'clouds' => $clouds,
         'weather' => $weather,
         'weather_description' => $weatherDescriptions[$weather],
-        'description' => ucfirst($weatherDescriptions[$weather]),
+        'description' => $weatherDescriptions[$weather],
         'visibility' => rand(5, 10),
         'sunrise' => strtotime('06:30'),
         'sunset' => strtotime('18:30'),

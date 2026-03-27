@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../config/database.php';
 
 $lat = $_GET['lat'] ?? null;
 $lon = $_GET['lon'] ?? null;
+$lang = $_GET['lang'] ?? 'en';
 
 if (!$lat || !$lon) {
     echo json_encode(['error' => 'Latitude and longitude required']);
@@ -23,7 +24,7 @@ if (!is_numeric($lat) || !is_numeric($lon)) {
 }
 
 // Get weather data using unified function
-$weather = getWeatherData($lat, $lon);
+$weather = getWeatherData($lat, $lon, $lang);
 
 // Return the weather data
 echo json_encode($weather);

@@ -27,7 +27,8 @@ if ($action === 'calculate_fish_activity') {
     
     try {
         // Get weather data
-        $weatherData = getWeatherData($lat, $lon);
+        $lang = $_SESSION['lang'] ?? 'en';
+        $weatherData = getWeatherData($lat, $lon, $lang);
         
         // Calculate activity score based on multiple factors
         $activityScore = calculateFishActivityScore($weatherData, $lat, $lon);
