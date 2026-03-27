@@ -60,7 +60,7 @@ $requests = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friend Requests | FISHINGLORY</title>
+    <title><?= __('requests') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
@@ -76,17 +76,17 @@ $requests = $stmt->fetchAll();
 <div class="container my-5 py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold page-title">
-            <i class="fas fa-user-plus text-warning"></i> Friend Requests
+            <i class="fas fa-user-plus text-warning"></i> <?= __('requests') ?>
             <?php if (!empty($requests)): ?>
                 <span class="badge bg-warning text-dark"><?= count($requests) ?></span>
             <?php endif; ?>
         </h2>
         <div>
             <a href="list_friends.php" class="btn btn-outline-success me-2">
-                <i class="fas fa-user-friends"></i> My Friends
+                <i class="fas fa-user-friends"></i> <?= __('my_friends') ?>
             </a>
             <a href="../../index.php" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Home
+                <i class="fas fa-arrow-left"></i> <?= __('home') ?>
             </a>
         </div>
     </div>
@@ -95,10 +95,10 @@ $requests = $stmt->fetchAll();
         <div class="card text-center py-5 shadow-sm requests-empty">
             <div class="card-body">
                 <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted">No pending requests</h4>
-                <p class="text-muted">You're all caught up!</p>
+                <h4 class="text-muted"><?= __('no_pending_requests') ?></h4>
+                <p class="text-muted"><?= __('all_caught_up') ?></p>
                 <a href="../../index.php" class="btn btn-primary mt-3">
-                    <i class="fas fa-home"></i> Go to Home
+                    <i class="fas fa-home"></i> <?= __('go_to_home') ?>
                 </a>
             </div>
         </div>
@@ -122,7 +122,7 @@ $requests = $stmt->fetchAll();
                                             <p class="text-muted mb-0 small"><?= htmlspecialchars($r['full_name']) ?></p>
                                         <?php endif; ?>
                                         <a href="../users/profile.php?id=<?= $r['user_id'] ?>" class="text-primary text-decoration-none small">
-                                            <i class="fas fa-eye"></i> View Profile
+                                            <i class="fas fa-eye"></i> <?= __('view_profile') ?>
                                         </a>
                                     </div>
                                 </div>
@@ -132,7 +132,7 @@ $requests = $stmt->fetchAll();
                                         <?= getCsrfField() ?>
                                         <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
                                         <button class="btn btn-success">
-                                            <i class="fas fa-check"></i> Accept
+                                            <i class="fas fa-check"></i> <?= __('accept') ?>
                                         </button>
                                     </form>
 
@@ -140,7 +140,7 @@ $requests = $stmt->fetchAll();
                                         <?= getCsrfField() ?>
                                         <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
                                         <button class="btn btn-outline-danger">
-                                            <i class="fas fa-times"></i> Reject
+                                            <i class="fas fa-times"></i> <?= __('reject') ?>
                                         </button>
                                     </form>
                                 </div>

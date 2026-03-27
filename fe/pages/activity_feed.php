@@ -77,9 +77,8 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
             <div class="activity-card" id="activityCard">
                 <div class="activity-header-section">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-fish"></i> Fish Activity Prediction</h5>
-                        <button class="btn btn-light btn-sm" onclick="toggleMapSection()" title="Change location">
-                            <i class="fas fa-map-marker-alt"></i> Change Location
+                        <button class="btn btn-light btn-sm" onclick="toggleMapSection()" title="<?= __('change_location') ?>">
+                            <i class="fas fa-map-marker-alt"></i> <?= __('change_location') ?>
                         </button>
                     </div>
                 </div>
@@ -91,14 +90,14 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 
                 <!-- Location Badge -->
                 <div class="location-badge">
-                    <i class="fas fa-map-marker-alt"></i> <span id="currentLocation">Getting your location...</span>
+                    <i class="fas fa-map-marker-alt"></i> <span id="currentLocation"><?= __('getting_your_location') ?></span>
                 </div>
 
                 <!-- Activity Score Circle -->
                 <div id="activityScoreSection" class="p-4">
                     <div id="loadingActivity" class="text-center p-5">
                         <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
-                        <p class="mt-3">Calculating fish activity for your location...</p>
+                        <p class="mt-3"><?= __('calculating_fish_activity') ?></p>
                     </div>
                     
                     <div id="activityResults" style="display: none;">
@@ -110,14 +109,14 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
                             </svg>
                             <div class="score-number" id="scoreNumber">0</div>
                         </div>
-                        <div class="activity-level-text" id="activityLevelText">Calculating...</div>
+                        <div class="activity-level-text" id="activityLevelText"><?= __('calculating') ?></div>
 
                         <!-- Activity Chart -->
                         <div class="activity-chart">
                             <div class="chart-labels">
-                                <div>HIGH</div>
-                                <div>MEDIUM</div>
-                                <div>LOW</div>
+                                <div><?= __('high') ?></div>
+                                <div><?= __('medium') ?></div>
+                                <div><?= __('low') ?></div>
                             </div>
                             <div class="chart-line">
                                 <div class="chart-grid">
@@ -141,11 +140,11 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
                         <!-- Times Section -->
                         <div class="times-section" id="timesSection">
                             <div class="times-column">
-                                <h6>MAJOR TIMES</h6>
+                                <h6><?= __('major_times') ?></h6>
                                 <div id="majorTimes">--:-- — --:--</div>
                             </div>
                             <div class="times-column">
-                                <h6>MINOR TIMES</h6>
+                                <h6><?= __('minor_times') ?></h6>
                                 <div id="minorTimes">--:-- — --:--</div>
                             </div>
                         </div>
@@ -157,9 +156,9 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
             <div class="activity-card" id="mapCard" style="display: none;">
                 <div class="activity-header-section">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-map-marked-alt"></i> Select Fishing Location</h5>
+                        <h5 class="mb-0"><i class="fas fa-map-marked-alt"></i> <?= __('select_fishing_location') ?></h5>
                         <button class="btn btn-light btn-sm" onclick="toggleMapSection()">
-                            <i class="fas fa-times"></i> Close
+                            <i class="fas fa-times"></i> <?= __('close') ?>
                         </button>
                     </div>
                 </div>
@@ -167,9 +166,9 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
                     <div class="search-box">
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="locationSearch" placeholder="Search city or town...">
+                            <input type="text" class="form-control" id="locationSearch" placeholder="<?= __('search_city_town') ?>">
                             <button class="btn btn-primary" type="button" onclick="searchLocation()">
-                                <i class="fas fa-search"></i> Search
+                                <i class="fas fa-search"></i> <?= __('search') ?>
                             </button>
                         </div>
                         <div id="searchResults" style="display:none;" class="mt-2"></div>
@@ -177,7 +176,7 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
                     <div id="map"></div>
                     <div class="mt-3">
                         <button class="btn btn-success w-100" id="calculateBtn" onclick="calculateActivity()" disabled>
-                            <i class="fas fa-calculator"></i> Calculate Fish Activity
+                            <i class="fas fa-calculator"></i> <?= __('calculate_fish_activity_btn') ?>
                         </button>
                     </div>
                 </div>
@@ -185,6 +184,21 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
         </div>
     </div>
 </div>
+
+<script>
+    window.fishingTranslations = {
+        excellent_activity: "<?= __('excellent_activity') ?>",
+        good_activity: "<?= __('good_activity') ?>",
+        moderate_activity: "<?= __('moderate_activity') ?>",
+        low_activity: "<?= __('low_activity') ?>",
+        very_low_activity: "<?= __('very_low_activity') ?>",
+        today: "<?= __('today') ?>",
+        days: {
+            0: "<?= __('sun') ?>", 1: "<?= __('mon') ?>", 2: "<?= __('tue') ?>", 
+            3: "<?= __('wed') ?>", 4: "<?= __('thu') ?>", 5: "<?= __('fri') ?>", 6: "<?= __('sat') ?>"
+        }
+    };
+</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

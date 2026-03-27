@@ -51,11 +51,11 @@ $profileExists = $stmt->fetch();
 // Handle avatar upload
 $avatarPath = null;
 if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === 0) {
-    $validationErrors = validateImageUpload($_FILES['avatar']);
-    if (!empty($validationErrors)) {
+    $imageErrors = validateImageUpload($_FILES['avatar']);
+    if (!empty($imageErrors)) {
         http_response_code(400);
         header('Content-Type: application/json');
-        exit(json_encode(['error' => implode(', ', $validationErrors)]));
+        exit(json_encode(['error' => implode(', ', $imageErrors)]));
     }
 
     // Get current avatar to delete old one

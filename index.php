@@ -112,7 +112,7 @@ if (isset($_SESSION['user_id'])) {
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="text-center py-5">
         <div class="hero-section">
-            <h2 class="fw-bold text-primary mb-3">Welcome to FISHINGLORY</h2>
+            <h2 class="fw-bold text-primary mb-3"><?= __('welcome_title') ?></h2>
             <div class="d-flex justify-content-center gap-3">
                 <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg">
                     <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
@@ -139,7 +139,7 @@ if (isset($_SESSION['user_id'])) {
     <div class="create-post-modern glass-card mb-4 mt-4">
         <form action="be/posts/create.php" method="post" enctype="multipart/form-data">
             <?= getCsrfField() ?>
-            <input type="text" name="title" class="create-post-input mb-3" placeholder="What's on your mind?" required maxlength="200">
+            <input type="text" name="title" class="create-post-input mb-3" placeholder="<?= __('post_title_placeholder') ?>" required maxlength="200">
             <textarea name="content" class="create-post-input mb-3" placeholder="<?= __('post_placeholder') ?>" required maxlength="5000" style="border-radius: 16px; min-height: 100px;"></textarea>
             <div class="create-post-actions">
                 <select name="visibility" class="form-select" style="border-radius: 12px;">
@@ -281,7 +281,7 @@ if (isset($_SESSION['user_id'])) {
                     <div class="weather-content">
                         <h5 class="sidebar-title"><i class="fas fa-cloud-sun"></i> <?= __('current_weather') ?></h5>
                         <div id="weather-info">
-                            <p>Fetching weather based on your location...</p>
+                            <p><?= __('fetching_weather') ?></p>
                         </div>
                     </div>
                 </div>
@@ -331,7 +331,7 @@ if (isset($_SESSION['user_id'])) {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
                 <button type="button" class="btn btn-danger" onclick="confirmDeletePost()">
-                    <i class="fas fa-trash-alt"></i> Delete Permanently
+                    <i class="fas fa-trash-alt"></i> <?= __('delete_permanently') ?>
                 </button>
             </div>
         </div>

@@ -10,34 +10,8 @@ if (!isset($_SESSION['lang'])) {
     $_SESSION['lang'] = 'bg';
 }
 require '../../config/languages.php'; // Add language support
-
-// Handle language/theme switches via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $csrf = $_POST['csrf_token'] ?? '';
-    if (!verifyCsrfToken($csrf)) {
-        http_response_code(400);
-        die('Invalid CSRF token');
-    }
-
-    $action = $_POST['action'];
-    if ($action === 'switch_lang' && isset($_POST['lang'])) {
-        $newLang = (string) $_POST['lang'];
-        if (in_array($newLang, ['bg', 'en'], true)) {
-            $_SESSION['lang'] = $newLang;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-
-    if ($action === 'switch_theme' && isset($_POST['theme'])) {
-        $newTheme = (string) $_POST['theme'];
-        if (in_array($newTheme, ['light', 'dark'], true)) {
-            $_SESSION['theme'] = $newTheme;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-}
+require '../../config/actions.php';
+handleGlobalActions();
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -78,7 +52,7 @@ $friends = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $isOwnProfile ? 'My Friends' : htmlspecialchars($viewUser['username']) . "'s Friends" ?> | FISHINGLORY</title>
+    <title><?= $isOwnProfile ? __('my_friends') : htmlspecialchars($viewUser['username']) . " - " . __('friends') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
@@ -95,7 +69,7 @@ $friends = $stmt->fetchAll();
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold page-title">
             <i class="fas fa-user-friends text-success"></i> 
-            <?= $isOwnProfile ? 'My Friends' : htmlspecialchars($viewUser['username']) . "'s Friends" ?>
+            <?= $isOwnProfile ? __('my_friends') : htmlspecialchars($viewUser['username']) . " - " . __('friends') ?>
             <?php if (!empty($friends)): ?>
                 <span class="badge bg-success"><?= count($friends) ?></span>
             <?php endif; ?>
@@ -103,16 +77,16 @@ $friends = $stmt->fetchAll();
         <div>
             <?php if ($isOwnProfile): ?>
                 <a href="list_requests.php" class="btn btn-outline-warning me-2">
-                    <i class="fas fa-user-plus"></i> Friend Requests
+                    <i class="fas fa-user-plus"></i> <?= __('requests') ?>
                 </a>
             <?php endif; ?>
             <?php if (!$isOwnProfile): ?>
                 <a href="../users/profile.php?id=<?= $viewUserId ?>" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-user"></i> Back to Profile
+                    <i class="fas fa-user"></i> <?= __('back_to_profile') ?>
                 </a>
             <?php endif; ?>
             <a href="../../index.php" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Home
+                <i class="fas fa-arrow-left"></i> <?= __('home') ?>
             </a>
         </div>
     </div>
@@ -121,11 +95,11 @@ $friends = $stmt->fetchAll();
         <div class="card text-center py-5 shadow-sm friends-empty">
             <div class="card-body">
                 <i class="fas fa-users fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted">No friends yet</h4>
-                <p class="text-muted"><?= $isOwnProfile ? 'Start connecting with other anglers!' : 'This user has no friends yet.' ?></p>
+                <h4 class="text-muted"><?= __('no_friends') ?></h4>
+                <p class="text-muted"><?= $isOwnProfile ? __('start_connecting') : __('no_friends') ?></p>
                 <?php if ($isOwnProfile): ?>
                     <a href="../../index.php" class="btn btn-primary mt-2">
-                        <i class="fas fa-search"></i> Find Friends
+                        <i class="fas fa-search"></i> <?= __('find_friends') ?>
                     </a>
                 <?php endif; ?>
             </div>
@@ -147,7 +121,7 @@ $friends = $stmt->fetchAll();
                                 <p class="text-muted small mb-3"><?= htmlspecialchars($f['full_name']) ?></p>
                             <?php endif; ?>
                             <a href="../users/profile.php?id=<?= $f['id'] ?>" class="btn btn-primary w-100">
-                                <i class="fas fa-user"></i> View Profile
+                                <i class="fas fa-user"></i> <?= __('view_profile') ?>
                             </a>
                         </div>
                     </div>

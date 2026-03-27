@@ -67,13 +67,13 @@ if (!isset($_SESSION['user_id'])) {
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-comments"></i> Messages</h5>
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> <?= __('messages') ?></h5>
                 </div>
                 <div class="messages-container">
                     <!-- Conversations List -->
                     <div class="conversation-list">
                         <div id="conversationsList" style="min-height: 100%;">
-                            <p class="text-center text-muted p-3"><i class="fas fa-spinner fa-spin"></i> Loading conversations...</p>
+                            <p class="text-center text-muted p-3"><i class="fas fa-spinner fa-spin"></i> <?= __('loading_conversations') ?></p>
                         </div>
                     </div>
 
@@ -88,7 +88,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button class="btn btn-outline-secondary" onclick="document.getElementById('fileInput').click()">
                                     <i class="fas fa-paperclip"></i>
                                 </button>
-                                <input type="text" id="messageInput" class="form-control" placeholder="Type a message...">
+                                <input type="text" id="messageInput" class="form-control" placeholder="<?= __('type_message') ?>">
                                 <button class="btn btn-primary" onclick="sendMessageToCurrentUser()">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
@@ -101,7 +101,7 @@ if (!isset($_SESSION['user_id'])) {
                     <div class="flex-grow-1 d-flex align-items-center justify-content-center bg-light" id="noConversationView">
                         <div class="text-center text-muted">
                             <i class="fas fa-comments fa-5x mb-3 text-secondary"></i>
-                            <p class="fs-5">Select a conversation to start messaging</p>
+                            <p class="fs-5"><?= __('select_conversation') ?></p>
                         </div>
                     </div>
                 </div>

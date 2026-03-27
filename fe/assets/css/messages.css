@@ -27,7 +27,7 @@ body {
 .conversation-list {
     width: 320px;
     height: 100%;
-    background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+    background: var(--bg-card);
     overflow-y: auto;
 }
 
@@ -78,7 +78,7 @@ body {
 
 .conversation-name {
     font-weight: 600;
-    color: #111827;
+    color: var(--text-primary);
     font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
@@ -111,7 +111,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 24px;
-    background: #F9FAFB;
+    background: var(--bg-tertiary);
     overflow-y: auto;
 }
 

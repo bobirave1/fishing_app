@@ -24,7 +24,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$profileId]);
 $user = $stmt->fetch();
 
-if (!$user) die("User not found");
+if (!$user) die(__('user_not_found'));
 
 // Check friendship
 $checkFriend = $pdo->prepare(
@@ -129,32 +129,36 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <?php if (!empty($user['experience_level'])): ?>
                 <p class="text-muted mb-3">
                     <?php
-                    $levels = ['beginner' => '🟢 Beginner', 'advanced' => '🟡 Advanced', 'pro' => '🔴 Pro'];
-                    echo $levels[$user['experience_level']] ?? '🟢 Beginner';
+                    $levels = [
+                        'beginner' => '🟢 ' . __('beginner'),
+                        'advanced' => '🟡 ' . __('advanced'),
+                        'pro' => '🔴 ' . __('pro')
+                    ];
+                    echo $levels[$user['experience_level']] ?? '🟢 ' . __('beginner');
                     ?>
                 </p>
             <?php endif; ?>
 
-            <p class="text-muted"><i class="fas fa-calendar-alt"></i> Joined <?= date('F Y', strtotime($user['created_at'])) ?></p>
+            <p class="text-muted"><i class="fas fa-calendar-alt"></i> <?= __('joined') ?> <?= date('F Y', strtotime($user['created_at'])) ?></p>
             <div class="profile-stats">
-                <div class="profile-stat-item"><strong><?= count($posts) ?></strong> Posts</div>
-                <div class="profile-stat-item"><strong><?= $friendCount ?></strong> Friends</div>
+                <div class="profile-stat-item"><strong><?= count($posts) ?></strong> <?= __('posts') ?></div>
+                <div class="profile-stat-item"><strong><?= $friendCount ?></strong> <?= __('friends') ?></div>
             </div>
             <?php if ($currentUser && $currentUser !== $profileId): ?>
                 <div id="friendActionContainer">
                     <?php if ($isFriend): ?>
-                        <span class="badge bg-success fs-6 px-3 py-2">Friends</span>
+                        <span class="badge bg-success fs-6 px-3 py-2"><?= __('friends') ?></span>
                     <?php elseif ($isPending): ?>
-                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">Request sent</span>
+                        <span class="badge bg-warning text-dark fs-6 px-3 py-2"><?= __('request_sent') ?></span>
                     <?php else: ?>
                         <button onclick="sendFriendRequest(<?= $profileId ?>)" class="btn btn-primary btn-lg" id="addFriendBtn">
-                            <i class="fas fa-user-plus"></i> Add Friend
+                            <i class="fas fa-user-plus"></i> <?= __('add_friend') ?>
                         </button>
                     <?php endif; ?>
                 </div>
             <?php elseif ($currentUser === $profileId): ?>
                 <a href="../../fe/pages/edit_profile.php" class="btn btn-outline-primary btn-lg">
-                    <i class="fas fa-edit"></i> Edit Profile
+                    <i class="fas fa-edit"></i> <?= __('edit_profile') ?>
                 </a>
             <?php endif; ?>
         </div>
@@ -166,16 +170,16 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <!-- Posts Section -->
             <div class="card profile-section-card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> Posts</h5>
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> <?= __('posts') ?></h5>
                 </div>
                 <div class="card-body">
                     <?php if (empty($posts)): ?>
-                        <p class="text-center text-muted">No posts yet.</p>
+                        <p class="text-center text-muted"><?= __('no_posts') ?></p>
                     <?php else: ?>
                         <?php foreach ($posts as $post): ?>
                             <div class="card mb-3 border-0 shadow-sm">
                                 <div class="card-body">
-                                    <h6 class="card-title fw-bold"><?= htmlspecialchars($post['title']) ?></h6>
+                                    <h6 class="card-title fw-bold text-primary"><?= htmlspecialchars($post['title']) ?></h6>
                                     <p class="card-text"><?= nl2br(htmlspecialchars($post['content'])) ?></p>
                                     <?php if (!empty($post['image'])): ?>
                                         <img src="../../<?= htmlspecialchars($post['image']) ?>" class="img-fluid rounded mb-2" style="max-height: 300px;">
@@ -195,14 +199,14 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <!-- Friends Sidebar -->
             <div class="card profile-section-card">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-users"></i> Friends</h5>
+                    <h5 class="mb-0"><i class="fas fa-users"></i> <?= __('friends') ?></h5>
                     <span class="badge bg-light text-success"><?= $friendCount ?></span>
                 </div>
                 <div class="card-body">
                     <?php if (empty($friends)): ?>
                         <p class="text-center text-muted">
                             <i class="fas fa-user-friends fa-2x mb-2 d-block"></i>
-                            No friends yet
+                            <?= __('no_friends') ?>
                         </p>
                     <?php else: ?>
                         <div class="row g-2">
@@ -216,7 +220,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                                                  class="rounded-circle mb-2" 
                                                  width="60" height="60" 
                                                  style="object-fit: cover; border: 2px solid #10b981;">
-                                            <div class="small text-dark fw-bold text-truncate"><?= htmlspecialchars($friend['username']) ?></div>
+                                            <div class="small fw-bold text-truncate"><?= htmlspecialchars($friend['username']) ?></div>
                                             <?php if (!empty($friend['full_name'])): ?>
                                                 <div class="small text-muted text-truncate"><?= htmlspecialchars($friend['full_name']) ?></div>
                                             <?php endif; ?>
@@ -228,7 +232,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                         <?php if ($friendCount > 6): ?>
                             <div class="text-center mt-3">
                                 <a href="../friends/list_friends.php?user_id=<?= $profileId ?>" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-arrow-right"></i> View All Friends (<?= $friendCount ?>)
+                                    <i class="fas fa-arrow-right"></i> <?= __('view_all_friends') ?> (<?= $friendCount ?>)
                                 </a>
                             </div>
                         <?php endif; ?>
