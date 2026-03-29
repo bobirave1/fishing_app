@@ -16,6 +16,7 @@ $title = trim($_POST['title'] ?? '');
 $content = trim($_POST['content'] ?? '');
 $visibility = $_POST['visibility'] ?? 'public';
 $imagePath = null;
+$uploadedMediaPaths = [];
 
 // Input validation
 if (empty($title) || strlen($title) > 200) {
@@ -34,31 +35,66 @@ if (!in_array($visibility, ['public', 'friends', 'private'])) {
     exit;
 }
 
-// Handle file upload (image or video)
-if (isset($_FILES['media']) && $_FILES['media']['error'] === 0) {
-    $validationErrors = validateMediaUpload($_FILES['media']);
-    if (!empty($validationErrors)) {
-        $_SESSION['post_error'] = implode(', ', $validationErrors);
-        header('Location: ../../index.php');
-        exit;
+// Handle file upload (single or multiple media)
+if (isset($_FILES['media'])) {
+    $isMultiple = is_array($_FILES['media']['name']);
+    $mediaCount = $isMultiple ? count($_FILES['media']['name']) : 1;
+
+    for ($i = 0; $i < $mediaCount; $i++) {
+        $file = $isMultiple
+            ? [
+                'name' => $_FILES['media']['name'][$i] ?? '',
+                'type' => $_FILES['media']['type'][$i] ?? '',
+                'tmp_name' => $_FILES['media']['tmp_name'][$i] ?? '',
+                'error' => $_FILES['media']['error'][$i] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $_FILES['media']['size'][$i] ?? 0,
+            ]
+            : $_FILES['media'];
+
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+
+        $validationErrors = validateMediaUpload($file);
+        if (!empty($validationErrors)) {
+            $_SESSION['post_error'] = implode(', ', $validationErrors);
+            header('Location: ../../index.php');
+            exit;
+        }
+
+        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+        $filename = uniqid('post_', true) . '.' . $ext;
+        $target = '../../fe/assets/img/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $target)) {
+            $_SESSION['post_error'] = 'Failed to upload file';
+            header('Location: ../../index.php');
+            exit;
+        }
+
+        $uploadedMediaPaths[] = 'fe/assets/img/' . $filename;
     }
-    
-    $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
-    $filename = uniqid() . '.' . $ext;
-    $target = '../../fe/assets/img/' . $filename;
-    
-    if (!move_uploaded_file($_FILES['media']['tmp_name'], $target)) {
-        $_SESSION['post_error'] = 'Failed to upload file';
-        header('Location: ../../index.php');
-        exit;
-    }
-    $imagePath = 'fe/assets/img/' . $filename;
+}
+
+if (!empty($uploadedMediaPaths)) {
+    $imagePath = $uploadedMediaPaths[0];
 }
 
 // Insert post
 $stmt = $pdo->prepare("INSERT INTO posts (user_id, title, content, image, visibility, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
 $stmt->execute([$_SESSION['user_id'], $title, $content, $imagePath, $visibility]);
 $postId = $pdo->lastInsertId();
+
+if (!empty($uploadedMediaPaths)) {
+    try {
+        $mediaStmt = $pdo->prepare("INSERT INTO post_images (post_id, image_url, uploaded_at) VALUES (?, ?, NOW())");
+        foreach ($uploadedMediaPaths as $mediaPath) {
+            $mediaStmt->execute([$postId, $mediaPath]);
+        }
+    } catch (Throwable $e) {
+        // If post_images table is missing in a local setup, keep post creation successful with primary media in posts.image.
+    }
+}
 
 // Notify friends about new post
 if ($visibility !== 'private') {

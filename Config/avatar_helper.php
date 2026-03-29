@@ -5,6 +5,46 @@
  */
 
 /**
+ * Safely get file version token for cache busting.
+ */
+function avatarAssetVersion($relativePath) {
+    $absolutePath = __DIR__ . '/../' . ltrim($relativePath, '/');
+    if (is_file($absolutePath)) {
+        $mtime = filemtime($absolutePath);
+        if ($mtime !== false) {
+            return (string) $mtime;
+        }
+    }
+    return null;
+}
+
+/**
+ * Resolve a default avatar path that actually exists in the project.
+ */
+function resolveDefaultAvatarPath() {
+    static $resolved = null;
+    if ($resolved !== null) {
+        return $resolved;
+    }
+
+    $candidates = [
+        'fe/assets/img/default-avatar.png',
+        'fe/assets/img/avatars/default.png',
+        'fe/assets/img/logo_rounded.png',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (is_file(__DIR__ . '/../' . $candidate)) {
+            $resolved = $candidate;
+            return $resolved;
+        }
+    }
+
+    $resolved = 'fe/assets/img/logo.png';
+    return $resolved;
+}
+
+/**
  * Get user avatar with proper path resolution
  * 
  * @param string|null $avatarUrl The avatar URL from database (can be NULL)
@@ -13,7 +53,7 @@
  */
 function getUserAvatar($avatarUrl, $currentPath = null) {
     // Default avatar if none set
-    $defaultAvatar = 'fe/assets/img/default-avatar.png';
+    $defaultAvatar = resolveDefaultAvatarPath();
     
     // Use default if no avatar
     $avatar = $avatarUrl ?? $defaultAvatar;
@@ -30,7 +70,10 @@ function getUserAvatar($avatarUrl, $currentPath = null) {
             $path = '../../' . $avatar;
             // Add cache buster for default avatar
             if ($avatar === $defaultAvatar) {
-                $path .= '?v=' . filemtime(__DIR__ . '/../' . $defaultAvatar);
+                $version = avatarAssetVersion($defaultAvatar);
+                if ($version !== null) {
+                    $path .= '?v=' . $version;
+                }
             }
             return $path;
         }
@@ -40,14 +83,20 @@ function getUserAvatar($avatarUrl, $currentPath = null) {
             $path = '../../' . $avatar;
             // Add cache buster for default avatar
             if ($avatar === $defaultAvatar) {
-                $path .= '?v=' . filemtime(__DIR__ . '/../' . $defaultAvatar);
+                $version = avatarAssetVersion($defaultAvatar);
+                if ($version !== null) {
+                    $path .= '?v=' . $version;
+                }
             }
             return $path;
         }
     }
     // Root level or already has correct path
     if ($avatar === $defaultAvatar) {
-        return $avatar . '?v=' . filemtime(__DIR__ . '/../' . $defaultAvatar);
+        $version = avatarAssetVersion($defaultAvatar);
+        if ($version !== null) {
+            return $avatar . '?v=' . $version;
+        }
     }
     return $avatar;
 }
@@ -58,9 +107,12 @@ function getUserAvatar($avatarUrl, $currentPath = null) {
  * @return string Default avatar database path
  */
 function getDefaultAvatarPath() {
-    $path = 'fe/assets/img/default-avatar.png';
-    // Add cache buster
-    return $path . '?v=' . time();
+    $path = resolveDefaultAvatarPath();
+    $version = avatarAssetVersion($path);
+    if ($version !== null) {
+        return $path . '?v=' . $version;
+    }
+    return $path;
 }
 
 /**

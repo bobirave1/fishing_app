@@ -46,17 +46,17 @@ if (isset($_SESSION['user_id'])) {
         </a>
         
         <?php if (isset($_SESSION['user_id'])): ?>
-        <div class="dropdown">
+        <div class="dropdown d-none d-md-block">
             <button class="fb-search-input search-container" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" 
                     onclick="this.nextElementSibling.querySelector('input').focus()">
                 <?= __('search_placeholder') ?>
             </button>
             <div class="dropdown-menu fb-search-dropdown p-0">
                 <div class="p-2">
-                    <input type="text" id="searchInput" class="form-control border-0 search-input-field" 
-                           placeholder="<?= __('search_placeholder') ?>" oninput="performSearch(this.value)">
+                    <input type="text" class="form-control border-0 search-input-field searchInput" 
+                           placeholder="<?= __('search_placeholder') ?>" oninput="performSearch(this)">
                 </div>
-                <div id="searchResults"></div>
+                <div class="searchResults"></div>
             </div>
         </div>
         <?php endif; ?>
@@ -96,6 +96,21 @@ if (isset($_SESSION['user_id'])) {
         <a href="<?= $activityPath ?>" class="fb-nav-btn <?= ($currentPage == 'activity_feed.php') ? 'active' : '' ?>">
             <i class="fas fa-fish fs-4"></i>
         </a>
+
+        <!-- Mobile Search -->
+        <div class="dropdown d-md-none">
+            <button class="fb-nav-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                    onclick="setTimeout(() => this.nextElementSibling.querySelector('input').focus(), 150)">
+                <i class="fas fa-search fs-4"></i>
+            </button>
+            <div class="dropdown-menu fb-search-dropdown p-0">
+                <div class="p-2">
+                    <input type="text" class="form-control border-0 search-input-field searchInput" 
+                           placeholder="<?= __('search_placeholder') ?>" oninput="performSearch(this)">
+                </div>
+                <div class="searchResults"></div>
+            </div>
+        </div>
     </div>
     <?php endif; ?>
     

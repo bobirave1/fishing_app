@@ -206,5 +206,7 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 <script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
 <script src="../assets/js/activity_feed.js?v=<?= assetVersion('fe/assets/js/activity_feed.js') ?>"></script>
 
+<?php include '../components/footer.php'; ?>
+
 </body>
 </html>

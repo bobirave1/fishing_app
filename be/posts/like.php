@@ -50,10 +50,10 @@ if ($action === 'like') {
         
         // Create notification
         if ($post['user_id'] != $userId) {
-            $stmt = $pdo->prepare("
-                INSERT INTO notifications (user_id, type, related_id, sender_id) 
-                VALUES (?, 'like', ?, ?)
-            ");
+                $stmt = $pdo->prepare("
+                    INSERT INTO notifications (user_id, type, related_id, from_user_id) 
+                    VALUES (?, 'like', ?, ?)
+                ");
             $stmt->execute([$post['user_id'], $postId, $userId]);
         }
     }

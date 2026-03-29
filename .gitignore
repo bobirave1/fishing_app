@@ -7,6 +7,7 @@
 *.code-workspace
 
 # OS files
+# Системни файлове
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -14,6 +15,9 @@ desktop.ini
 # Logs
 *.log
 error_log
+# Конфигурация и пароли
+.env
+config/database.php
 
 # Temporary files
 *.tmp
@@ -21,6 +25,9 @@ error_log
 *.bak
 *.swp
 *~
+# Качени файлове (не искаме да качваме тестови снимки)
+/fe/assets/img/avatars/*
+!/fe/assets/img/avatars/.gitkeep
 
 # User uploads
 fe/assets/img/avatars/*
@@ -38,3 +45,5 @@ vendor/
 
 # PHP cache
 *.cache
+# Лог файлове
+*.log

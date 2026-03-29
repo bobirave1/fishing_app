@@ -57,7 +57,7 @@ if ($action === 'follow') {
     
     // Create notification
     $stmt = $pdo->prepare("
-        INSERT INTO notifications (user_id, type, sender_id) 
+        INSERT INTO notifications (user_id, type, from_user_id) 
         VALUES (?, 'follow', ?)
     ");
     $stmt->execute([$targetId, $userId]);

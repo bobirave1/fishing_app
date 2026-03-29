@@ -1,7 +1,10 @@
 <?php
 require_once '../../config/security.php';
 secureSession();
+require_once '../../config/languages.php';
 setSecurityHeaders();
+
+$prefillEmail = htmlspecialchars(trim((string)($_GET['email'] ?? '')), ENT_QUOTES, 'UTF-8');
 
 // If already logged in, redirect to index
 if (isset($_SESSION['user_id'])) {
@@ -10,7 +13,7 @@ if (isset($_SESSION['user_id'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= getCurrentLang() ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,11 +21,12 @@ if (isset($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="stylesheet" href="../assets/css/auth_forms.css?v=<?= assetVersion('fe/assets/css/auth_forms.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
-<body>
-
+<body class="d-flex flex-column min-vh-100 auth-page">
+<main class="flex-grow-1 auth-main">
 <div class="login-card">
     <div class="login-header">
         <img src="../assets/img/logo_rounded.png" alt="Logo" width="80" height="80" class="mb-3">
@@ -59,12 +63,12 @@ if (isset($_SESSION['user_id'])) {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="../../be/auth/login.php">
+        <form method="POST" action="../../be/auth/login.php" id="loginForm">
             <?= getCsrfField() ?>
             
             <div class="mb-3">
                 <label for="email" class="form-label"><i class="fas fa-envelope"></i> Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required autofocus>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" value="<?= $prefillEmail ?>" required autofocus>
             </div>
             
             <div class="mb-3">
@@ -92,7 +96,17 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
 </div>
+</main>
+
+<?php include '../components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script>
+    // Enable bubble animation on login form submission
+    document.getElementById('loginForm')?.addEventListener('submit', function() {
+        sessionStorage.setItem('bubbleTransition', 'true');
+    });
+</script>
 </body>
 </html>

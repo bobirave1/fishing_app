@@ -4,18 +4,25 @@ secureSession();
 require '../../config/database.php';
 setSecurityHeaders();
 
+function redirectLoginError(string $errorCode, string $email = ''): void {
+    $query = ['login_error' => $errorCode];
+    if ($email !== '') {
+        $query['email'] = $email;
+    }
+    header('Location: ../../fe/auth/login_form.php?' . http_build_query($query));
+    exit;
+}
+
 // Rate limiting
 if (!checkRateLimit('login', 5, 900)) {
     http_response_code(429);
-    header("Location: ../../index.php?login_error=rate_limit");
-    exit;
+    redirectLoginError('rate_limit');
 }
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
     http_response_code(403);
-    header("Location: ../../index.php?login_error=csrf");
-    exit;
+    redirectLoginError('csrf');
 }
 
 // Collect POST data
@@ -24,8 +31,7 @@ $password = $_POST['password'] ?? '';
 
 // Validate input
 if (!validateEmail($email) || empty($password)) {
-    header("Location: ../../index.php?login_error=invalid");
-    exit;
+    redirectLoginError('invalid', $email);
 }
 
 // Check if user exists
@@ -34,9 +40,7 @@ $stmt->execute([$email]);
 $user = $stmt->fetch();
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
-    // Redirect back with error
-    header("Location: ../../index.php?login_error=1");
-    exit;
+    redirectLoginError('invalid', $email);
 }
 
 // Login successful

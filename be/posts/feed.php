@@ -59,5 +59,8 @@ $posts = $stmt->fetchAll();
 <?php endforeach; ?>
 
 </div>
+
+<?php include '../../fe/components/footer.php'; ?>
+
 </body>
 </html>

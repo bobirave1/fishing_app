@@ -56,12 +56,16 @@ $stmt = $pdo->prepare(
 try {
     $stmt->execute([$sender, $receiver]);
     
-    // Create notification for friend request
-    $notifStmt = $pdo->prepare(
-        "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
-         VALUES (?, 'friend_request', ?, ?, NOW())"
-    );
-    $notifStmt->execute([$receiver, $sender, $sender]);
+    // Create notification for friend request (skip silently if table is missing).
+    try {
+        $notifStmt = $pdo->prepare(
+            "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
+             VALUES (?, 'friend_request', ?, ?, NOW())"
+        );
+        $notifStmt->execute([$receiver, $sender, $sender]);
+    } catch (Throwable $e) {
+        // Keep friend request flow successful even when notifications are not available.
+    }
     
     header("Location: ../users/profile.php?id=$receiver");
 } catch (PDOException $e) {

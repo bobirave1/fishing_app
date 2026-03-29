@@ -41,11 +41,15 @@ $pdo->prepare(
     "INSERT INTO friends (user_id, friend_id) VALUES (?, ?), (?, ?)"
 )->execute([$userId, $senderId, $senderId, $userId]);
 
-// Create notification for accepted friend request
-$pdo->prepare(
-    "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
-     VALUES (?, 'friend_accepted', ?, ?, NOW())"
-)->execute([$senderId, $userId, $userId]);
+// Create notification for accepted friend request (optional).
+try {
+    $pdo->prepare(
+        "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
+         VALUES (?, 'friend_accepted', ?, ?, NOW())"
+    )->execute([$senderId, $userId, $userId]);
+} catch (Throwable $e) {
+    // Keep accept flow successful if notifications are unavailable.
+}
 
 $pdo->commit();
 

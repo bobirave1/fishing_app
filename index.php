@@ -21,6 +21,7 @@ if (isset($_SESSION['user_id'])) {
         SELECT p.*, u.username, up.avatar_url,
                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
                (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
+             (SELECT GROUP_CONCAT(pi.image_url ORDER BY pi.id SEPARATOR '||') FROM post_images pi WHERE pi.post_id = p.id) as media_urls,
                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_liked
         FROM posts p
         JOIN users u ON u.id = p.user_id
@@ -41,6 +42,7 @@ if (isset($_SESSION['user_id'])) {
         SELECT p.*, u.username, up.avatar_url,
                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
                (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
+             (SELECT GROUP_CONCAT(pi.image_url ORDER BY pi.id SEPARATOR '||') FROM post_images pi WHERE pi.post_id = p.id) as media_urls,
                0 as user_liked
         FROM posts p
         JOIN users u ON u.id = p.user_id
@@ -49,6 +51,21 @@ if (isset($_SESSION['user_id'])) {
         ORDER BY p.created_at DESC
     ");
     $posts = $stmt->fetchAll();
+}
+
+$composerUser = [
+    'username' => $_SESSION['username'] ?? 'User',
+    'avatar' => getUserAvatar(null),
+];
+
+if (isset($_SESSION['user_id'])) {
+    $composerStmt = $pdo->prepare("SELECT u.username, up.avatar_url FROM users u LEFT JOIN user_profiles up ON up.user_id = u.id WHERE u.id = ? LIMIT 1");
+    $composerStmt->execute([$_SESSION['user_id']]);
+    $composerData = $composerStmt->fetch(PDO::FETCH_ASSOC);
+    if ($composerData) {
+        $composerUser['username'] = $composerData['username'];
+        $composerUser['avatar'] = getUserAvatar($composerData['avatar_url'] ?? null);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -66,11 +83,11 @@ if (isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="fe/assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="fe/assets/img/logo_rounded.png">
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<body class="d-flex flex-column min-vh-100" data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include 'fe/components/navbar.php'; ?>
 
-<div class="container-fluid my-5 py-3">
+<main class="flex-grow-1 container-fluid mt-5 mb-0 py-3">
     <div class="row">
         <!-- Left Sidebar -->
         <?php if (isset($_SESSION['user_id'])): ?>
@@ -107,20 +124,18 @@ if (isset($_SESSION['user_id'])) {
         <?php endif; ?>
 
         <!-- Main Content - Posts Only -->
-        <div class="col-12 col-md-<?= isset($_SESSION['user_id']) ? '6' : '8' ?> col-lg-<?= isset($_SESSION['user_id']) ? '7' : '8' ?>">
+        <div class="col-12 col-md-<?= isset($_SESSION['user_id']) ? '6' : '8 offset-md-2' ?> col-lg-<?= isset($_SESSION['user_id']) ? '7' : '8 offset-lg-2' ?>">
 
 <?php if (!isset($_SESSION['user_id'])): ?>
     <div class="text-center py-5">
-        <div class="hero-section">
-            <h2 class="fw-bold text-primary mb-3"><?= __('welcome_title') ?></h2>
-            <div class="d-flex justify-content-center gap-3">
-                <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg">
-                    <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
-                </a>
-                <a href="fe/auth/register_form.php" class="btn btn-success btn-lg">
-                    <i class="fas fa-user-plus"></i> <?= __('sign_up') ?>
-                </a>
-            </div>
+        <h2 class="fw-bold text-primary mb-4"><?= __('welcome_title') ?></h2>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
+            </a>
+            <a href="fe/auth/register_form.php" class="btn btn-success btn-lg px-4">
+                <i class="fas fa-user-plus"></i> <?= __('sign_up') ?>
+            </a>
         </div>
     </div>
 <?php endif; ?>
@@ -137,19 +152,65 @@ if (isset($_SESSION['user_id'])) {
     <?php endif; ?>
     
     <div class="create-post-modern glass-card mb-4 mt-4">
-        <form action="be/posts/create.php" method="post" enctype="multipart/form-data">
+        <form action="be/posts/create.php" method="post" enctype="multipart/form-data" id="createPostForm">
             <?= getCsrfField() ?>
-            <input type="text" name="title" class="create-post-input mb-3" placeholder="<?= __('post_title_placeholder') ?>" required maxlength="200">
-            <textarea name="content" class="create-post-input mb-3" placeholder="<?= __('post_placeholder') ?>" required maxlength="5000" style="border-radius: 16px; min-height: 100px;"></textarea>
-            <div class="create-post-actions">
-                <select name="visibility" class="form-select" style="border-radius: 12px;">
-                    <option value="public">🌍 <?= __('public') ?></option>
-                    <option value="friends">👥 <?= __('friends') ?></option>
-                    <option value="private">🔒 <?= __('private') ?></option>
-                </select>
-                <input type="file" name="media" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/avi,video/mov" style="border-radius: 12px;">
+
+            <div class="composer-header">
+                <img src="<?= htmlspecialchars($composerUser['avatar']) ?>" alt="avatar" class="composer-avatar">
+                <div class="composer-meta">
+                    <div class="composer-name"><?= htmlspecialchars($composerUser['username']) ?></div>
+                    <select id="postVisibility" name="visibility" class="form-select form-select-sm composer-privacy">
+                        <option value="public">🌍 <?= __('public') ?></option>
+                        <option value="friends">👥 <?= __('friends') ?></option>
+                        <option value="private">🔒 <?= __('private') ?></option>
+                    </select>
+                </div>
             </div>
-            <button class="btn btn-primary w-100 mt-3" style="border-radius: 12px; padding: 1rem; font-size: 1.1rem; font-weight: 700;">
+
+            <div class="composer-fields">
+                <input
+                    type="text"
+                    name="title"
+                    id="postTitleInput"
+                    class="create-post-input mb-2"
+                    placeholder="<?= __('post_title_placeholder') ?>"
+                    required
+                    maxlength="200"
+                >
+                <textarea
+                    id="postContentInput"
+                    name="content"
+                    class="create-post-input composer-content-input"
+                    placeholder="<?= __('post_placeholder') ?>"
+                    required
+                    maxlength="5000"
+                ></textarea>
+            </div>
+
+            <input
+                type="file"
+                id="postMediaInput"
+                name="media[]"
+                class="create-post-file-input"
+                multiple
+                accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/avi,video/mov"
+            >
+
+            <div id="postMediaPreview" class="post-media-preview" aria-live="polite"></div>
+
+            <label for="postMediaInput" class="composer-icon-btn mt-1" title="<?= __('attach_file') ?>">
+                <i class="fas fa-images"></i>
+            </label>
+
+            <div
+                id="postMediaFileName"
+                class="create-post-file-name"
+                data-no-file="<?= __('no_file_selected') ?>"
+                data-selected-file="<?= __('selected_file') ?>"
+                data-files-selected="<?= __('files_selected') ?>"
+            ><?= __('no_file_selected') ?></div>
+
+            <button class="btn btn-primary w-100 mt-3" style="border-radius: 10px; padding: 0.9rem; font-size: 1.05rem; font-weight: 700;">
                 <i class="fas fa-paper-plane"></i> <?= __('post') ?>
             </button>
         </form>
@@ -159,6 +220,12 @@ if (isset($_SESSION['user_id'])) {
 <!-- Posts feed -->
 <?php foreach ($posts as $p): 
     $avatar = getUserAvatar($p['avatar_url'] ?? null);
+    $postMedia = [];
+    if (!empty($p['media_urls'])) {
+        $postMedia = array_values(array_unique(array_filter(explode('||', (string) $p['media_urls']))));
+    } elseif (!empty($p['image'])) {
+        $postMedia = [(string) $p['image']];
+    }
 ?>
     <div class="modern-post glass-card">
         <div class="post-header">
@@ -166,7 +233,7 @@ if (isset($_SESSION['user_id'])) {
                 <img src="<?= htmlspecialchars($avatar) ?>" class="post-avatar-modern">
                 <div class="post-user-info">
                     <h6>
-                        <a href="be/users/profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none text-dark">
+                        <a href="be/users/profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none" style="color: var(--text-primary);">
                             <?= htmlspecialchars($p['username']) ?>
                         </a>
                     </h6>
@@ -175,7 +242,7 @@ if (isset($_SESSION['user_id'])) {
                             <i class="fas fa-clock"></i>
                             <span class="post-time-ago" data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"></span>
                         </span>
-                        <span class="badge bg-light text-dark ms-3" style="font-size: 0.85rem;">
+                        <span class="badge ms-3" style="font-size: 0.85rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
                             <?php 
                             $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
                             echo $icons[$p['visibility']] ?? '🌍';
@@ -206,20 +273,37 @@ if (isset($_SESSION['user_id'])) {
             <p class="mb-0"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
         </div>
         
-        <?php if (!empty($p['image'])): ?>
-            <div class="post-image-wrapper">
-                <?php 
-                $ext = strtolower(pathinfo($p['image'], PATHINFO_EXTENSION));
-                $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
-                if (in_array($ext, $videoExtensions)): 
-                ?>
-                    <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
-                        <source src="<?= htmlspecialchars($p['image']) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
-                        Your browser does not support the video tag.
-                    </video>
-                <?php else: ?>
-                    <img src="<?= htmlspecialchars($p['image']) ?>" class="post-image-modern">
-                <?php endif; ?>
+        <?php if (!empty($postMedia)): ?>
+            <div class="post-image-wrapper<?= count($postMedia) > 1 ? ' post-media-grid' : '' ?>">
+                <?php foreach ($postMedia as $mediaPath): ?>
+                    <?php
+                    $ext = strtolower(pathinfo($mediaPath, PATHINFO_EXTENSION));
+                    $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
+                    ?>
+                    <div class="post-media-item">
+                        <?php if (in_array($ext, $videoExtensions, true)): ?>
+                            <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
+                                <source src="<?= htmlspecialchars($mediaPath) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
+                                Your browser does not support the video tag.
+                            </video>
+                        <?php else: ?>
+                            <img src="<?= htmlspecialchars($mediaPath) ?>"
+                                 class="post-image-modern"
+                                 style="cursor:pointer;"
+                                 onclick="openPhotoLightbox(this)"
+                                 data-post-id="<?= (int)$p['id'] ?>"
+                                 data-avatar="<?= htmlspecialchars($avatar) ?>"
+                                 data-username="<?= htmlspecialchars($p['username']) ?>"
+                                 data-user-id="<?= (int)$p['user_id'] ?>"
+                                 data-title="<?= htmlspecialchars($p['title'] ?? '') ?>"
+                                 data-content="<?= htmlspecialchars($p['content'] ?? '') ?>"
+                                 data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"
+                                 data-like-count="<?= (int)$p['like_count'] ?>"
+                                 data-comment-count="<?= (int)$p['comment_count'] ?>"
+                                 data-user-liked="<?= !empty($p['user_liked']) ? '1' : '0' ?>">
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
         
@@ -274,6 +358,7 @@ if (isset($_SESSION['user_id'])) {
         </div> <!-- Close main content column -->
 
         <!-- Right Sidebar -->
+        <?php if (isset($_SESSION['user_id'])): ?>
         <div class="col-md-3 col-lg-3">
             <div class="sidebar-modern sidebar-sticky">
                 <!-- Weather Widget -->
@@ -287,8 +372,9 @@ if (isset($_SESSION['user_id'])) {
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div> <!-- Close row -->
-</div> <!-- Close container-fluid -->
+</main>
 
 
 
@@ -338,17 +424,50 @@ if (isset($_SESSION['user_id'])) {
     </div>
 </div>
 
+<!-- Photo Lightbox -->
+<div id="photoLightbox" class="photo-lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+    <div class="lightbox-container">
+        <div class="lightbox-media">
+            <img id="lightboxImage" src="" alt="Post image">
+        </div>
+        <div class="lightbox-sidebar">
+            <div class="lightbox-post-header">
+                <img id="lightboxAvatar" src="" class="rounded-circle" width="42" height="42" style="object-fit:cover;flex-shrink:0;">
+                <div style="min-width:0;flex:1;">
+                    <a id="lightboxUsernameLink" href="#" class="text-decoration-none fw-bold" style="color:var(--text-primary);font-size:0.95rem;"></a>
+                    <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;" id="lightboxTimestamp"></div>
+                </div>
+            </div>
+            <div class="lightbox-post-body">
+                <h6 id="lightboxTitle" style="font-weight:700;color:var(--text-primary);margin-bottom:6px;"></h6>
+                <p id="lightboxContent" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
+            </div>
+            <div class="lightbox-actions">
+                <button id="lightboxLikeBtn" class="action-btn" onclick="toggleLike(parseInt(this.dataset.postId), this)">
+                    <i class="far fa-heart"></i> <span>0</span>
+                </button>
+                <span class="action-btn" style="cursor:default;pointer-events:none;">
+                    <i class="far fa-comment"></i> <span id="lightboxCommentCnt">0</span>
+                </span>
+            </div>
+            <div class="lightbox-comments-scroll" id="lightboxComments"></div>
+            <div class="lightbox-comment-input">
+                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="Write a comment...">
+                <button class="btn btn-sm btn-primary" onclick="addLightboxComment()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
 <script src="fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
 <script src="fe/assets/js/index.js?v=<?= assetVersion('fe/assets/js/index.js') ?>"></script>
 
-<!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
-    </div>
-</footer>
+<?php include 'fe/components/footer.php'; ?>
 
 </body>
 </html>

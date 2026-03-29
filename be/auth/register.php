@@ -4,6 +4,17 @@ secureSession();
 require '../../config/database.php';
 setSecurityHeaders();
 
+function redirectWithRegisterData(string $error, string $fullName, string $username, string $email): void {
+    $query = http_build_query([
+        'error' => $error,
+        'fullName' => $fullName,
+        'username' => $username,
+        'email' => $email,
+    ]);
+    header('Location: ../../fe/auth/register_form.php?' . $query);
+    exit();
+}
+
 // Rate limiting
 if (!checkRateLimit('register', 5, 900)) {
     http_response_code(429);
@@ -29,47 +40,40 @@ $confirm = trim($confirm);
 
 // Basic validation
 if (!$fullName || !$username || !$email || !$password || !$confirm) {
-    header('Location: ../../fe/auth/register_form.php?error=empty_fields');
-    exit();
+    redirectWithRegisterData('empty_fields', $fullName, $username, $email);
 }
 
 // Validate email
 if (!validateEmail($email)) {
-    header('Location: ../../fe/auth/register_form.php?error=invalid_email');
-    exit();
+    redirectWithRegisterData('invalid_email', $fullName, $username, $email);
 }
 
 // Validate username
 if (!validateUsername($username)) {
-    header('Location: ../../fe/auth/register_form.php?error=invalid_username');
-    exit();
+    redirectWithRegisterData('invalid_username', $fullName, $username, $email);
 }
 
 // Validate password strength
 if (!validatePassword($password)) {
-    header('Location: ../../fe/auth/register_form.php?error=weak_password');
-    exit();
+    redirectWithRegisterData('weak_password', $fullName, $username, $email);
 }
 
 if ($password !== $confirm) {
-    header('Location: ../../fe/auth/register_form.php?error=password_mismatch');
-    exit();
+    redirectWithRegisterData('password_mismatch', $fullName, $username, $email);
 }
 
 // Check if email already exists
 $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
 $stmt->execute([$email]);
 if ($stmt->fetch()) {
-    header('Location: ../../fe/auth/register_form.php?error=email_exists');
-    exit();
+    redirectWithRegisterData('email_exists', $fullName, $username, $email);
 }
 
 // Check if username already exists
 $stmt = $pdo->prepare('SELECT id FROM users WHERE username = ?');
 $stmt->execute([$username]);
 if ($stmt->fetch()) {
-    header('Location: ../../fe/auth/register_form.php?error=username_exists');
-    exit();
+    redirectWithRegisterData('username_exists', $fullName, $username, $email);
 }
 
 // Hash password
@@ -96,6 +100,5 @@ try {
 } catch (PDOException $e) {
     // Log error (in production, log to file)
     error_log('Registration error: ' . $e->getMessage());
-    header('Location: ../../fe/auth/register_form.php?error=server_error');
-    exit();
+    redirectWithRegisterData('server_error', $fullName, $username, $email);
 }

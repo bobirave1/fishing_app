@@ -39,19 +39,6 @@ CREATE TABLE `activity_feed` (
 
 -- --------------------------------------------------------
 
---
--- Table structure for table `comments`
---
-
-CREATE TABLE `comments` (
-  `id` int(11) NOT NULL,
-  `post_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `content` text NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `fishing_plans`
@@ -122,27 +109,8 @@ CREATE TABLE `friend_requests` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `friend_requests`
---
-
-INSERT INTO `friend_requests` (`id`, `sender_id`, `receiver_id`, `status`, `created_at`) VALUES
-(1, 1, 1, 'pending', '2026-01-12 07:27:36'),
-(2, 3, 3, 'pending', '2026-01-12 07:28:51');
-
 -- --------------------------------------------------------
 
---
--- Table structure for table `likes`
---
-
-CREATE TABLE `likes` (
-  `post_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `messages`
@@ -153,7 +121,26 @@ CREATE TABLE `messages` (
   `sender_id` int(11) NOT NULL,
   `receiver_id` int(11) NOT NULL,
   `content` text NOT NULL,
+  `attachment_urls` longtext DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `from_user_id` int(11) DEFAULT NULL,
+  `related_id` int(11) DEFAULT NULL,
+  `post_id` int(11) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -315,13 +302,6 @@ ALTER TABLE `activity_feed`
   ADD KEY `user_id` (`user_id`),
   ADD KEY `post_id` (`post_id`);
 
---
--- Indexes for table `comments`
---
-ALTER TABLE `comments`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `idx_comments_post` (`post_id`);
 
 --
 -- Indexes for table `fishing_plans`
@@ -361,12 +341,6 @@ ALTER TABLE `friend_requests`
   ADD UNIQUE KEY `sender_id` (`sender_id`,`receiver_id`),
   ADD KEY `receiver_id` (`receiver_id`);
 
---
--- Indexes for table `likes`
---
-ALTER TABLE `likes`
-  ADD PRIMARY KEY (`post_id`,`user_id`),
-  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `messages`
@@ -376,6 +350,16 @@ ALTER TABLE `messages`
   ADD KEY `sender_id` (`sender_id`),
   ADD KEY `receiver_id` (`receiver_id`),
   ADD KEY `conversation` (`sender_id`,`receiver_id`);
+
+--
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_notifications_user_read` (`user_id`,`is_read`),
+  ADD KEY `idx_notifications_created` (`created_at`),
+  ADD KEY `from_user_id` (`from_user_id`),
+  ADD KEY `post_id` (`post_id`);
 
 --
 -- Indexes for table `password_resets`
@@ -444,11 +428,6 @@ ALTER TABLE `waterbodies`
 ALTER TABLE `activity_feed`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
---
--- AUTO_INCREMENT for table `comments`
---
-ALTER TABLE `comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `fishing_plans`
@@ -472,12 +451,18 @@ ALTER TABLE `follows`
 -- AUTO_INCREMENT for table `friend_requests`
 --
 ALTER TABLE `friend_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -541,6 +526,13 @@ ALTER TABLE `fishing_plans`
   ADD CONSTRAINT `fishing_plans_ibfk_2` FOREIGN KEY (`waterbody_id`) REFERENCES `waterbodies` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `fish_catches`
+--
+ALTER TABLE `fish_catches`
+  ADD CONSTRAINT `fish_catches_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fish_catches_ibfk_2` FOREIGN KEY (`waterbody_id`) REFERENCES `waterbodies` (`id`) ON DELETE SET NULL;
+
+--
 -- Constraints for table `follows`
 --
 ALTER TABLE `follows`
@@ -569,6 +561,14 @@ ALTER TABLE `messages`
   ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`from_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `notifications_ibfk_3` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL;
+
+--
 -- Constraints for table `password_resets`
 --
 ALTER TABLE `password_resets`
@@ -580,6 +580,12 @@ ALTER TABLE `password_resets`
 ALTER TABLE `post_comments`
   ADD CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `post_images`
+--
+ALTER TABLE `post_images`
+  ADD CONSTRAINT `post_images_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `post_likes`

@@ -2,13 +2,24 @@
    AUTHENTICATION FORMS - MODERN PROFESSIONAL
    ============================================ */
 
-body {
-    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+body.auth-page {
+    background-color: var(--bg-primary);
+    background-image: var(--body-bg-overlay), var(--body-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-blend-mode: multiply, normal;
+    background-attachment: fixed;
     min-height: 100vh;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body.auth-page .auth-main {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 3.5rem 1rem;
 }
 
 /* Auth Cards */
@@ -19,14 +30,19 @@ body {
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
     overflow: hidden;
-    max-width: 420px;
+    max-width: 460px;
     width: 100%;
     transition: all 250ms ease-in-out;
 }
 
 .register-card {
-    max-width: 480px;
+    max-width: 500px;
     margin: 20px auto;
+}
+
+body.auth-page .footer {
+    margin-top: 0;
+    padding: 1.5rem 0 1rem;
 }
 
 .login-card:hover,
@@ -89,7 +105,7 @@ body {
 
 .form-group label {
     font-weight: 600;
-    color: #111827;
+    color: var(--text-primary);
     margin-bottom: 8px;
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -97,23 +113,24 @@ body {
 }
 
 .form-control {
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 12px 16px;
     font-size: 0.95rem;
     transition: all 150ms ease-in-out;
-    background: #F9FAFB;
+    background: var(--surface-2);
+    color: var(--text-primary);
 }
 
 .form-control:focus {
-    background: white;
+    background: var(--surface-1);
     border-color: #3B82F6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     outline: none;
 }
 
 .form-control::placeholder {
-    color: #D1D5DB;
+    color: var(--text-muted);
 }
 
 /* Auth Buttons */
@@ -159,7 +176,13 @@ body {
     text-align: center;
     margin-top: 20px;
     font-size: 0.9rem;
-    color: #6B7280;
+    color: var(--text-muted);
+}
+
+body.auth-page[data-theme="dark"] .login-card,
+body.auth-page[data-theme="dark"] .register-card {
+    background: var(--surface-1);
+    border-color: var(--border-color);
 }
 
 .form-text a {
@@ -180,7 +203,7 @@ body.register-page {
 
 /* Error Messages */
 .alert-danger {
-    background: linear-gradient(135deg, #FEE2E2 0%, #FEV2E2 100%);
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
     border: 1px solid #FECACA;
     color: #991B1B;
     border-radius: 8px;
@@ -191,7 +214,7 @@ body.register-page {
 
 .alert-success {
     background: linear-gradient(135deg, #DCFCE7 0%, #D1FAE5 100%);
-    border: 1px solid #BBIF9B;
+    border: 1px solid #BBF7D0;
     color: #166534;
     border-radius: 8px;
     padding: 12px 16px;
@@ -221,6 +244,10 @@ body.register-page {
     .register-card {
         border-radius: 12px;
         max-width: 100%;
+    }
+
+    body.auth-page .auth-main {
+        padding: 2rem 0.75rem;
     }
 
     .login-header,

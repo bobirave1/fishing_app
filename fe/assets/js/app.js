@@ -1,4 +1,4 @@
-// Comprehensive JavaScript for all fishing app features
+﻿// Comprehensive JavaScript for all fishing app features
 
 // Helper function to get CSRF token
 function getCsrfToken() {
@@ -279,13 +279,16 @@ function sendFriendRequest(receiverId) {
 // ==================== SEARCH ====================
 let searchTimeout;
 
-function performSearch(query) {
+function performSearch(element) {
+    const isElement = typeof element !== 'string' && element.value !== undefined;
+    const query = isElement ? element.value : element;
     clearTimeout(searchTimeout);
     
-    const resultsDiv = document.getElementById('searchResults');
+    const resultsDiv = isElement 
+        ? element.closest('.dropdown-menu').querySelector('.searchResults') 
+        : (document.querySelector('.searchResults') || document.getElementById('searchResults'));
     
     if (!resultsDiv) {
-        console.error('searchResults element not found!');
         return;
     }
     
@@ -313,7 +316,7 @@ function performSearch(query) {
             .then(data => {
                 console.log('Search data:', data);
                 if (data.success) {
-                    displaySearchResults(data.results);
+                    displaySearchResults(data.results, resultsDiv);
                 } else {
                     resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">No results</div>';
                 }
@@ -325,8 +328,9 @@ function performSearch(query) {
     }, 300);
 }
 
-function displaySearchResults(results) {
-    const resultsDiv = document.getElementById('searchResults');
+function displaySearchResults(results, targetDiv) {
+    const resultsDiv = targetDiv || document.querySelector('.searchResults') || document.getElementById('searchResults');
+    if (!resultsDiv) return;
     
     const path = window.location.pathname;
     const isInFePages = path.includes('/fe/pages/');
@@ -498,8 +502,7 @@ function displayConversation(messages, currentUserId, otherId) {
     let html = '';
     messages.forEach(msg => {
         const isOwn = msg.sender_id == currentUserId;
-        const alignment = isOwn ? 'text-end' : 'text-start';
-        const bgClass = isOwn ? 'bg-primary text-white' : 'bg-light';
+        const groupClass = isOwn ? 'own' : 'other';
         
         let attachmentsHtml = '';
         if (msg.attachment_urls) {
@@ -515,18 +518,19 @@ function displayConversation(messages, currentUserId, otherId) {
         }
         
         html += `
-            <div class="message-group mb-2 ${alignment}">
-                <div class="d-inline-block ${bgClass} p-2 rounded" style="max-width: 70%;">
+            <div class="message-group ${groupClass}">
+                <div class="message-bubble" style="max-width: 70%;">
                     ${attachmentsHtml}
                     ${msg.content ? `<p class="mb-0">${msg.content}</p>` : ''}
-                    <small class="${isOwn ? 'text-white-50' : 'text-muted'}">${formatDate(msg.created_at)}</small>
+                    <small class="message-time">${formatDate(msg.created_at)}</small>
                 </div>
             </div>
         `;
     });
     
     container.innerHTML = html;
-    container.scrollTop = container.scrollHeight;
+    const scrollArea = container.parentElement;
+    scrollArea.scrollTop = scrollArea.scrollHeight;
 }
 
 function sendMessage(receiverId) {
@@ -847,14 +851,14 @@ if (document.body.dataset.userId && document.body.dataset.userId != '0') {
 
 // Close search dropdown when clicking outside
 document.addEventListener('click', function(e) {
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    
-    if (searchInput && searchResults) {
-        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-            searchResults.classList.add('d-none');
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+        const input = dropdown.querySelector('.searchInput');
+        const results = dropdown.querySelector('.searchResults');
+        
+        if (input && results && !dropdown.contains(e.target)) {
+            results.classList.add('d-none');
         }
-    }
+    });
 });
 
 // ==================== UTILITIES ====================
@@ -892,3 +896,133 @@ if (document.readyState === 'loading') {
 } else {
     localizeIsoDates();
 }
+
+// ==================== BUBBLE EFFECTS ====================
+function slowDownBubble(bubble) {
+    // Заменяме текущата скорост с много бавна (напр. 30 секунди за изкачване)
+    bubble.style.setProperty('--duration', '30s');
+    bubble.style.opacity = '0.4'; // Визуален фийдбек, че е докоснато
+}
+
+function initBubbles() {
+    const TRANSITION_EXIT_MS = 320;
+
+    const container = document.createElement('div');
+    container.className = 'bubble-container';
+    document.body.appendChild(container);
+
+    const transitionContainer = document.createElement('div');
+    transitionContainer.className = 'bubble-container transition-bubble-container';
+    document.body.appendChild(transitionContainer);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'transition-overlay';
+    document.body.appendChild(overlay);
+
+    let isNavigating = false;
+
+    const createTransitionSpinner = () => {
+        transitionContainer.innerHTML = '';
+        const spinner = document.createElement('div');
+        spinner.className = 'bubble-spinner';
+
+        for (let i = 0; i < 12; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'bubble-spinner__dot';
+            dot.style.setProperty('--dot-index', i.toString());
+            spinner.appendChild(dot);
+        }
+
+        transitionContainer.appendChild(spinner);
+    };
+
+    // Create background bubbles with optional stagger to avoid visual popping.
+    const spawnBackgroundBubbles = (count = 15, staggerMs = 0) => {
+        if (staggerMs <= 0) {
+            for (let i = 0; i < count; i++) createOneBubble(container);
+            return;
+        }
+
+        let created = 0;
+        const intervalId = setInterval(() => {
+            createOneBubble(container);
+            created++;
+            if (created >= count) clearInterval(intervalId);
+        }, staggerMs);
+    };
+
+    spawnBackgroundBubbles(24, 0);
+
+    // Handle page transitions
+    document.addEventListener('click', e => {
+        const link = e.target.closest('a');
+        if (link &&
+            link.href && 
+            !isNavigating &&
+            e.button === 0 &&
+            !e.metaKey &&
+            !e.ctrlKey &&
+            !e.shiftKey &&
+            !e.altKey &&
+            !link.target && 
+            !link.hasAttribute('download') &&
+            !link.dataset.noTransition &&
+            link.origin === window.location.origin && 
+            !link.href.includes('#') &&
+            !link.getAttribute('onclick')) {
+            
+            isNavigating = true;
+            e.preventDefault();
+            
+            // Fade out page content smoothly
+            requestAnimationFrame(() => {
+                document.body.classList.add('fade-out');
+                // Fade out background bubbles smoothly
+                container.classList.add('fade-out');
+                // Activate transition container with fade-in
+                transitionContainer.classList.add('active');
+            });
+
+            createTransitionSpinner();
+
+            setTimeout(() => {
+                window.location.href = link.href;
+            }, TRANSITION_EXIT_MS);
+        }
+    });
+}
+
+function createOneBubble(container) {
+    const bubble = document.createElement('div');
+    bubble.className = 'bg-bubble';
+    
+    const size = Math.random() * 60 + 20 + 'px';
+    bubble.style.width = size;
+    bubble.style.height = size;
+    bubble.style.left = Math.random() * 100 + '%';
+    
+    bubble.style.bottom = '-150px';
+    
+    const duration = Math.random() * 5 + 8;
+    bubble.style.setProperty('--duration', duration + 's');
+    bubble.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+    bubble.style.animationDelay = (Math.random() * 3) + 's';
+    
+    // Събитие за пукане при клик
+    bubble.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        slowDownBubble(bubble);
+    });
+
+    container.appendChild(bubble);
+}
+
+// Initialize if DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBubbles);
+} else {
+    initBubbles();
+}
+
+

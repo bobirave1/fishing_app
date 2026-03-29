@@ -221,5 +221,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 <script src="../assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
 <script src="../assets/js/edit_profile.js?v=<?= assetVersion('fe/assets/js/edit_profile.js') ?>"></script>
 
+<?php include '../components/footer.php'; ?>
+
 </body>
 </html>

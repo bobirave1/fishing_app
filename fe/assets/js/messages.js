@@ -32,8 +32,7 @@ function displayConversationView(messages, currentUserId, otherId) {
     
     messages.forEach(msg => {
         const isOwn = msg.sender_id == currentUserId;
-        const alignment = isOwn ? 'text-end' : 'text-start';
-        const bgClass = isOwn ? 'bg-primary text-white' : 'bg-light';
+        const groupClass = isOwn ? 'own' : 'other';
         
         let attachmentsHtml = '';
         if (msg.attachment_urls) {
@@ -49,11 +48,11 @@ function displayConversationView(messages, currentUserId, otherId) {
         }
         
         html += `
-            <div class="${alignment}">
-                <div class="d-inline-block ${bgClass} p-2 rounded-3" style="max-width: 70%;">
+            <div class="message-group ${groupClass}">
+                <div class="message-bubble" style="max-width: 70%;">
                     ${attachmentsHtml}
                     ${msg.content ? `<p class="mb-0">${msg.content}</p>` : ''}
-                    <small class="${isOwn ? 'text-white-50' : 'text-muted'}">${formatDate(msg.created_at)}</small>
+                    <small class="message-time">${formatDate(msg.created_at)}</small>
                 </div>
             </div>
         `;

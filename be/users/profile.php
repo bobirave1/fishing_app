@@ -102,11 +102,11 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     <link rel="icon" href="../../fe/assets/img/logo_rounded.png">
 
 </head>
-<body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<body class="d-flex flex-column min-vh-100" data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../../fe/components/navbar.php'; ?>
 
-<div class="container my-5 py-5">
+<main class="flex-grow-1 container my-5 py-5">
     <!-- Profile Header -->
     <div class="card mb-4 shadow profile-main-card">
         <div class="card-body text-center">
@@ -241,14 +241,9 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             </div>
         </div>
     </div>
-</div>
+</main>
 
-<!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
-    </div>
-</footer>
+<?php include '../../fe/components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>

@@ -276,6 +276,48 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* Profile dropdown readability (theme + language controls) */
+.fb-navbar .dropdown-menu {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.fb-navbar .dropdown-item,
+.fb-navbar .dropdown-item span,
+.fb-navbar .dropdown-header,
+.fb-navbar .dropdown-item-text,
+.fb-navbar .theme-label,
+.fb-navbar .form-check-label {
+    color: var(--text-primary) !important;
+}
+
+.fb-navbar .dropdown-item:hover,
+.fb-navbar .dropdown-item:focus {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.fb-navbar .dropdown-divider {
+    border-top-color: var(--border-color);
+}
+
+.fb-navbar #langSelect {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.fb-navbar #langSelect:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(8, 131, 149, 0.18);
+}
+
+.fb-navbar .dropdown-item.text-danger,
+.fb-navbar .dropdown-item.text-danger i {
+    color: #f87171 !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .fb-navbar {

@@ -102,6 +102,50 @@ document.getElementById('deletePostModal').addEventListener('hidden.bs.modal', f
 
 // Weather widget with improved error handling
 const weatherInfoEl = document.getElementById('weather-info');
+const lang = document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith('bg') ? 'bg' : 'en';
+const isBg = lang === 'bg';
+const ui = isBg ? {
+    temperature: 'Температура',
+    wind: 'Вятър',
+    humidity: 'Влажност',
+    visibility: 'Видимост',
+    pressure: 'Налягане',
+    seaLevel: 'Ниво на морето',
+    fishingTip: 'Съвет за риболов',
+    greatTip: 'Отличен ден за риболов! Ниски скорости на вятъра са идеални.',
+    moderateTip: 'Умерен вятър - все още подходящ за повечето видове риболов.',
+    highTip: 'Силен вятър може да затрудни (или да направи по-рисков) риболова.',
+    errorTitle: 'Грешка при зареждане на времето',
+    retry: 'Опритай пак',
+    locationDenied: 'Достъпът до локация беше отказан. Включете разрешение в настройките на браузъра.',
+    positionUnavailable: 'Информацията за местоположението не е налична. Проверете настройките на устройството.',
+    timeout: 'Заявката за местоположение изтече. Опитайте отново.',
+    unknownLocation: 'Възникна неизвестна грешка при получаване на местоположение.',
+    locationAccessNeeded: 'Достъп до местоположението',
+    browserNoGeo: 'Вашият браузър не поддържа геолокация.',
+    browserHint: 'Моля, използвайте модерен браузър като Chrome, Firefox или Edge.',
+} : {
+    temperature: 'Temperature',
+    wind: 'Wind',
+    humidity: 'Humidity',
+    visibility: 'Visibility',
+    pressure: 'Pressure',
+    seaLevel: 'Sea Level',
+    fishingTip: 'Fishing Tip',
+    greatTip: 'Great day for fishing! Low wind speeds are ideal.',
+    moderateTip: 'Moderate wind, still suitable for most fishing activities.',
+    highTip: 'High wind speeds may make fishing challenging or unsafe.',
+    errorTitle: 'Error loading weather',
+    retry: 'Retry',
+    locationDenied: 'Location access was denied. Please enable location services in your browser settings.',
+    positionUnavailable: 'Location information is unavailable. Please check your device settings.',
+    timeout: 'Location request timed out. Please try again.',
+    unknownLocation: 'An unknown error occurred while getting your location.',
+    locationAccessNeeded: 'Location Access Needed',
+    browserNoGeo: "Your browser doesn't support geolocation.",
+    browserHint: 'Please use a modern browser like Chrome, Firefox, or Edge.',
+};
+
 if (weatherInfoEl && navigator.geolocation) {
     console.log('Geolocation supported - requesting position...');
     
@@ -112,49 +156,6 @@ if (weatherInfoEl && navigator.geolocation) {
         
         weatherInfoEl.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading weather...</p>';
         
-        const lang = document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith('bg') ? 'bg' : 'en';
-        const isBg = lang === 'bg';
-        const ui = isBg ? {
-            temperature: 'Температура',
-            wind: 'Вятър',
-            humidity: 'Влажност',
-            visibility: 'Видимост',
-            pressure: 'Налягане',
-            seaLevel: 'Ниво на морето',
-            fishingTip: 'Съвет за риболов',
-            greatTip: 'Отличен ден за риболов! Ниски скорости на вятъра са идеални.',
-            moderateTip: 'Умерен вятър - все още подходящ за повечето видове риболов.',
-            highTip: 'Силен вятър може да затрудни (или да направи по-рисков) риболова.',
-            errorTitle: 'Грешка при зареждане на времето',
-            retry: 'Опритай пак',
-            locationDenied: 'Достъпът до локация беше отказан. Включете разрешение в настройките на браузъра.',
-            positionUnavailable: 'Информацията за местоположението не е налична. Проверете настройките на устройството.',
-            timeout: 'Заявката за местоположение изтече. Опитайте отново.',
-            unknownLocation: 'Възникна неизвестна грешка при получаване на местоположение.',
-            locationAccessNeeded: 'Достъп до местоположението',
-            browserNoGeo: 'Вашият браузър не поддържа геолокация.',
-            browserHint: 'Моля, използвайте модерен браузър като Chrome, Firefox или Edge.',
-        } : {
-            temperature: 'Temperature',
-            wind: 'Wind',
-            humidity: 'Humidity',
-            visibility: 'Visibility',
-            pressure: 'Pressure',
-            seaLevel: 'Sea Level',
-            fishingTip: 'Fishing Tip',
-            greatTip: 'Great day for fishing! Low wind speeds are ideal.',
-            moderateTip: 'Moderate wind, still suitable for most fishing activities.',
-            highTip: 'High wind speeds may make fishing challenging or unsafe.',
-            errorTitle: 'Error loading weather',
-            retry: 'Retry',
-            locationDenied: 'Location access was denied. Please enable location services in your browser settings.',
-            positionUnavailable: 'Location information is unavailable. Please check your device settings.',
-            timeout: 'Location request timed out. Please try again.',
-            unknownLocation: 'An unknown error occurred while getting your location.',
-            locationAccessNeeded: 'Location Access Needed',
-            browserNoGeo: "Your browser doesn't support geolocation.",
-            browserHint: 'Please use a modern browser like Chrome, Firefox, or Edge.',
-        };
         fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}&lang=${encodeURIComponent(lang)}`)
             .then(response => {
                 console.log('Weather API response status:', response.status);
@@ -257,3 +258,204 @@ if (weatherInfoEl && navigator.geolocation) {
         </div>
     `;
 }
+
+// ==================== PHOTO LIGHTBOX ====================
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(str)));
+    return d.innerHTML;
+}
+
+function setTextWithNewlines(el, text) {
+    el.innerHTML = '';
+    String(text).split('\n').forEach(function(line, i) {
+        if (i > 0) el.appendChild(document.createElement('br'));
+        el.appendChild(document.createTextNode(line));
+    });
+}
+
+const LIGHTBOX_ANIMATION_MS = 220;
+let lightboxCloseTimer = null;
+
+function openPhotoLightbox(img) {
+    const lb = document.getElementById('photoLightbox');
+    const postId = img.dataset.postId;
+
+    if (lightboxCloseTimer) {
+        clearTimeout(lightboxCloseTimer);
+        lightboxCloseTimer = null;
+    }
+    lb.classList.remove('closing');
+
+    document.getElementById('lightboxImage').src = img.src;
+    document.getElementById('lightboxAvatar').src = img.dataset.avatar || '';
+
+    const usernameLink = document.getElementById('lightboxUsernameLink');
+    usernameLink.textContent = img.dataset.username || '';
+    usernameLink.href = 'be/users/profile.php?id=' + (img.dataset.userId || '');
+
+    const isoDate = img.dataset.isoDate;
+    document.getElementById('lightboxTimestamp').textContent = isoDate ? formatDate(isoDate) : '';
+
+    const titleEl = document.getElementById('lightboxTitle');
+    if (img.dataset.title) {
+        titleEl.textContent = img.dataset.title;
+        titleEl.style.display = '';
+    } else {
+        titleEl.textContent = '';
+        titleEl.style.display = 'none';
+    }
+    setTextWithNewlines(document.getElementById('lightboxContent'), img.dataset.content || '');
+
+    const likeBtn = document.getElementById('lightboxLikeBtn');
+    const isLiked = img.dataset.userLiked === '1';
+    likeBtn.dataset.postId = postId;
+    likeBtn.className = 'action-btn' + (isLiked ? ' liked' : '');
+    likeBtn.innerHTML = '<i class="' + (isLiked ? 'fas' : 'far') + ' fa-heart"></i> <span>' + (img.dataset.likeCount || 0) + '</span>';
+
+    document.getElementById('lightboxCommentCnt').textContent = img.dataset.commentCount || 0;
+
+    lb.dataset.postId = postId;
+    lb.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    const commentInput = document.getElementById('lightboxCommentInput');
+    if (commentInput) commentInput.value = '';
+
+    loadLightboxComments(postId);
+}
+
+function closeLightbox() {
+    const lb = document.getElementById('photoLightbox');
+    if (!lb.classList.contains('active') || lb.classList.contains('closing')) {
+        return;
+    }
+
+    lb.classList.add('closing');
+
+    lightboxCloseTimer = setTimeout(function() {
+        lb.classList.remove('closing');
+        lb.classList.remove('active');
+        lightboxCloseTimer = null;
+    }, LIGHTBOX_ANIMATION_MS);
+
+    document.body.style.overflow = '';
+}
+
+document.getElementById('photoLightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+});
+
+function loadLightboxComments(postId) {
+    const container = document.getElementById('lightboxComments');
+    container.innerHTML = '<p class="text-center text-muted small py-2"><i class="fas fa-spinner fa-spin"></i></p>';
+
+    const fd = new FormData();
+    fd.append('post_id', postId);
+    fd.append('action', 'get');
+
+    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success || !data.comments.length) {
+                container.innerHTML = '<p class="text-center text-muted small py-3">No comments yet.</p>';
+                return;
+            }
+            container.innerHTML = data.comments.map(function(c) {
+                const av = (typeof getAvatarUrl === 'function') ? getAvatarUrl(c.avatar_url) : (c.avatar_url || 'fe/assets/img/avatars/default.png');
+                return '<div class="d-flex gap-2 mb-3">' +
+                    '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="32" height="32" style="object-fit:cover;">' +
+                    '<div>' +
+                        '<div style="background:var(--surface-2);border-radius:8px;padding:6px 10px;">' +
+                            '<strong style="color:var(--text-primary);font-size:0.8rem;">' + escapeHtml(c.username) + '</strong>' +
+                            '<p style="margin:3px 0 0;color:var(--text-primary);font-size:0.85rem;">' + escapeHtml(c.content) + '</p>' +
+                        '</div>' +
+                        '<small style="color:var(--text-muted);margin-left:4px;">' + escapeHtml(c.created_at) + '</small>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        })
+        .catch(function() {
+            container.innerHTML = '<p class="text-danger text-center small py-2">Failed to load comments.</p>';
+        });
+}
+
+function addLightboxComment() {
+    const lb = document.getElementById('photoLightbox');
+    const postId = lb.dataset.postId;
+    const input = document.getElementById('lightboxCommentInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    const fd = new FormData();
+    fd.append('post_id', postId);
+    fd.append('content', content);
+    fd.append('action', 'add');
+    fd.append('csrf_token', getCsrfToken());
+
+    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                input.value = '';
+                loadLightboxComments(postId);
+                const lbCnt = document.getElementById('lightboxCommentCnt');
+                if (lbCnt) lbCnt.textContent = parseInt(lbCnt.textContent || '0') + 1;
+                const feedCnt = document.getElementById('comment-count-' + postId);
+                if (feedCnt) feedCnt.textContent = parseInt(feedCnt.textContent || '0') + 1;
+            } else {
+                alert('Error: ' + (data.error || 'Failed to add comment'));
+            }
+        });
+}
+
+// ==================== CREATE POST FILE PREVIEW ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const mediaInput = document.getElementById('postMediaInput');
+    const preview = document.getElementById('postMediaPreview');
+    const fileNameEl = document.getElementById('postMediaFileName');
+    if (!mediaInput || !preview || !fileNameEl) return;
+
+    const previewObjectUrls = [];
+    const defaultFileName = fileNameEl.dataset.noFile || fileNameEl.textContent;
+    const selectedFileLabel = fileNameEl.dataset.selectedFile || 'Selected file';
+    const filesSelectedLabel = fileNameEl.dataset.filesSelected || 'files selected';
+
+    mediaInput.addEventListener('change', function() {
+        while (previewObjectUrls.length) {
+            URL.revokeObjectURL(previewObjectUrls.pop());
+        }
+
+        const files = Array.from(mediaInput.files || []);
+        if (files.length === 0) {
+            fileNameEl.textContent = defaultFileName;
+            preview.classList.remove('show');
+            preview.innerHTML = '';
+            return;
+        }
+
+        if (files.length === 1) {
+            fileNameEl.textContent = selectedFileLabel + ': ' + files[0].name;
+        } else {
+            fileNameEl.textContent = files.length + ' ' + filesSelectedLabel;
+        }
+
+        const previewParts = files.map(function(file) {
+            if (file.type.startsWith('image/')) {
+                const objectUrl = URL.createObjectURL(file);
+                previewObjectUrls.push(objectUrl);
+                return '<img src="' + objectUrl + '" alt="Selected image preview">';
+            }
+
+            return '<div class="file-name"><i class="fas fa-file me-1"></i>' + escapeHtml(file.name) + '</div>';
+        });
+
+        preview.innerHTML = previewParts.join('');
+        preview.classList.add('show');
+    });
+});

@@ -79,7 +79,7 @@ if (!isset($_SESSION['user_id'])) {
 
                     <!-- Conversation Thread -->
                     <div class="conversation-thread d-none" id="conversationView">
-                        <div class="flex-grow-1">
+                        <div class="messages-scroll-area flex-grow-1">
                             <div id="conversationThread" style="display: flex; flex-direction: column; gap: 10px;"></div>
                         </div>
                         <div class="message-input-area">
@@ -98,7 +98,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
 
                     <!-- No Conversation Selected -->
-                    <div class="flex-grow-1 d-flex align-items-center justify-content-center bg-light" id="noConversationView">
+                    <div class="flex-grow-1 d-flex align-items-center justify-content-center" id="noConversationView">
                         <div class="text-center text-muted">
                             <i class="fas fa-comments fa-5x mb-3 text-secondary"></i>
                             <p class="fs-5"><?= __('select_conversation') ?></p>
@@ -115,12 +115,7 @@ if (!isset($_SESSION['user_id'])) {
 <script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
 <script src="../assets/js/messages.js?v=<?= assetVersion('fe/assets/js/messages.js') ?>"></script>
 
-<!-- Footer -->
-<footer class="footer mt-5">
-    <div class="container">
-        <p>&copy; 2026 FISHINGLORY. All rights reserved. | Connect with fellow anglers and share your catches!</p>
-    </div>
-</footer>
+<?php include '../components/footer.php'; ?>
 
 </body>
 </html>

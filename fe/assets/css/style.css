@@ -14,7 +14,7 @@
     --accent-danger: #EF4444;           /* Red for errors */
     
     /* Background & Surfaces - Light Mode (Optimized for bg_light.jpg) */
-    --bg-primary: #F0F9FA;
+    --bg-primary: #DCEBED;
     --bg-secondary: rgba(255, 255, 255, 0.8);
     --bg-tertiary: rgba(8, 131, 149, 0.1);
     --bg-card: rgba(255, 255, 255, 0.65);    /* Lighter glass for light mode */
@@ -25,6 +25,9 @@
     --text-primary: #04161D;            /* Dark text for light bg */
     --text-secondary: #088395;
     --text-tertiary: #557A7A;
+    --text-muted: #46666D;
+    --surface-1: rgba(255, 255, 255, 0.78);
+    --surface-2: rgba(255, 255, 255, 0.68);
     --border-color: rgba(8, 131, 149, 0.2);
     
     /* Gradients */
@@ -54,7 +57,10 @@
     /* Body Background Images - No gradient overlay */
     --body-bg-image-light: url('../img/bg_light.jpg');
     --body-bg-image-dark: url('../img/bg_dark.jpg');
+    --body-bg-overlay-light: linear-gradient(180deg, rgba(8, 131, 149, 0.18) 0%, rgba(6, 95, 111, 0.14) 100%);
+    --body-bg-overlay-dark: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.32) 100%);
     --body-bg-image: var(--body-bg-image-light); /* Default to light */
+    --body-bg-overlay: var(--body-bg-overlay-light);
 }
 
 /* Dark Mode Variables */
@@ -71,12 +77,16 @@
     --text-primary: #F0F9FA;            /* Very Light Teal */
     --text-secondary: #B8D4D4;          /* Light Teal */
     --text-tertiary: #7AB2B2;           /* Medium Light Teal */
+    --text-muted: #BFD8D8;
+    --surface-1: rgba(16, 28, 28, 0.84);
+    --surface-2: rgba(23, 36, 36, 0.78);
     --border-color: #2A3A3A;            /* Dark Teal Border */
     
     /* Gradients for Dark Mode */
     --gradient-sidebar: linear-gradient(135deg, #0F1A1A 0%, #1A2525 100%);
     --gradient-post: linear-gradient(135deg, #1A2525 0%, #2A3A3A 100%);
     --body-bg-image: var(--body-bg-image-dark);
+    --body-bg-overlay: var(--body-bg-overlay-dark);
     
     /* Adjust shadows for dark mode */
     --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -97,15 +107,42 @@ html {
 
 body {
     background-color: var(--bg-primary);
-    background-image: var(--body-bg-image); /* Use only the image, no gradient */
+    background-image: var(--body-bg-overlay), var(--body-bg-image);
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
+    background-blend-mode: multiply, normal;
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     transition: background-color var(--transition-base), background-image var(--transition-slow);
+}
+
+/* Smooth page-content transition without hiding bubble layers */
+body > * {
+    transition: opacity 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body > *:not(.bubble-container):not(.transition-overlay) {
+    animation: page-content-fade-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+body.fade-out > *:not(.bubble-container):not(.transition-overlay) {
+    animation: none;
+    opacity: 0;
+}
+
+@keyframes page-content-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 a {
@@ -371,6 +408,26 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.9rem;
 }
 
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.form-control,
+.form-select,
+.form-check-label,
+.input-group-text,
+.list-group-item {
+    color: var(--text-primary);
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+textarea::placeholder,
+input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.9;
+}
+
 /* Bootstrap Overrides */
 .btn-primary {
     background: rgba(0, 0, 0, 0.72);
@@ -470,10 +527,10 @@ h1, h2, h3, h4, h5, h6 {
 .login-card,
 .register-card,
 .glass-card {
-    background: rgba(0, 0, 0, 0.38) !important;
-    border-color: rgba(255, 255, 255, 0.16) !important;
+    background: var(--surface-1) !important;
+    border-color: var(--border-color) !important;
     color: var(--text-primary) !important;
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28) !important;
+    box-shadow: var(--shadow-lg) !important;
 }
 
 /* Make the post/message internals readable */
@@ -500,9 +557,9 @@ h1, h2, h3 {
 .btn-secondary,
 .btn-outline-primary,
 .btn-outline-success {
-    background: rgba(0, 0, 0, 0.25) !important;
-    border-color: rgba(255, 255, 255, 0.20) !important;
-    color: #ffffff !important;
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
     border-radius: 999px !important;
 }
 
@@ -515,4 +572,140 @@ h1, h2, h3 {
 .friend-card,
 .request-card {
     background-image: none !important;
+}
+
+[data-theme="dark"] .post-timestamp,
+[data-theme="dark"] .conversation-preview,
+[data-theme="dark"] .message-time,
+[data-theme="dark"] .location-badge,
+[data-theme="dark"] .chart-labels,
+[data-theme="dark"] .time-labels,
+[data-theme="dark"] .times-column h6,
+[data-theme="dark"] .profile-bio,
+[data-theme="dark"] .profile-info-label,
+[data-theme="dark"] .friend-status,
+[data-theme="dark"] .friends-empty,
+[data-theme="dark"] .requests-empty,
+[data-theme="dark"] .empty-conversation {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .post-actions,
+[data-theme="dark"] .comment-section,
+[data-theme="dark"] .engagement-buttons,
+[data-theme="dark"] .conversation-item,
+[data-theme="dark"] .activity-chart,
+[data-theme="dark"] .times-section,
+[data-theme="dark"] .calendar-days,
+[data-theme="dark"] #searchResults,
+[data-theme="dark"] #searchResults .list-group-item {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .action-btn,
+[data-theme="dark"] .engagement-btn,
+[data-theme="dark"] .friend-btn-secondary,
+[data-theme="dark"] .request-btn-decline,
+[data-theme="dark"] .activity-header-section button {
+    background: var(--surface-1) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ============================================
+   Design Cleanup: Unified Color Language
+   ============================================ */
+
+/* 1) One consistent accent gradient across feature pages */
+.login-header,
+.register-header,
+.edit-profile-header,
+.profile-header-gradient,
+.activity-header-section,
+.conversation-list-header,
+.friend-btn-primary,
+.request-btn-accept,
+.filter-btn,
+.friends-count,
+.requests-count,
+.profile-action-btn,
+.message-group.own .message-bubble,
+.message-send-btn {
+    background: var(--gradient-primary) !important;
+}
+
+/* 2) Unified accent/border interactions (replace mixed bright blues) */
+.modern-post:hover,
+.activity-card:hover,
+.profile-main-card:hover,
+.profile-section-card:hover,
+.friend-card:hover,
+.request-card:hover,
+.login-card:hover,
+.register-card:hover,
+.hover-card:hover,
+.day-item:hover,
+.day-item.active,
+.conversation-item:hover,
+.conversation-item.active,
+.fb-profile-btn:hover,
+.message-input:focus,
+.search-box input:focus,
+.form-control:focus,
+.create-post-input:focus {
+    border-color: var(--primary-color) !important;
+}
+
+/* 3) Calmer, consistent surfaces instead of mixed white/gray blocks */
+.post-actions,
+.comment-section,
+.engagement-buttons,
+.activity-chart,
+.times-section,
+.calendar-days,
+.conversation-item,
+.search-box input,
+#searchResults,
+#searchResults .list-group-item,
+.friends-empty,
+.requests-empty {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+}
+
+.action-btn,
+.engagement-btn,
+.friend-btn-secondary,
+.request-btn-decline,
+.activity-header-section button,
+.create-post-actions .form-select,
+.create-post-actions .form-control,
+.comment-input,
+.message-input {
+    background: var(--surface-1) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 4) Unified text hierarchy */
+.post-user-info h6,
+.friend-name,
+.profile-info-value,
+.activity-level-text,
+.times-column .time-item,
+.conversation-name {
+    color: var(--text-primary) !important;
+}
+
+.post-timestamp,
+.conversation-preview,
+.message-time,
+.friend-status,
+.profile-bio,
+.profile-info-label,
+.chart-labels,
+.time-labels,
+.times-column h6 {
+    color: var(--text-muted) !important;
 }

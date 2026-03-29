@@ -8,6 +8,10 @@ if (!isset($_SESSION['lang'])) {
 require_once '../../config/languages.php';
 setSecurityHeaders();
 
+$prefillFullName = htmlspecialchars(trim((string)($_GET['fullName'] ?? '')), ENT_QUOTES, 'UTF-8');
+$prefillEmail = htmlspecialchars(trim((string)($_GET['email'] ?? '')), ENT_QUOTES, 'UTF-8');
+$prefillUsername = htmlspecialchars(trim((string)($_GET['username'] ?? '')), ENT_QUOTES, 'UTF-8');
+
 // If already logged in, redirect to index
 if (isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -23,11 +27,12 @@ if (isset($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="stylesheet" href="../assets/css/auth_forms.css?v=<?= assetVersion('fe/assets/css/auth_forms.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
-<body>
-
+<body class="d-flex flex-column min-vh-100 auth-page">
+<main class="flex-grow-1 auth-main">
 <div class="register-card">
     <div class="register-header">
         <img src="../assets/img/logo_rounded.png" alt="Logo" width="80" height="80" class="mb-3">
@@ -73,25 +78,25 @@ if (isset($_SESSION['user_id'])) {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="../../be/auth/register.php"> 
+        <form method="POST" action="../../be/auth/register.php" id="registerForm"> 
             <?= getCsrfField() ?>
             
             <div class="mb-3">
                 <label for="regFullName" class="form-label"><i class="fas fa-user"></i> <?= __('full_name') ?></label>
                 <input type="text" class="form-control" id="regFullName" name="fullName" 
-                       placeholder="<?= __('full_name') ?>" required autofocus>
+                      placeholder="<?= __('full_name') ?>" value="<?= $prefillFullName ?>" required autofocus>
             </div>
 
             <div class="mb-3">
                 <label for="regEmail" class="form-label"><i class="fas fa-envelope"></i> <?= __('email') ?></label>
                 <input type="email" class="form-control" id="regEmail" name="email" 
-                       placeholder="<?= __('email') ?>" required>
+                      placeholder="<?= __('email') ?>" value="<?= $prefillEmail ?>" required>
             </div>
 
             <div class="mb-3">
                 <label for="regUsername" class="form-label"><i class="fas fa-at"></i> <?= __('username') ?></label>
                 <input type="text" class="form-control" id="regUsername" name="username" 
-                       placeholder="<?= __('username') ?>" pattern="[a-zA-Z0-9_]{3,20}" 
+                      placeholder="<?= __('username') ?>" value="<?= $prefillUsername ?>" pattern="[a-zA-Z0-9_]{3,20}" 
                        title="3-20 characters, letters, numbers, and underscores only" required>
                 <div class="form-text">3-20 characters, letters, numbers, and underscores only</div>
             </div>
@@ -131,7 +136,17 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
 </div>
+</main>
+
+<?php include '../components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script>
+    // Enable bubble animation on register form submission
+    document.getElementById('registerForm')?.addEventListener('submit', function() {
+        sessionStorage.setItem('bubbleTransition', 'true');
+    });
+</script>
 </body>
 </html>
