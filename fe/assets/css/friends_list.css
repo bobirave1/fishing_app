@@ -22,17 +22,17 @@
 
 .friends-page .page-title i,
 .requests-page .page-title i {
-    color: #3B82F6;
+    color: var(--primary-color);
     font-size: 2rem;
 }
 
 /* Friend Card */
 .friend-card,
 .request-card {
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    transition: all 250ms ease-in-out;
-    background: white;
+    transition: all var(--transition-base);
+    background: var(--surface-1);
     padding: 20px;
     margin-bottom: 16px;
     display: flex;
@@ -43,13 +43,13 @@
 .friend-card:hover,
 .request-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
-    border-color: #3B82F6;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
 .request-card {
-    border-left: 4px solid #F59E0B;
-    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+    border-left: 4px solid var(--accent-warning);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.15) 100%);
 }
 
 /* Friend Avatar */
@@ -64,13 +64,13 @@
 .friend-avatar-lg {
     width: 80px;
     height: 80px;
-    border: 4px solid #10B981;
+    border: 4px solid var(--accent-success);
 }
 
 .request-avatar {
     width: 80px;
     height: 80px;
-    border: 3px solid #F59E0B;
+    border: 3px solid var(--accent-warning);
 }
 
 /* Friend Info */
@@ -97,11 +97,11 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #EF4444;
+    background: var(--accent-danger);
 }
 
 .friend-status.online .status-badge {
-    background: #10B981;
+    background: var(--accent-success);
 }
 
 /* Friend Actions */
@@ -126,46 +126,44 @@
 
 .friend-btn-primary,
 .request-btn-accept {
-    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    background: var(--gradient-primary);
     color: white;
 }
 
 .friend-btn-primary:hover,
 .request-btn-accept:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 .friend-btn-secondary,
 .request-btn-decline {
-    background: #F3F4F6;
-    color: #111827;
-    border: 1px solid #E5E7EB;
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 
 .friend-btn-secondary:hover,
 .request-btn-decline:hover {
-    background: #E5E7EB;
-    border-color: #D1D5DB;
+    background: var(--surface-1);
+    border-color: var(--primary-color);
 }
 
-.friend-btn-danger,
-.request-btn-decline {
-    background: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FECACA;
+.friend-btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--accent-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.friend-btn-danger:hover,
-.request-btn-decline:hover {
-    background: #FEV2E2;
-    border-color: #FECACA;
+.friend-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--accent-danger);
 }
 
 /* Empty State */
 .friends-empty,
 .requests-empty {
-    border: 2px dashed #D1D5DB;
+    border: 2px dashed var(--border-color);
     border-radius: 12px;
     background: var(--surface-2);
     padding: 60px 20px;
@@ -176,7 +174,7 @@
 .friends-empty i,
 .requests-empty i {
     font-size: 3rem;
-    color: #D1D5DB;
+    color: var(--text-muted);
     margin-bottom: 16px;
     display: block;
 }
@@ -200,40 +198,42 @@
 .requests-filter input {
     flex: 1;
     min-width: 250px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 10px 16px;
     font-size: 0.95rem;
+    background: var(--surface-2);
+    color: var(--text-primary);
 }
 
 .friends-filter input:focus,
 .requests-filter input:focus {
     outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.15);
 }
 
 .filter-btn {
-    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    background: var(--gradient-primary);
     color: white;
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease-in-out;
+    transition: all var(--transition-fast);
 }
 
 .filter-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 /* Counters */
 .friends-count,
 .requests-count {
     display: inline-block;
-    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    background: var(--gradient-primary);
     color: white;
     padding: 4px 12px;
     border-radius: 99px;

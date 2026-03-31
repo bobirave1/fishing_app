@@ -214,6 +214,52 @@ Customize in `Config/security.php`:
 3. Choose visibility (Public, Friends, Private)
 4. Click "Post"
 
+## ✅ Fast Testing & Debug (Defense Ready)
+
+Use this section as your quick validation script before presentation.
+
+### 1) Manual Smoke Checklist (10 minutes)
+
+1. Auth: register with a new user, logout, login again.
+2. Feed: create a post (text only), then create a post with image/video.
+3. Social: like and unlike a post; add and delete a comment.
+4. Friends: send request, accept request, remove friend.
+5. Messaging: send message with text, then with attachment.
+6. Notifications: open notifications, mark one read, then mark all read.
+7. Profile: edit profile info and verify avatar rendering.
+8. Security checks: submit form with missing CSRF and verify rejection.
+9. Validation checks: try empty comment/post and confirm proper user feedback.
+10. Theme checks: toggle light/dark and verify text contrast and button readability.
+
+### 2) Frontend Debug Mode
+
+Enable a compact debug panel in browser console:
+
+```js
+localStorage.setItem('fishingDebug', '1');
+location.reload();
+```
+
+Disable:
+
+```js
+localStorage.removeItem('fishingDebug');
+location.reload();
+```
+
+What you get:
+- in-app error notices for common request failures
+- captured unhandled JS errors and promise rejections
+- compact debug panel with recent events
+
+### 3) Quick Presentation Script (2 minutes)
+
+1. Open home feed and create a post.
+2. Show like/comment interaction.
+3. Open profile and remove a friend (with confirmation).
+4. Toggle dark/light mode to demonstrate UI consistency.
+5. Show debug panel enabled and explain faster issue tracing.
+
 ### Fish Activity Prediction
 1. Navigate to "Activity Feed"
 2. Click on the interactive map to select a location

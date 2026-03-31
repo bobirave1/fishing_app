@@ -88,10 +88,9 @@ try {
     $stmt->execute([$fullName, $username, $email, $hash]);
     $userId = $pdo->lastInsertId();
     
-    // Create user profile entry with default avatar
-    $defaultAvatar = 'fe/assets/img/default-avatar.png';
-    $stmt = $pdo->prepare("INSERT INTO user_profiles (user_id, avatar_url) VALUES (?, ?)");
-    $stmt->execute([$userId, $defaultAvatar]);
+    // Create user profile entry (avatar_url stays NULL – theme-aware default is resolved at display time)
+    $stmt = $pdo->prepare("INSERT INTO user_profiles (user_id) VALUES (?)");
+    $stmt->execute([$userId]);
     
     // Redirect to login with success message
     header('Location: ../../fe/auth/login_form.php?registered=1');

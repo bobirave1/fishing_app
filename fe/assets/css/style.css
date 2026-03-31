@@ -709,3 +709,542 @@ h1, h2, h3 {
 .times-column h6 {
     color: var(--text-muted) !important;
 }
+
+/* ============================================
+   Fast Quality Pass: Focus + Forms + Controls
+   ============================================ */
+
+.btn,
+.form-control,
+.form-select,
+.input-group-text,
+.card,
+.alert {
+    border-radius: var(--radius-md);
+}
+
+.btn {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.btn-primary,
+.btn-success,
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-secondary {
+    min-height: 40px;
+}
+
+.form-control,
+.form-select,
+textarea.form-control,
+input.form-control {
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea.form-control:focus,
+input.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.18);
+    background: var(--surface-1);
+}
+
+:focus-visible {
+    outline: 2px solid rgba(8, 131, 149, 0.72);
+    outline-offset: 2px;
+}
+
+[data-theme="dark"] .alert {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .alert-success {
+    background: rgba(16, 185, 129, 0.22);
+}
+
+[data-theme="dark"] .alert-danger {
+    background: rgba(239, 68, 68, 0.22);
+}
+
+[data-theme="dark"] .alert-warning {
+    background: rgba(245, 158, 11, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================
+   Phase 2: Unified Button System
+   ============================================ */
+.btn-app-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--gradient-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+}
+
+.btn-app-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: #fff;
+}
+
+.btn-app-primary:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.btn-app-primary:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.btn-app-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-app-secondary:hover {
+    background: var(--surface-1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.btn-app-secondary:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.btn-app-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--accent-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-app-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--accent-danger);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.btn-app-danger:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.btn-app-success {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--gradient-success);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-app-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    color: #fff;
+}
+
+.btn-app-success:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* Button sizes */
+.btn-app-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    border-radius: var(--radius-sm);
+}
+
+.btn-app-lg {
+    padding: 14px 32px;
+    font-size: 1rem;
+}
+
+/* ============================================
+   Phase 3: Global Keyframes & Micro-Animations
+   ============================================ */
+
+/* Notification badge pulse */
+@keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* Card fade-in on load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Like button bounce */
+@keyframes likeBouncePop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25); }
+    50% { transform: scale(0.95); }
+    70% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Scroll-to-top fade */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Like button bounce effect */
+.action-btn.like-bounce i {
+    animation: likeBouncePop 400ms ease-out;
+}
+
+/* Post card hover lift */
+.modern-post {
+    transition: all var(--transition-base), transform var(--transition-fast);
+}
+
+.modern-post:hover {
+    transform: translateY(-2px);
+}
+
+/* Friend/request card hover */
+.friend-card,
+.request-card {
+    transition: all var(--transition-base), transform var(--transition-fast);
+}
+
+/* Conversation item smooth transition */
+.conversation-item {
+    transition: all var(--transition-fast), border-left var(--transition-fast);
+}
+
+/* Search dropdown slide in */
+.fb-search-results {
+    animation: fadeInUp 200ms ease-out;
+}
+
+/* ============================================
+   Phase 4: Dark Mode Refinements
+   ============================================ */
+
+[data-theme="dark"] {
+    --text-secondary: #C8E0E0;
+    --text-muted: #9ABCBC;
+}
+
+/* Dark mode surface highlight for hovers */
+[data-theme="dark"] .friend-card:hover,
+[data-theme="dark"] .request-card:hover,
+[data-theme="dark"] .conversation-item:hover,
+[data-theme="dark"] .hover-card:hover {
+    background: rgba(8, 131, 149, 0.08) !important;
+}
+
+/* Dark mode request card */
+[data-theme="dark"] .request-card {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border-left-color: var(--accent-warning) !important;
+}
+
+/* Dark mode shadows: subtle glow instead of dark voids */
+[data-theme="dark"] .modern-post:hover,
+[data-theme="dark"] .profile-main-card:hover,
+[data-theme="dark"] .activity-card:hover {
+    box-shadow: 0 4px 20px rgba(8, 131, 149, 0.12) !important;
+}
+
+/* Dark mode profile stat items */
+[data-theme="dark"] .profile-stat-item {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Dark message bubbles */
+[data-theme="dark"] .message-group.other .message-bubble {
+    background: var(--surface-2);
+}
+
+/* Dark scrollbar styling */
+[data-theme="dark"] .messages-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(8, 131, 149, 0.3);
+}
+
+/* ============================================
+   Phase 5: Loading & Empty States
+   ============================================ */
+
+/* Skeleton loader */
+.skeleton {
+    background: linear-gradient(90deg,
+        var(--surface-2) 25%,
+        var(--surface-1) 50%,
+        var(--surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    padding: 20px;
+    border-radius: var(--radius-md);
+    min-height: 120px;
+}
+
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state-icon {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+    color: var(--text-muted);
+}
+
+.empty-state-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.empty-state-text {
+    font-size: 0.9rem;
+    max-width: 320px;
+    line-height: 1.6;
+}
+
+/* ============================================
+   Phase 6: Mobile Improvements
+   ============================================ */
+
+@media (max-width: 576px) {
+    /* Larger touch targets */
+    .fb-nav-btn,
+    .fb-icon-btn,
+    .action-btn,
+    .engagement-btn,
+    .friend-btn,
+    .request-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Compact hero */
+    .landing-hero {
+        padding: 20px 24px;
+        border-radius: 16px;
+    }
+
+    .landing-hero__title-outline {
+        font-size: clamp(2.2rem, 8vw, 3.5rem);
+        -webkit-text-stroke: 2px #ffffff;
+    }
+
+    .landing-hero__content {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .landing-hero__description {
+        font-size: 0.9rem;
+    }
+
+    /* Post cards tighter spacing */
+    .modern-post {
+        margin-bottom: 12px;
+    }
+
+    .post-actions,
+    .engagement-buttons {
+        gap: 4px;
+    }
+}
+
+/* ============================================
+   Phase 7: Final Visual Details
+   ============================================ */
+
+/* Selection color */
+::selection {
+    background: rgba(8, 131, 149, 0.25);
+    color: var(--text-primary);
+}
+
+::-moz-selection {
+    background: rgba(8, 131, 149, 0.25);
+    color: var(--text-primary);
+}
+
+/* Custom scrollbar (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(8, 131, 149, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(8, 131, 149, 0.35);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(8, 131, 149, 0.2) transparent;
+}
+
+/* Scroll-to-top button */
+.scroll-to-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: #fff;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-fast);
+    animation: fadeIn 300ms ease-out;
+}
+
+.scroll-to-top:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+}
+
+.scroll-to-top.visible {
+    display: flex;
+}
+
+/* Footer gradient border */
+.footer {
+    border-top: 2px solid transparent;
+    border-image: var(--gradient-primary) 1;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    background: var(--primary-color);
+    color: #fff;
+    transform: translateY(-2px);
+}

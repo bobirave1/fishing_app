@@ -5,10 +5,25 @@ require '../../config/database.php';
 require '../../config/avatar_helper.php';
 setSecurityHeaders();
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
+$requestId = bin2hex(random_bytes(8));
+
+function jsonResponse(array $payload, int $status = 200): void {
+    http_response_code($status);
     header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Unauthorized']));
+    echo json_encode($payload);
+    exit;
+}
+
+function jsonError(string $message, string $requestId, int $status): void {
+    jsonResponse([
+        'success' => false,
+        'error' => $message,
+        'request_id' => $requestId,
+    ], $status);
+}
+
+if (!isset($_SESSION['user_id'])) {
+    jsonError('Unauthorized', $requestId, 401);
 }
 
 $userId = $_SESSION['user_id'];
@@ -19,17 +34,12 @@ $action = $_POST['action'] ?? 'add'; // add or get
 // CSRF Protection for write operations only (not for 'get' action)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== 'get') {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-        http_response_code(403);
-        header('Content-Type: application/json');
-        exit(json_encode(['error' => 'Invalid CSRF token']));
+        jsonError('Invalid CSRF token', $requestId, 403);
     }
 }
 
-header('Content-Type: application/json');
-
 if (!$postId) {
-    http_response_code(400);
-    exit(json_encode(['error' => 'Post ID required']));
+    jsonError('Post ID required', $requestId, 400);
 }
 
 // Check if post exists
@@ -38,27 +48,34 @@ $stmt->execute([$postId]);
 $post = $stmt->fetch();
 
 if (!$post) {
-    http_response_code(404);
-    exit(json_encode(['error' => 'Post not found']));
+    jsonError('Post not found', $requestId, 404);
 }
 
 if ($action === 'add') {
     if (empty($content)) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Comment content required']));
+        jsonError('Comment content required', $requestId, 400);
     }
     
     if (strlen($content) > 1000) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Comment too long (max 1000 characters)']));
+        jsonError('Comment too long (max 1000 characters)', $requestId, 400);
+    }
+    
+    // Validate parent_id if replying
+    $parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+    if ($parentId) {
+        $stmt = $pdo->prepare("SELECT id, user_id FROM post_comments WHERE id = ? AND post_id = ?");
+        $stmt->execute([$parentId, $postId]);
+        if (!$stmt->fetch()) {
+            jsonError('Parent comment not found', $requestId, 404);
+        }
     }
     
     // Add comment
     $stmt = $pdo->prepare("
-        INSERT INTO post_comments (post_id, user_id, content, created_at)
-        VALUES (?, ?, ?, NOW())
+        INSERT INTO post_comments (post_id, user_id, content, parent_id, created_at)
+        VALUES (?, ?, ?, ?, NOW())
     ");
-    $stmt->execute([$postId, $userId, $content]);
+    $stmt->execute([$postId, $userId, $content, $parentId]);
     $commentId = $pdo->lastInsertId();
     
     // Create notification
@@ -89,28 +106,34 @@ if ($action === 'add') {
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
     
-    exit(json_encode([
+    jsonResponse([
         'success' => true,
         'comment_id' => $commentId,
         'username' => $user['username'],
         'avatar' => $user['avatar_url'] ?? getDefaultAvatarPath(),
         'content' => htmlspecialchars($content),
-        'created_at' => date('c')
-    ]));
+        'created_at' => date('c'),
+        'request_id' => $requestId,
+    ]);
     
 } else if ($action === 'get') {
-    // Get all comments for post
+    // Get all comments for post with like counts and parent info
     $stmt = $pdo->prepare("
         SELECT 
-            pc.id, pc.user_id, pc.content, pc.created_at,
-            u.username, up.avatar_url
+            pc.id, pc.user_id, pc.content, pc.created_at, pc.parent_id,
+            u.username, up.avatar_url,
+            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = pc.id) AS like_count,
+            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = pc.id AND cl.user_id = ?) AS user_liked,
+            pu.username AS parent_username
         FROM post_comments pc
         JOIN users u ON pc.user_id = u.id
         LEFT JOIN user_profiles up ON u.id = up.user_id
+        LEFT JOIN post_comments pp ON pc.parent_id = pp.id
+        LEFT JOIN users pu ON pp.user_id = pu.id
         WHERE pc.post_id = ?
-        ORDER BY pc.created_at DESC
+        ORDER BY pc.created_at ASC
     ");
-    $stmt->execute([$postId]);
+    $stmt->execute([$userId, $postId]);
     $comments = $stmt->fetchAll();
     
     // Ensure consistent ISO timestamps for front-end localization/parsing
@@ -118,20 +141,22 @@ if ($action === 'add') {
         if (!empty($c['created_at'])) {
             $c['created_at'] = date('c', strtotime($c['created_at']));
         }
+        $c['like_count'] = (int)$c['like_count'];
+        $c['user_liked'] = (int)$c['user_liked'];
     }
     
-    exit(json_encode([
+    jsonResponse([
         'success' => true,
         'comments' => $comments,
-        'count' => count($comments)
-    ]));
+        'count' => count($comments),
+        'request_id' => $requestId,
+    ]);
     
 } else if ($action === 'delete') {
     $commentId = $_POST['comment_id'] ?? null;
     
     if (!$commentId) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Comment ID required']));
+        jsonError('Comment ID required', $requestId, 400);
     }
     
     // Check ownership
@@ -140,16 +165,54 @@ if ($action === 'add') {
     $comment = $stmt->fetch();
     
     if (!$comment || $comment['user_id'] != $userId) {
-        http_response_code(403);
-        exit(json_encode(['error' => 'Cannot delete this comment']));
+        jsonError('Cannot delete this comment', $requestId, 403);
     }
     
     // Delete comment
     $stmt = $pdo->prepare("DELETE FROM post_comments WHERE id = ?");
     $stmt->execute([$commentId]);
     
-    exit(json_encode(['success' => true]));
+    jsonResponse([
+        'success' => true,
+        'request_id' => $requestId,
+    ]);
+} else if ($action === 'like_comment') {
+    $commentId = (int)($_POST['comment_id'] ?? 0);
+    if (!$commentId) {
+        jsonError('Comment ID required', $requestId, 400);
+    }
+    
+    // Check comment exists and belongs to this post
+    $stmt = $pdo->prepare("SELECT id FROM post_comments WHERE id = ? AND post_id = ?");
+    $stmt->execute([$commentId, $postId]);
+    if (!$stmt->fetch()) {
+        jsonError('Comment not found', $requestId, 404);
+    }
+    
+    // Toggle like
+    $stmt = $pdo->prepare("SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?");
+    $stmt->execute([$commentId, $userId]);
+    $existing = $stmt->fetch();
+    
+    if ($existing) {
+        $pdo->prepare("DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?")->execute([$commentId, $userId]);
+        $liked = false;
+    } else {
+        $pdo->prepare("INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)")->execute([$commentId, $userId]);
+        $liked = true;
+    }
+    
+    // Get updated count
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM comment_likes WHERE comment_id = ?");
+    $stmt->execute([$commentId]);
+    $likeCount = (int)$stmt->fetchColumn();
+    
+    jsonResponse([
+        'success' => true,
+        'liked' => $liked,
+        'like_count' => $likeCount,
+        'request_id' => $requestId,
+    ]);
 }
 
-http_response_code(400);
-exit(json_encode(['error' => 'Invalid action']));
+jsonError('Invalid action', $requestId, 400);

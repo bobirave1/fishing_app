@@ -4,16 +4,33 @@ secureSession();
 require '../../config/database.php';
 setSecurityHeaders();
 
+$requestId = bin2hex(random_bytes(8));
+
+function jsonResponse(array $payload, int $status = 200): void {
+    http_response_code($status);
+    header('Content-Type: application/json');
+    echo json_encode($payload);
+    exit;
+}
+
+function jsonError(string $message, string $requestId, int $status): void {
+    jsonResponse([
+        'success' => false,
+        'error' => $message,
+        'request_id' => $requestId,
+    ], $status);
+}
+
+header('Content-Type: application/json');
+
 if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    exit(json_encode(['error' => 'Unauthorized']));
+    jsonError('Unauthorized', $requestId, 401);
 }
 
 // CSRF Protection for POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-        http_response_code(403);
-        exit(json_encode(['error' => 'Invalid CSRF token']));
+        jsonError('Invalid CSRF token', $requestId, 403);
     }
 }
 
@@ -22,29 +39,24 @@ $action = $_POST['action'] ?? $_GET['action'] ?? null;
 $receiverId = $_POST['receiver_id'] ?? $_GET['receiver_id'] ?? null;
 $content = trim($_POST['content'] ?? '');
 
-header('Content-Type: application/json');
-
 if ($action === 'send') {
     $files = $_FILES['files'] ?? [];
     $hasContent = !empty($content);
     $hasFiles = !empty($files['name'][0]);
     
     if (!$receiverId || (!$hasContent && !$hasFiles)) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Receiver and message content or files required']));
+        jsonError('Receiver and message content or files required', $requestId, 400);
     }
     
     if (strlen($content) > 2000) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Message too long']));
+        jsonError('Message too long', $requestId, 400);
     }
     
     // Check if receiver exists
     $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
     $stmt->execute([$receiverId]);
     if (!$stmt->fetch()) {
-        http_response_code(404);
-        exit(json_encode(['error' => 'Receiver not found']));
+        jsonError('Receiver not found', $requestId, 404);
     }
     
     // Handle file uploads
@@ -90,17 +102,17 @@ if ($action === 'send') {
     $stmt->execute([$userId, $receiverId, $content, $attachmentJson]);
     $messageId = $pdo->lastInsertId();
     
-    exit(json_encode([
+    jsonResponse([
         'success' => true,
         'message_id' => $messageId,
         'created_at' => date('c'),
-        'attachments' => $attachmentUrls
-    ]));
+        'attachments' => $attachmentUrls,
+        'request_id' => $requestId,
+    ]);
     
 } else if ($action === 'get_conversation') {
     if (!$receiverId) {
-        http_response_code(400);
-        exit(json_encode(['error' => 'Receiver ID required']));
+        jsonError('Receiver ID required', $requestId, 400);
     }
     
     // Get conversation between two users
@@ -132,11 +144,12 @@ if ($action === 'send') {
         }
     }
     
-    exit(json_encode([
+    jsonResponse([
         'success' => true,
         'messages' => $messages,
-        'current_user_id' => $userId
-    ]));
+        'current_user_id' => $userId,
+        'request_id' => $requestId,
+    ]);
     
 } else if ($action === 'get_conversations') {
     // Get list of conversations
@@ -172,12 +185,12 @@ if ($action === 'send') {
     $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId]);
     $conversations = $stmt->fetchAll();
     
-    exit(json_encode([
+    jsonResponse([
         'success' => true,
-        'conversations' => $conversations
-    ]));
+        'conversations' => $conversations,
+        'request_id' => $requestId,
+    ]);
     
 } else {
-    http_response_code(400);
-    exit(json_encode(['error' => 'Invalid action']));
+    jsonError('Invalid action', $requestId, 400);
 }

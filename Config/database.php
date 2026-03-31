@@ -1,4 +1,7 @@
 <?php
+// Set correct timezone (must match the system/MySQL timezone)
+date_default_timezone_set('Europe/Sofia');
+
 // Load environment variables (if using .env file)
 if (file_exists(__DIR__ . '/../.env')) {
     $envLines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

@@ -9,23 +9,23 @@ body {
 
 /* Activity Card Container */
 .activity-card {
-    background: white;
+    background: var(--surface-1);
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 24px;
     overflow: hidden;
-    border: 1px solid #E5E7EB;
-    transition: all 250ms ease-in-out;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-base);
 }
 
 .activity-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #3B82F6;
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
 }
 
 /* Activity Header */
 .activity-header-section {
-    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    background: var(--gradient-primary);
     color: white;
     padding: 24px;
     text-align: center;
@@ -43,18 +43,18 @@ body {
 
 .activity-header-section button {
     background: white;
-    color: #3B82F6;
+    color: var(--primary-color);
     border: none;
     border-radius: 8px;
     padding: 8px 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 150ms ease-in-out;
+    transition: all var(--transition-fast);
 }
 
 .activity-header-section button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
 }
 
 /* Calendar Navigation */
@@ -63,8 +63,8 @@ body {
     justify-content: center;
     gap: 12px;
     padding: 16px 24px;
-    background: #F9FAFB;
-    border-bottom: 1px solid #E5E7EB;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-color);
     overflow-x: auto;
 }
 
@@ -87,9 +87,9 @@ body {
 }
 
 .day-item.active {
-    background: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+    background: var(--gradient-primary);
     color: white;
-    border-color: #3B82F6;
+    border-color: var(--primary-color);
     font-weight: 600;
 }
 
@@ -111,7 +111,7 @@ body {
     text-align: center;
     padding: 12px 24px;
     background: var(--surface-2);
-    border-bottom: 1px solid #E5E7EB;
+    border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
     color: var(--text-muted);
     font-weight: 500;
@@ -131,7 +131,7 @@ body {
 
 .circle-bg {
     fill: none;
-    stroke: #E5E7EB;
+    stroke: var(--border-color);
     stroke-width: 8;
 }
 
@@ -150,7 +150,7 @@ body {
     transform: translate(-50%, -50%);
     font-size: 3.5rem;
     font-weight: 700;
-    color: #3B82F6;
+    color: var(--primary-color);
 }
 
 .activity-level-text {
@@ -166,8 +166,8 @@ body {
     padding: 32px 24px;
     position: relative;
     height: 200px;
-    background: #F9FAFB;
-    border-bottom: 1px solid #E5E7EB;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .chart-labels {
@@ -187,7 +187,7 @@ body {
     position: relative;
     height: 140px;
     margin-left: 50px;
-    border-bottom: 2px solid #E5E7EB;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .chart-grid {
@@ -200,7 +200,7 @@ body {
 }
 
 .grid-line {
-    border-top: 1px dashed #E5E7EB;
+    border-top: 1px dashed var(--border-color);
     width: 100%;
 }
 
@@ -226,8 +226,8 @@ body {
     padding: 24px;
     display: flex;
     justify-content: space-around;
-    background: #F9FAFB;
-    border-top: 1px solid #E5E7EB;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-color);
 }
 
 .times-column {
@@ -269,23 +269,25 @@ body {
 }
 
 .search-box input {
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 10px 12px;
     width: 100%;
+    background: var(--surface-2);
+    color: var(--text-primary);
 }
 
 .search-box input:focus {
     outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.15);
 }
 
 #map {
     height: 400px;
     width: 100%;
     border-radius: 8px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color);
 }
 
 /* Map Card */
@@ -319,26 +321,26 @@ body {
 }
 
 #searchResults {
-    background: white;
-    border: 1px solid #E5E7EB;
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
 }
 
 #searchResults .list-group-item {
     border: none;
-    border-bottom: 1px solid #E5E7EB;
+    border-bottom: 1px solid var(--border-color);
     padding: 12px 16px;
     color: var(--text-primary);
     background: var(--surface-1);
     cursor: pointer;
-    transition: all 150ms ease-in-out;
+    transition: all var(--transition-fast);
 }
 
 #searchResults .list-group-item:hover {
-    background: #F9FAFB;
-    color: #3B82F6;
+    background: var(--surface-2);
+    color: var(--primary-color);
 }
 
 #searchResults .list-group-item:last-child {
@@ -352,7 +354,7 @@ body {
 }
 
 #loadingActivity i {
-    color: #3B82F6;
+    color: var(--primary-color);
 }
 
 /* Keep API alerts readable regardless of inherited header/widget colors */

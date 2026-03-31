@@ -20,14 +20,23 @@ function avatarAssetVersion($relativePath) {
 
 /**
  * Resolve a default avatar path that actually exists in the project.
+ * Returns theme-appropriate avatar (light/dark) based on session.
  */
 function resolveDefaultAvatarPath() {
-    static $resolved = null;
-    if ($resolved !== null) {
-        return $resolved;
+    $theme = $_SESSION['theme'] ?? 'light';
+    $isDark = ($theme === 'dark');
+
+    // Theme-specific defaults first
+    if ($isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/default_avatar_dark.jpg')) {
+        return 'fe/assets/img/avatars/default_avatar_dark.jpg';
+    }
+    if (!$isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/default_avatar_light.jpg')) {
+        return 'fe/assets/img/avatars/default_avatar_light.jpg';
     }
 
+    // Fallback candidates
     $candidates = [
+        'fe/assets/img/avatars/default_avatar_light.jpg',
         'fe/assets/img/default-avatar.png',
         'fe/assets/img/avatars/default.png',
         'fe/assets/img/logo_rounded.png',
@@ -35,13 +44,11 @@ function resolveDefaultAvatarPath() {
 
     foreach ($candidates as $candidate) {
         if (is_file(__DIR__ . '/../' . $candidate)) {
-            $resolved = $candidate;
-            return $resolved;
+            return $candidate;
         }
     }
 
-    $resolved = 'fe/assets/img/logo.png';
-    return $resolved;
+    return 'fe/assets/img/logo.png';
 }
 
 /**
@@ -55,8 +62,11 @@ function getUserAvatar($avatarUrl, $currentPath = null) {
     // Default avatar if none set
     $defaultAvatar = resolveDefaultAvatarPath();
     
-    // Use default if no avatar
+    // Use default if no avatar or if stored file doesn't exist
     $avatar = $avatarUrl ?? $defaultAvatar;
+    if ($avatar !== $defaultAvatar && !is_file(__DIR__ . '/../' . $avatar)) {
+        $avatar = $defaultAvatar;
+    }
     
     // If no current path provided, detect it
     if ($currentPath === null) {

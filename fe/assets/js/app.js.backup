@@ -1,129 +1,9 @@
-﻿// Comprehensive JavaScript for all fishing app features
+// Comprehensive JavaScript for all fishing app features
 
 // Helper function to get CSRF token
 function getCsrfToken() {
     return document.body.dataset.csrfToken || '';
 }
-
-const APP_DEBUG = window.location.search.includes('debug=1') || localStorage.getItem('fishingDebug') === '1';
-const debugEvents = [];
-
-function debugLog(level, message, meta) {
-    const normalizedLevel = ['info', 'warn', 'error'].includes(level) ? level : 'info';
-    const entry = {
-        ts: new Date().toISOString(),
-        level: normalizedLevel,
-        message,
-        meta: meta || null
-    };
-
-    debugEvents.unshift(entry);
-    if (debugEvents.length > 30) {
-        debugEvents.pop();
-    }
-
-    if (APP_DEBUG) {
-        const logger = normalizedLevel === 'error' ? console.error : (normalizedLevel === 'warn' ? console.warn : console.info);
-        logger('[FishingApp]', message, meta || '');
-        renderDebugPanel();
-    }
-}
-
-function getErrorMessage(err, fallback) {
-    if (!err) return fallback;
-    if (typeof err === 'string') return err;
-    if (err.message) return err.message;
-    return fallback;
-}
-
-function showAppNotice(message, type = 'danger', timeoutMs = 4200) {
-    const rootId = 'appNoticeStack';
-    let root = document.getElementById(rootId);
-
-    if (!root) {
-        root = document.createElement('div');
-        root.id = rootId;
-        root.className = 'app-notice-stack';
-        document.body.appendChild(root);
-    }
-
-    const notice = document.createElement('div');
-    const bsType = ['success', 'warning', 'info', 'danger'].includes(type) ? type : 'danger';
-    notice.className = `alert alert-${bsType} alert-dismissible fade show shadow-sm app-notice`;
-    notice.setAttribute('role', 'alert');
-    notice.innerHTML = `
-        <span>${message}</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-
-    root.appendChild(notice);
-
-    window.setTimeout(() => {
-        if (notice.parentElement) {
-            notice.remove();
-        }
-    }, timeoutMs);
-}
-
-function renderDebugPanel() {
-    if (!APP_DEBUG) return;
-    let panel = document.getElementById('appDebugPanel');
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = 'appDebugPanel';
-        panel.className = 'app-debug-panel';
-        panel.innerHTML = `
-            <div class="app-debug-header">
-                <strong>Debug</strong>
-                <div class="app-debug-actions">
-                    <button type="button" class="btn btn-sm btn-outline-light" id="appDebugClear">Clear</button>
-                    <button type="button" class="btn btn-sm btn-outline-light" id="appDebugClose">Hide</button>
-                </div>
-            </div>
-            <div class="app-debug-body" id="appDebugBody"></div>
-        `;
-        document.body.appendChild(panel);
-
-        panel.querySelector('#appDebugClear').addEventListener('click', () => {
-            debugEvents.length = 0;
-            renderDebugPanel();
-        });
-
-        panel.querySelector('#appDebugClose').addEventListener('click', () => {
-            panel.classList.add('d-none');
-        });
-    }
-
-    const body = document.getElementById('appDebugBody');
-    if (!body) return;
-
-    if (debugEvents.length === 0) {
-        body.innerHTML = '<div class="app-debug-item app-debug-empty">No events yet</div>';
-        return;
-    }
-
-    body.innerHTML = debugEvents
-        .map((item) => {
-            const time = new Date(item.ts).toLocaleTimeString();
-            const meta = item.meta ? `<div class="app-debug-meta">${escapeHtml(JSON.stringify(item.meta))}</div>` : '';
-            return `<div class="app-debug-item app-debug-${item.level}"><span>[${time}]</span> ${escapeHtml(item.message)}${meta}</div>`;
-        })
-        .join('');
-}
-
-window.addEventListener('error', (event) => {
-    debugLog('error', 'Unhandled JS error', {
-        message: event.message,
-        source: event.filename,
-        line: event.lineno
-    });
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-    debugLog('error', 'Unhandled promise rejection', {
-        reason: getErrorMessage(event.reason, 'Unknown promise rejection')
-    });
-});
 
 // ==================== LIKES ====================
 const likingInProgress = new Set();
@@ -159,9 +39,6 @@ function toggleLike(postId, button) {
             if (data.liked) {
                 button.classList.add('liked');
                 button.innerHTML = '<i class="fas fa-heart"></i> <span id="like-count-' + postId + '">' + data.like_count + '</span>';
-                // Bounce animation on like
-                button.classList.add('like-bounce');
-                setTimeout(function() { button.classList.remove('like-bounce'); }, 450);
             } else {
                 button.classList.remove('liked');
                 button.innerHTML = '<i class="far fa-heart"></i> <span id="like-count-' + postId + '">' + data.like_count + '</span>';
@@ -170,16 +47,14 @@ function toggleLike(postId, button) {
             // Revert on error
             button.innerHTML = originalHTML;
             button.className = originalClass;
-            debugLog('warn', 'Like action failed', { postId, error: data.error });
-            showAppNotice(data.error || 'Could not update like now.');
+            console.error('Error:', data.error);
         }
     })
     .catch(error => {
         // Revert on error
         button.innerHTML = originalHTML;
         button.className = originalClass;
-        debugLog('error', 'Like request failed', { postId, error: getErrorMessage(error, 'Network error') });
-        showAppNotice('Network error while updating like. Please try again.');
+        console.error('Error:', error);
     })
     .finally(() => {
         likingInProgress.delete(postId);
@@ -244,7 +119,7 @@ function loadComments(postId) {
         }
     })
     .catch(error => {
-        debugLog('error', 'Loading comments failed', { postId, error: getErrorMessage(error, 'Network error') });
+        console.error('Error loading comments:', error);
         commentsSection.innerHTML = '<p class="text-danger text-center small">Failed to load comments</p>';
     });
 }
@@ -279,13 +154,12 @@ function addComment(postId) {
                 countBadge.textContent = parseInt(countBadge.textContent) + 1;
             }
         } else {
-            showAppNotice('Error: ' + (data.error || 'Failed to add comment'));
-            debugLog('warn', 'Add comment rejected', { postId, error: data.error || 'Unknown error' });
+            alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        debugLog('error', 'Add comment request failed', { postId, error: getErrorMessage(error, 'Network error') });
-        showAppNotice('Failed to add comment. Check your connection.');
+        console.error('Error:', error);
+        alert('Failed to add comment');
     });
 }
 
@@ -387,7 +261,7 @@ function sendFriendRequest(receiverId) {
         }
     })
     .catch(error => {
-        debugLog('error', 'Friend request failed', { receiverId, error: getErrorMessage(error, 'Network error') });
+        console.error('Error:', error);
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Friend';
         
@@ -398,7 +272,7 @@ function sendFriendRequest(receiverId) {
             message = 'You are already friends';
         }
         
-        showAppNotice(message, 'warning');
+        alert(message);
     });
 }
 
@@ -448,7 +322,7 @@ function performSearch(element) {
                 }
             })
             .catch(err => {
-                debugLog('error', 'Search request failed', { query, error: getErrorMessage(err, 'Network error') });
+                console.error('Search error:', err);
                 resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">Search error</div>';
             });
     }, 300);
@@ -1023,42 +897,6 @@ if (document.readyState === 'loading') {
     localizeIsoDates();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (APP_DEBUG) {
-            renderDebugPanel();
-            showAppNotice('Debug mode enabled (disable with localStorage.removeItem("fishingDebug"))', 'info', 3000);
-        }
-        initScrollToTop();
-    });
-} else {
-    if (APP_DEBUG) {
-        renderDebugPanel();
-    }
-    initScrollToTop();
-}
-
-// Scroll-to-top button
-function initScrollToTop() {
-    var btn = document.createElement('button');
-    btn.className = 'scroll-to-top';
-    btn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-    btn.setAttribute('aria-label', 'Scroll to top');
-    document.body.appendChild(btn);
-
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 400) {
-            btn.classList.add('visible');
-        } else {
-            btn.classList.remove('visible');
-        }
-    }, { passive: true });
-
-    btn.addEventListener('click', function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
-
 // ==================== BUBBLE EFFECTS ====================
 function slowDownBubble(bubble) {
     // Заменяме текущата скорост с много бавна (напр. 30 секунди за изкачване)
@@ -1067,8 +905,6 @@ function slowDownBubble(bubble) {
 }
 
 function initBubbles() {
-    const TRANSITION_EXIT_MS = 320;
-
     const container = document.createElement('div');
     container.className = 'bubble-container';
     document.body.appendChild(container);
@@ -1081,96 +917,76 @@ function initBubbles() {
     overlay.className = 'transition-overlay';
     document.body.appendChild(overlay);
 
-    let isNavigating = false;
+    // ПРОВЕРКА ЗА ВЛИЗАНЕ (Ако току що сме заредили страницата след клик)
+    if (sessionStorage.getItem('bubbleTransition') === 'true') {
+        overlay.style.transform = 'translateY(0)'; // Моментално покритие
+        overlay.style.pointerEvents = 'all';
+        sessionStorage.removeItem('bubbleTransition');
+        
+        // Масиран старт на балончета при влизане
+        for(let i=0; i<30; i++) createOneBubble(transitionContainer, true, true);
 
-    const createTransitionSpinner = () => {
-        transitionContainer.innerHTML = '';
-        const spinner = document.createElement('div');
-        spinner.className = 'bubble-spinner';
+        // Плавно откриване на страницата
+        setTimeout(() => {
+            overlay.style.transition = 'transform 0.9s cubic-bezier(0.23, 1, 0.32, 1)';
+            overlay.style.transform = 'translateY(-100%)';
+        }, 200);
+    }
 
-        for (let i = 0; i < 12; i++) {
-            const dot = document.createElement('span');
-            dot.className = 'bubble-spinner__dot';
-            dot.style.setProperty('--dot-index', i.toString());
-            spinner.appendChild(dot);
-        }
-
-        transitionContainer.appendChild(spinner);
-    };
-
-    // Create background bubbles with optional stagger to avoid visual popping.
-    const spawnBackgroundBubbles = (count = 15, staggerMs = 0) => {
-        if (staggerMs <= 0) {
-            for (let i = 0; i < count; i++) createOneBubble(container);
-            return;
-        }
-
-        let created = 0;
-        const intervalId = setInterval(() => {
-            createOneBubble(container);
-            created++;
-            if (created >= count) clearInterval(intervalId);
-        }, staggerMs);
-    };
-
-    spawnBackgroundBubbles(24, 0);
+    // Create initial background bubbles
+    for (let i = 0; i < 15; i++) {
+        createOneBubble(container);
+    }
 
     // Handle page transitions
     document.addEventListener('click', e => {
         const link = e.target.closest('a');
-        if (link &&
+        if (link && 
             link.href && 
-            !isNavigating &&
-            e.button === 0 &&
-            !e.metaKey &&
-            !e.ctrlKey &&
-            !e.shiftKey &&
-            !e.altKey &&
             !link.target && 
-            !link.hasAttribute('download') &&
-            !link.dataset.noTransition &&
             link.origin === window.location.origin && 
             !link.href.includes('#') &&
             !link.getAttribute('onclick')) {
             
-            isNavigating = true;
             e.preventDefault();
+            sessionStorage.setItem('bubbleTransition', 'true');
+            overlay.classList.add('active');
             
-            // Fade out page content smoothly
-            requestAnimationFrame(() => {
-                document.body.classList.add('fade-out');
-                // Fade out background bubbles smoothly
-                container.classList.add('fade-out');
-                // Activate transition container with fade-in
-                transitionContainer.classList.add('active');
-            });
-
-            createTransitionSpinner();
+            // Плавно генериране, за да не "замръзва" браузъра
+            let surgeCount = 0;
+            const surgeInterval = setInterval(() => {
+                createOneBubble(transitionContainer, true);
+                surgeCount++;
+                if (surgeCount >= 30) clearInterval(surgeInterval);
+            }, 13);
 
             setTimeout(() => {
                 window.location.href = link.href;
-            }, TRANSITION_EXIT_MS);
+            }, 500);
         }
     });
 }
 
-function createOneBubble(container) {
+function createOneBubble(container, fast = false, isEntry = false) {
     const bubble = document.createElement('div');
     bubble.className = 'bg-bubble';
     
-    const size = Math.random() * 60 + 20 + 'px';
+    // Огромни балончета при преход
+    const size = fast ? (Math.random() * 180 + 100 + 'px') : (Math.random() * 60 + 20 + 'px');
     bubble.style.width = size;
     bubble.style.height = size;
     bubble.style.left = Math.random() * 100 + '%';
     
-    bubble.style.bottom = '-150px';
+    // Ако е влизане в страницата (isEntry), разпръскваме балончетата по целия екран (0-100%)
+    // Ако е излизане, ги пускаме предимно отдолу нагоре
+    bubble.style.bottom = fast ? (isEntry ? (Math.random() * 100) + '%' : (Math.random() * 40 - 20) + '%') : '-150px';
     
-    const duration = Math.random() * 5 + 8;
+    const duration = fast ? (Math.random() * 1.5 + 2.8) : (Math.random() * 5 + 8);
     bubble.style.setProperty('--duration', duration + 's');
     bubble.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
-    bubble.style.animationDelay = (Math.random() * 3) + 's';
+    bubble.style.animationDelay = fast ? '0s' : (Math.random() * 3) + 's';
     
-    // Събитие за пукане при клик
+    // Добавяне на събитие за пукане при клик
     bubble.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1178,6 +994,8 @@ function createOneBubble(container) {
     });
 
     container.appendChild(bubble);
+    
+    if (fast) setTimeout(() => bubble.remove(), 2000);
 }
 
 // Initialize if DOM is ready
@@ -1186,5 +1004,3 @@ if (document.readyState === 'loading') {
 } else {
     initBubbles();
 }
-
-

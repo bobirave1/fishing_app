@@ -107,6 +107,22 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
 <?php include '../../fe/components/navbar.php'; ?>
 
 <main class="flex-grow-1 container my-5 py-5">
+    <?php if (isset($_SESSION['friend_flash_success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['friend_flash_success']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['friend_flash_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['friend_flash_error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($_SESSION['friend_flash_error']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['friend_flash_error']); ?>
+    <?php endif; ?>
+
     <!-- Profile Header -->
     <div class="card mb-4 shadow profile-main-card">
         <div class="card-body text-center">
@@ -147,7 +163,15 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <?php if ($currentUser && $currentUser !== $profileId): ?>
                 <div id="friendActionContainer">
                     <?php if ($isFriend): ?>
-                        <span class="badge bg-success fs-6 px-3 py-2"><?= __('friends') ?></span>
+                        <span class="badge bg-success fs-6 px-3 py-2 me-2"><?= __('friends') ?></span>
+                        <form action="../friends/remove_friend.php" method="POST" class="d-inline" onsubmit="return confirm('<?= htmlspecialchars(__('remove_friend_confirm'), ENT_QUOTES, 'UTF-8') ?>');">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="friend_id" value="<?= (int) $profileId ?>">
+                            <input type="hidden" name="return_to" value="profile">
+                            <button type="submit" class="btn btn-outline-danger btn-sm ms-2">
+                                <i class="fas fa-user-minus"></i> <?= __('remove_friend') ?>
+                            </button>
+                        </form>
                     <?php elseif ($isPending): ?>
                         <span class="badge bg-warning text-dark fs-6 px-3 py-2"><?= __('request_sent') ?></span>
                     <?php else: ?>

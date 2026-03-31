@@ -51,7 +51,7 @@
 /* Friend Avatar Circles */
 .friend-avatar {
     object-fit: cover;
-    border: 3px solid #10B981;
+    border: 3px solid var(--accent-success);
     border-radius: 50%;
     width: 48px;
     height: 48px;
@@ -59,7 +59,7 @@
 
 .friend-avatar-sm {
     object-fit: cover;
-    border: 3px solid #10B981;
+    border: 3px solid var(--accent-success);
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -89,8 +89,8 @@
 }
 
 .modern-post:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #3B82F6;
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
 }
 
 /* Post Header */
@@ -107,10 +107,10 @@
     height: 48px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #3B82F6;
+    border: 3px solid var(--primary-color);
     margin-right: 12px;
     flex-shrink: 0;
-    transition: transform 150ms ease-in-out;
+    transition: transform var(--transition-fast);
 }
 
 .post-avatar-modern:hover {
@@ -188,7 +188,7 @@
 .post-image-wrapper {
     width: 100%;
     overflow: hidden;
-    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+    background: linear-gradient(135deg, var(--surface-2) 0%, var(--border-color) 100%);
 }
 
 .post-media-grid {
@@ -506,6 +506,75 @@
     align-items: center;
     flex-shrink: 0;
     background: var(--bg-card);
+}
+
+/* Comment action row (date, like, reply) */
+.comment-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 3px;
+    padding-left: 4px;
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: color 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.comment-action-btn:hover {
+    color: var(--text-primary);
+}
+
+.comment-liked {
+    color: #EF4444 !important;
+}
+
+.comment-action-btn .fa-heart {
+    font-size: 0.72rem;
+}
+
+.comment-like-count {
+    font-size: 0.72rem;
+}
+
+/* Reply tag above comment bubble */
+.comment-reply-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    padding-left: 4px;
+}
+
+.comment-reply-tag i {
+    font-size: 0.6rem;
+    margin-right: 2px;
+}
+
+/* Reply indicator bar */
+.lightbox-reply-indicator {
+    padding: 6px 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--surface-2);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.lightbox-reply-indicator i.fa-reply {
+    color: var(--primary-color);
 }
 
 .lightbox-close {

@@ -4,17 +4,30 @@ secureSession();
 require '../../config/database.php';
 setSecurityHeaders();
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
+$requestId = bin2hex(random_bytes(8));
+
+function jsonResponse(array $payload, int $status = 200): void {
+    http_response_code($status);
     header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Unauthorized']));
+    echo json_encode($payload);
+    exit;
+}
+
+function jsonError(string $message, string $requestId, int $status): void {
+    jsonResponse([
+        'success' => false,
+        'error' => $message,
+        'request_id' => $requestId,
+    ], $status);
+}
+
+if (!isset($_SESSION['user_id'])) {
+    jsonError('Unauthorized', $requestId, 401);
 }
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-    http_response_code(403);
-    header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Invalid CSRF token']));
+    jsonError('Invalid CSRF token', $requestId, 403);
 }
 
 $userId = $_SESSION['user_id'];
@@ -22,9 +35,7 @@ $postId = $_POST['post_id'] ?? null;
 $action = $_POST['action'] ?? 'like'; // like or unlike
 
 if (!$postId) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Post ID required']));
+    jsonError('Post ID required', $requestId, 400);
 }
 
 // Check if post exists
@@ -33,9 +44,7 @@ $stmt->execute([$postId]);
 $post = $stmt->fetch();
 
 if (!$post) {
-    http_response_code(404);
-    header('Content-Type: application/json');
-    exit(json_encode(['error' => 'Post not found']));
+    jsonError('Post not found', $requestId, 404);
 }
 
 if ($action === 'like') {
@@ -74,9 +83,9 @@ $stmt = $pdo->prepare("SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = 
 $stmt->execute([$postId, $userId]);
 $liked = $stmt->fetch() ? true : false;
 
-header('Content-Type: application/json');
-echo json_encode([
+jsonResponse([
     'success' => true,
     'like_count' => $likeCount,
-    'liked' => $liked
+    'liked' => $liked,
+    'request_id' => $requestId,
 ]);

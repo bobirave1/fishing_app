@@ -13,9 +13,33 @@ setSecurityHeaders();
 handleGlobalActions();
 
 $posts = [];
+$postsPerPage = 20;
+$currentPage = max(1, (int)($_GET['page'] ?? 1));
+$offset = ($currentPage - 1) * $postsPerPage;
+$totalPosts = 0;
+$totalPages = 1;
 
 if (isset($_SESSION['user_id'])) {
     $userId = $_SESSION['user_id'];
+
+    $countStmt = $pdo->prepare(
+        "SELECT COUNT(*)
+         FROM posts p
+         WHERE
+            p.visibility = 'public'
+            OR (p.visibility = 'friends' AND p.user_id IN (
+                SELECT friend_id FROM friends WHERE user_id = ?
+            ))
+            OR p.user_id = ?"
+    );
+    $countStmt->execute([$userId, $userId]);
+    $totalPosts = (int)$countStmt->fetchColumn();
+    $totalPages = max(1, (int)ceil($totalPosts / $postsPerPage));
+
+    if ($currentPage > $totalPages) {
+        $currentPage = $totalPages;
+        $offset = ($currentPage - 1) * $postsPerPage;
+    }
 
     $stmt = $pdo->prepare("
         SELECT p.*, u.username, up.avatar_url,
@@ -33,12 +57,27 @@ if (isset($_SESSION['user_id'])) {
             ))
          OR p.user_id = ?
         ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?
     ");
-    $stmt->execute([$userId, $userId, $userId]);
+    $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+    $stmt->bindValue(2, $userId, PDO::PARAM_INT);
+    $stmt->bindValue(3, $userId, PDO::PARAM_INT);
+    $stmt->bindValue(4, $postsPerPage, PDO::PARAM_INT);
+    $stmt->bindValue(5, $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $posts = $stmt->fetchAll();
 } else {
+    $countStmt = $pdo->query("SELECT COUNT(*) FROM posts WHERE visibility = 'public'");
+    $totalPosts = (int)$countStmt->fetchColumn();
+    $totalPages = max(1, (int)ceil($totalPosts / $postsPerPage));
+
+    if ($currentPage > $totalPages) {
+        $currentPage = $totalPages;
+        $offset = ($currentPage - 1) * $postsPerPage;
+    }
+
     // за гости – само public постове
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT p.*, u.username, up.avatar_url,
                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
                (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
@@ -49,7 +88,11 @@ if (isset($_SESSION['user_id'])) {
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE p.visibility = 'public'
         ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?
     ");
+    $stmt->bindValue(1, $postsPerPage, PDO::PARAM_INT);
+    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $posts = $stmt->fetchAll();
 }
 
@@ -355,6 +398,34 @@ if (isset($_SESSION['user_id'])) {
     </div> <!-- Close modern-post -->
 <?php endforeach; ?>
 
+<?php if ($totalPages > 1): ?>
+    <nav aria-label="Feed pagination" class="my-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= max(1, $currentPage - 1) ?>" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            <?php
+            $startPage = max(1, $currentPage - 2);
+            $endPage = min($totalPages, $currentPage + 2);
+            for ($page = $startPage; $page <= $endPage; $page++):
+            ?>
+                <li class="page-item <?= $page === $currentPage ? 'active' : '' ?>">
+                    <a class="page-link" href="?page=<?= $page ?>"><?= $page ?></a>
+                </li>
+            <?php endfor; ?>
+
+            <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" href="?page=<?= min($totalPages, $currentPage + 1) ?>" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+<?php endif; ?>
+
         </div> <!-- Close main content column -->
 
         <!-- Right Sidebar -->
@@ -452,6 +523,7 @@ if (isset($_SESSION['user_id'])) {
                 </span>
             </div>
             <div class="lightbox-comments-scroll" id="lightboxComments"></div>
+            <div id="lightboxReplyIndicator" class="lightbox-reply-indicator" style="display:none;"></div>
             <div class="lightbox-comment-input">
                 <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="Write a comment...">
                 <button class="btn btn-sm btn-primary" onclick="addLightboxComment()">

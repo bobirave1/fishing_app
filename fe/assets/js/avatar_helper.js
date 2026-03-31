@@ -4,12 +4,17 @@
  */
 
 /**
- * Get properly formatted avatar URL
- * @param {string|null} avatarUrl - The avatar URL from server
- * @returns {string} - Properly formatted avatar path
+ * Get theme-appropriate default avatar path
  */
+function getDefaultAvatarForTheme() {
+    var isDark = document.body.getAttribute('data-theme') === 'dark';
+    return isDark
+        ? 'fe/assets/img/avatars/default_avatar_dark.jpg'
+        : 'fe/assets/img/avatars/default_avatar_light.jpg';
+}
+
 function getAvatarUrl(avatarUrl) {
-    const defaultAvatar = 'fe/assets/img/default-avatar.png';
+    const defaultAvatar = getDefaultAvatarForTheme();
     const avatar = avatarUrl || defaultAvatar;
     
     // Detect if we're in a subdirectory

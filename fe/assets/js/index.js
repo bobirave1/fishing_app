@@ -322,6 +322,7 @@ function openPhotoLightbox(img) {
 
     const commentInput = document.getElementById('lightboxCommentInput');
     if (commentInput) commentInput.value = '';
+    cancelReply();
 
     loadLightboxComments(postId);
 }
@@ -351,11 +352,57 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeLightbox();
 });
 
+// Enter key on lightbox comment input
+document.getElementById('lightboxCommentInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); addLightboxComment(); }
+});
+
+// Track reply state for lightbox comments
+var lightboxReplyTo = null; // { id, username }
+
+function getLbLang() {
+    var lang = (document.documentElement.lang || '').toLowerCase();
+    return lang.startsWith('bg');
+}
+
+function renderCommentHtml(c) {
+    var av = (typeof getAvatarUrl === 'function') ? getAvatarUrl(c.avatar_url) : (c.avatar_url || getDefaultAvatarForTheme());
+    var isBg = getLbLang();
+    var replyLabel = isBg ? 'Отговори' : 'Reply';
+    var likedClass = c.user_liked ? ' comment-liked' : '';
+    var heartIcon = c.user_liked ? 'fas' : 'far';
+    var likeCountStr = c.like_count > 0 ? c.like_count : '';
+    var isReply = c.parent_id && c.parent_username;
+    var replyTag = isReply
+        ? '<span class="comment-reply-tag"><i class="fas fa-reply fa-flip-horizontal"></i> ' + escapeHtml(c.parent_username) + '</span>'
+        : '';
+    var indent = isReply ? ' style="margin-left:24px;"' : '';
+
+    return '<div class="lb-comment d-flex gap-2 mb-2"' + indent + ' data-comment-id="' + c.id + '">' +
+        '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;">' +
+        '<div style="flex:1;min-width:0;">' +
+            replyTag +
+            '<div style="background:var(--surface-2);border-radius:8px;padding:6px 10px;">' +
+                '<strong style="color:var(--text-primary);font-size:0.8rem;">' + escapeHtml(c.username) + '</strong>' +
+                '<p style="margin:3px 0 0;color:var(--text-primary);font-size:0.85rem;word-break:break-word;">' + escapeHtml(c.content) + '</p>' +
+            '</div>' +
+            '<div class="comment-actions-row">' +
+                '<small style="color:var(--text-muted);">' + formatDate(c.created_at) + '</small>' +
+                '<button class="comment-action-btn" onclick="toggleCommentLike(' + c.id + ', this)" title="Like">' +
+                    '<i class="' + heartIcon + ' fa-heart' + likedClass + '"></i>' +
+                    '<span class="comment-like-count">' + likeCountStr + '</span>' +
+                '</button>' +
+                '<button class="comment-action-btn" onclick="setReplyTo(' + c.id + ', \'' + escapeHtml(c.username).replace(/'/g, "\\'") + '\')">' + replyLabel + '</button>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+}
+
 function loadLightboxComments(postId) {
-    const container = document.getElementById('lightboxComments');
+    var container = document.getElementById('lightboxComments');
     container.innerHTML = '<p class="text-center text-muted small py-2"><i class="fas fa-spinner fa-spin"></i></p>';
 
-    const fd = new FormData();
+    var fd = new FormData();
     fd.append('post_id', postId);
     fd.append('action', 'get');
 
@@ -363,53 +410,124 @@ function loadLightboxComments(postId) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success || !data.comments.length) {
-                container.innerHTML = '<p class="text-center text-muted small py-3">No comments yet.</p>';
+                var isBg = getLbLang();
+                container.innerHTML = '<p class="text-center text-muted small py-3">' + (isBg ? 'Няма коментари.' : 'No comments yet.') + '</p>';
                 return;
             }
-            container.innerHTML = data.comments.map(function(c) {
-                const av = (typeof getAvatarUrl === 'function') ? getAvatarUrl(c.avatar_url) : (c.avatar_url || 'fe/assets/img/avatars/default.png');
-                return '<div class="d-flex gap-2 mb-3">' +
-                    '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="32" height="32" style="object-fit:cover;">' +
-                    '<div>' +
-                        '<div style="background:var(--surface-2);border-radius:8px;padding:6px 10px;">' +
-                            '<strong style="color:var(--text-primary);font-size:0.8rem;">' + escapeHtml(c.username) + '</strong>' +
-                            '<p style="margin:3px 0 0;color:var(--text-primary);font-size:0.85rem;">' + escapeHtml(c.content) + '</p>' +
-                        '</div>' +
-                        '<small style="color:var(--text-muted);margin-left:4px;">' + escapeHtml(c.created_at) + '</small>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
+            // Separate top-level and replies
+            var topLevel = [];
+            var replies = {};
+            data.comments.forEach(function(c) {
+                if (c.parent_id) {
+                    if (!replies[c.parent_id]) replies[c.parent_id] = [];
+                    replies[c.parent_id].push(c);
+                } else {
+                    topLevel.push(c);
+                }
+            });
+            var html = '';
+            topLevel.forEach(function(c) {
+                html += renderCommentHtml(c);
+                if (replies[c.id]) {
+                    replies[c.id].forEach(function(r) {
+                        html += renderCommentHtml(r);
+                    });
+                }
+            });
+            // Orphan replies (parent deleted but reply exists)
+            Object.keys(replies).forEach(function(pid) {
+                var parentExists = topLevel.some(function(c) { return c.id == pid; });
+                if (!parentExists) {
+                    replies[pid].forEach(function(r) {
+                        html += renderCommentHtml(r);
+                    });
+                }
+            });
+            container.innerHTML = html;
         })
         .catch(function() {
             container.innerHTML = '<p class="text-danger text-center small py-2">Failed to load comments.</p>';
         });
 }
 
+function setReplyTo(commentId, username) {
+    lightboxReplyTo = { id: commentId, username: username };
+    var input = document.getElementById('lightboxCommentInput');
+    var indicator = document.getElementById('lightboxReplyIndicator');
+    if (indicator) {
+        var isBg = getLbLang();
+        indicator.innerHTML = '<i class="fas fa-reply fa-flip-horizontal"></i> ' +
+            (isBg ? 'Отговор на' : 'Replying to') + ' <strong>' + escapeHtml(username) + '</strong>' +
+            '<button onclick="cancelReply()" class="comment-action-btn" style="margin-left:6px;"><i class="fas fa-times"></i></button>';
+        indicator.style.display = 'flex';
+    }
+    input.focus();
+}
+
+function cancelReply() {
+    lightboxReplyTo = null;
+    var indicator = document.getElementById('lightboxReplyIndicator');
+    if (indicator) {
+        indicator.innerHTML = '';
+        indicator.style.display = 'none';
+    }
+}
+
 function addLightboxComment() {
-    const lb = document.getElementById('photoLightbox');
-    const postId = lb.dataset.postId;
-    const input = document.getElementById('lightboxCommentInput');
-    const content = input.value.trim();
+    var lb = document.getElementById('photoLightbox');
+    var postId = lb.dataset.postId;
+    var input = document.getElementById('lightboxCommentInput');
+    var content = input.value.trim();
     if (!content) return;
 
-    const fd = new FormData();
+    var fd = new FormData();
     fd.append('post_id', postId);
     fd.append('content', content);
     fd.append('action', 'add');
     fd.append('csrf_token', getCsrfToken());
+    if (lightboxReplyTo) {
+        fd.append('parent_id', lightboxReplyTo.id);
+    }
 
     fetch('be/posts/comment.php', { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
                 input.value = '';
+                cancelReply();
                 loadLightboxComments(postId);
-                const lbCnt = document.getElementById('lightboxCommentCnt');
+                var lbCnt = document.getElementById('lightboxCommentCnt');
                 if (lbCnt) lbCnt.textContent = parseInt(lbCnt.textContent || '0') + 1;
-                const feedCnt = document.getElementById('comment-count-' + postId);
+                var feedCnt = document.getElementById('comment-count-' + postId);
                 if (feedCnt) feedCnt.textContent = parseInt(feedCnt.textContent || '0') + 1;
             } else {
                 alert('Error: ' + (data.error || 'Failed to add comment'));
+            }
+        });
+}
+
+function toggleCommentLike(commentId, btn) {
+    var lb = document.getElementById('photoLightbox');
+    var postId = lb.dataset.postId;
+
+    var fd = new FormData();
+    fd.append('post_id', postId);
+    fd.append('comment_id', commentId);
+    fd.append('action', 'like_comment');
+    fd.append('csrf_token', getCsrfToken());
+
+    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var icon = btn.querySelector('i');
+                var countEl = btn.querySelector('.comment-like-count');
+                if (data.liked) {
+                    icon.className = 'fas fa-heart comment-liked';
+                } else {
+                    icon.className = 'far fa-heart';
+                }
+                countEl.textContent = data.like_count > 0 ? data.like_count : '';
             }
         });
 }

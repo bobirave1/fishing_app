@@ -66,6 +66,22 @@ $friends = $stmt->fetchAll();
 <?php include '../../fe/components/navbar.php'; ?>
 
 <main class="flex-grow-1 container my-5 py-5">
+    <?php if (isset($_SESSION['friend_flash_success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['friend_flash_success']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['friend_flash_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['friend_flash_error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($_SESSION['friend_flash_error']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['friend_flash_error']); ?>
+    <?php endif; ?>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold page-title">
             <i class="fas fa-user-friends text-success"></i> 
@@ -120,9 +136,19 @@ $friends = $stmt->fetchAll();
                             <?php if (!empty($f['full_name'])): ?>
                                 <p class="text-muted small mb-3"><?= htmlspecialchars($f['full_name']) ?></p>
                             <?php endif; ?>
-                            <a href="../users/profile.php?id=<?= $f['id'] ?>" class="btn btn-primary w-100">
+                            <a href="../users/profile.php?id=<?= $f['id'] ?>" class="btn btn-primary w-100 mb-2">
                                 <i class="fas fa-user"></i> <?= __('view_profile') ?>
                             </a>
+                            <?php if ($isOwnProfile): ?>
+                                <form action="remove_friend.php" method="POST" class="w-100" onsubmit="return confirm('<?= htmlspecialchars(__('remove_friend_confirm'), ENT_QUOTES, 'UTF-8') ?>');">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="friend_id" value="<?= (int) $f['id'] ?>">
+                                    <input type="hidden" name="return_to" value="friends_list">
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        <i class="fas fa-user-minus"></i> <?= __('remove_friend') ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
