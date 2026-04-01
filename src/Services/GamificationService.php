@@ -191,9 +191,14 @@ class GamificationService
 
                 // Notification
                 try {
+                    $lang = $_SESSION['lang'] ?? 'en';
+                    $badgeName = $lang === 'bg' ? $badge['name_bg'] : $badge['name_en'];
+                    $notifMsg = $lang === 'bg'
+                        ? "Получихте нова значка: {$badge['name_bg']}"
+                        : "You earned the badge: {$badge['name_en']}";
                     $this->pdo->prepare(
-                        "INSERT INTO notifications (user_id, type, message, created_at) VALUES (?, 'badge', ?, NOW())"
-                    )->execute([$userId, "You earned the badge: {$badge['name_en']}"]);
+                        "INSERT INTO notifications (user_id, type, related_id, message, created_at) VALUES (?, 'badge', ?, ?, NOW())"
+                    )->execute([$userId, $badge['id'], $notifMsg]);
                 } catch (\Throwable) {}
 
                 $lang = $_SESSION['lang'] ?? 'en';

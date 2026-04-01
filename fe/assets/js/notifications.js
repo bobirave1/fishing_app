@@ -57,6 +57,17 @@ function displayNotifications(notifications) {
                 message = `<strong>${safeUsername}</strong> shared a new post`;
                 clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
+            case 'badge': {
+                const badgesPath = resolvePath('badges');
+                const badgeMsg = notif.message
+                    ? escapeHtml(notif.message)
+                    : (document.documentElement.lang || '').startsWith('bg')
+                        ? 'Получихте нова значка!'
+                        : 'You earned a new badge!';
+                message = `<i class="fas fa-medal text-warning me-1"></i>${badgeMsg}`;
+                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${badgesPath}')"`;
+                break;
+            }
             default:
                 message = `<strong>${safeUsername}</strong> performed an action`;
                 clickAction = '';

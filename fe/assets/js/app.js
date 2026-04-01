@@ -849,4 +849,56 @@ if (document.readyState === 'loading') {
     initBubbles();
 }
 
+// ==================== BADGE EARNED TOAST ====================
+
+function showBadgeToast(badge) {
+    const isBg = (document.documentElement.lang || '').startsWith('bg');
+
+    const toast = document.createElement('div');
+    toast.className = 'badge-earned-toast';
+    toast.innerHTML =
+        '<div class="badge-earned-toast-inner">' +
+            '<div class="badge-earned-icon" style="color:' + escapeHtml(badge.color || '#FFD700') + ';">' +
+                '<i class="fas ' + escapeHtml(badge.icon || 'fa-trophy') + ' fa-2x"></i>' +
+            '</div>' +
+            '<div class="badge-earned-text">' +
+                '<div class="badge-earned-title">' +
+                    (isBg ? '🏅 Нова значка!' : '🏅 Badge Earned!') +
+                '</div>' +
+                '<div class="badge-earned-name">' + escapeHtml(badge.name || '') + '</div>' +
+            '</div>' +
+            '<button class="badge-earned-close" aria-label="Close">&times;</button>' +
+        '</div>';
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(function () {
+        toast.classList.add('badge-earned-toast--visible');
+    });
+
+    const dismiss = function () {
+        toast.classList.remove('badge-earned-toast--visible');
+        setTimeout(function () { if (toast.parentElement) toast.remove(); }, 500);
+    };
+
+    toast.querySelector('.badge-earned-close').addEventListener('click', dismiss);
+    setTimeout(dismiss, 6000);
+}
+
+function showPendingBadges() {
+    if (!window._newBadges || !window._newBadges.length) return;
+    var delay = 600;
+    window._newBadges.forEach(function (badge) {
+        setTimeout(function () { showBadgeToast(badge); }, delay);
+        delay += 700;
+    });
+    delete window._newBadges;
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showPendingBadges);
+} else {
+    showPendingBadges();
+}
 

@@ -330,3 +330,80 @@
 [data-theme="dark"] .badge-toast {
     background: linear-gradient(135deg, #0d3318, #1a5b2c);
 }
+
+/* ========================================
+   Badge Earned Toast (triggered from JS)
+   ======================================== */
+
+.badge-earned-toast {
+    position: fixed;
+    bottom: 28px;
+    right: 20px;
+    z-index: 13000;
+    min-width: 280px;
+    max-width: min(380px, calc(100vw - 32px));
+    background: linear-gradient(135deg, #1a5b2c 0%, #088395 100%);
+    color: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    transform: translateY(120px);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+    pointer-events: none;
+}
+
+.badge-earned-toast--visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.badge-earned-toast-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+}
+
+.badge-earned-icon {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+}
+
+.badge-earned-text {
+    flex: 1;
+}
+
+.badge-earned-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-earned-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.badge-earned-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+
+.badge-earned-close:hover {
+    color: #fff;
+}
+
+[data-theme="dark"] .badge-earned-toast {
+    background: linear-gradient(135deg, #0d3318 0%, #09637e 100%);
+}
+

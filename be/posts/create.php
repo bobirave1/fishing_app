@@ -108,5 +108,16 @@ if ($visibility !== 'private') {
 
 $logger->info('Post created: {postId} by user {userId}', ['postId' => $postId, 'userId' => $userId]);
 
+// Award XP and check for new badges (gamification)
+try {
+    $gamification = $container->get(\App\Services\GamificationService::class);
+    $result = $gamification->awardXp($userId, 'post_created', $postId);
+    if (!empty($result['new_badges'])) {
+        $_SESSION['new_badges'] = $result['new_badges'];
+    }
+} catch (\Throwable $e) {
+    $logger->error('Gamification awardXp failed: {msg}', ['msg' => $e->getMessage()]);
+}
+
 header('Location: ../../index.php');
 exit;

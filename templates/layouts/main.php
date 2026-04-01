@@ -43,6 +43,11 @@ if (is_callable($content ?? null)) {
 
 <?php include dirname(__DIR__, 2) . '/fe/components/footer.php'; ?>
 
+<?php if (!empty($_SESSION['new_badges'])): ?>
+<script>
+window._newBadges = <?= json_encode($_SESSION['new_badges'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+</script>
+<?php unset($_SESSION['new_badges']); endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= $basePath ?? '' ?>fe/assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="<?= $basePath ?? '' ?>fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
