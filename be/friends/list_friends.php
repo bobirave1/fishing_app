@@ -1,17 +1,10 @@
 <?php
-require '../../config/security.php';
-secureSession();
-setSecurityHeaders();
+/**
+ * Friends list page — uses bootstrap for DI + security.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-require '../../config/database.php';
-require '../../config/avatar_helper.php';
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php'; // Add language support
-require '../../config/actions.php';
-handleGlobalActions();
+$pdo = $GLOBALS['container']->get(\PDO::class);
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -19,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $currentUserId = $_SESSION['user_id'];
-$viewUserId = (int)($_GET['user_id'] ?? $currentUserId); // View someone else's friends or own
+$viewUserId = (int)($_GET['user_id'] ?? $currentUserId);
 
 // Get user info whose friends we're viewing
 $stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
@@ -42,7 +35,8 @@ $stmt = $pdo->prepare(
          SELECT user_id as friend FROM friends WHERE friend_id = ?
      ) f
      JOIN users u ON u.id = f.friend
-     LEFT JOIN user_profiles up ON u.id = up.user_id"
+     LEFT JOIN user_profiles up ON u.id = up.user_id
+     LIMIT 500"
 );
 $stmt->execute([$viewUserId, $viewUserId]);
 $friends = $stmt->fetchAll();
@@ -63,7 +57,7 @@ $friends = $stmt->fetchAll();
 </head>
 <body class="friends-page d-flex flex-column min-vh-100" data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
-<?php include '../../fe/components/navbar.php'; ?>
+<?php include __DIR__ . '/../../fe/components/navbar.php'; ?>
 
 <main class="flex-grow-1 container my-5 py-5">
     <?php if (isset($_SESSION['friend_flash_success'])): ?>
@@ -157,10 +151,12 @@ $friends = $stmt->fetchAll();
     <?php endif; ?>
 </main>
 
-<?php include '../../fe/components/footer.php'; ?>
+<?php include __DIR__ . '/../../fe/components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../../fe/assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../../fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../../fe/assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 </body>
 </html>

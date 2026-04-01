@@ -1,15 +1,11 @@
 <?php
-require '../../config/security.php';
+require __DIR__ . '/../../config/security.php';
 secureSession();
 setSecurityHeaders();
 
-require '../../config/database.php';
-require '../../config/avatar_helper.php';
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php'; // Add language support
+require __DIR__ . '/../../config/database.php';
+require __DIR__ . '/../../config/avatar_helper.php';
+require __DIR__ . '/../../config/languages.php';
 
 // Handle language/theme switches via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -55,7 +51,7 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fish Activity - FISHINGLORY</title>
+    <title><?= __('fish_activity') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
@@ -68,7 +64,7 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 </head>
 <body data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
-<?php include '../components/navbar.php'; ?>
+<?php include __DIR__ . '/../components/navbar.php'; ?>
 
 <div class="container my-4">
     <div class="row justify-content-center">
@@ -77,9 +73,18 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
             <div class="activity-card" id="activityCard">
                 <div class="activity-header-section">
                     <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-fish"></i> <?= __('fish_activity_prediction') ?></h5>
                         <button class="btn btn-light btn-sm" onclick="toggleMapSection()" title="<?= __('change_location') ?>">
                             <i class="fas fa-map-marker-alt"></i> <?= __('change_location') ?>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Species Selector -->
+                <div class="species-selector" id="speciesSelector">
+                    <label class="species-label"><?= __('select_species') ?></label>
+                    <div class="species-chips" id="speciesChips">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
 
@@ -101,43 +106,75 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
                     </div>
                     
                     <div id="activityResults" style="display: none;">
-                        <div class="activity-score-circle">
-                            <svg class="circle-progress" width="200" height="200">
-                                <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
-                                <circle class="circle-progress-bar" id="progressCircle" cx="100" cy="100" r="90" 
-                                        stroke-dasharray="565.48" stroke-dashoffset="565.48"></circle>
-                            </svg>
-                            <div class="score-number" id="scoreNumber">0</div>
+                        <!-- Score Circle + Moon Phase Row -->
+                        <div class="score-moon-row">
+                            <div class="activity-score-circle">
+                                <svg class="circle-progress" width="180" height="180">
+                                    <circle class="circle-bg" cx="90" cy="90" r="80"></circle>
+                                    <circle class="circle-progress-bar" id="progressCircle" cx="90" cy="90" r="80" 
+                                            stroke-dasharray="502.65" stroke-dashoffset="502.65"></circle>
+                                </svg>
+                                <div class="score-number" id="scoreNumber">0</div>
+                            </div>
+                            <div class="moon-phase-panel" id="moonPhasePanel">
+                                <div class="moon-icon" id="moonIcon">🌕</div>
+                                <div class="moon-name" id="moonName">—</div>
+                                <div class="moon-illumination" id="moonIllum">0%</div>
+                                <div class="water-temp" id="waterTemp">
+                                    <i class="fas fa-water"></i> <span id="waterTempValue">—</span>°C
+                                </div>
+                            </div>
                         </div>
+
                         <div class="activity-level-text" id="activityLevelText"><?= __('calculating') ?></div>
 
-                        <!-- Activity Chart -->
-                        <div class="activity-chart">
-                            <div class="chart-labels">
-                                <div><?= __('high') ?></div>
-                                <div><?= __('medium') ?></div>
-                                <div><?= __('low') ?></div>
-                            </div>
-                            <div class="chart-line">
-                                <div class="chart-grid">
-                                    <div class="grid-line"></div>
-                                    <div class="grid-line"></div>
-                                    <div class="grid-line"></div>
-                                </div>
-                                <svg class="chart-wave" id="activityChart" viewBox="0 0 400 140" preserveAspectRatio="none">
-                                    <path id="chartPath" fill="none" stroke="#0d6efd" stroke-width="3" d="M0,70 Q100,70 200,70 T400,70"/>
-                                </svg>
-                            </div>
-                            <div class="time-labels">
-                                <span>04:00</span>
-                                <span>08:00</span>
-                                <span>12:00</span>
-                                <span>16:00</span>
-                                <span>20:00</span>
+                        <!-- Factor Breakdown Cards -->
+                        <div class="factors-grid" id="factorsGrid">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Best Times -->
+                        <div class="best-times-section" id="bestTimesSection">
+                            <h6 class="section-title"><i class="fas fa-star"></i> <?= __('best_fishing_times') ?></h6>
+                            <div class="best-times-list" id="bestTimesList">
+                                <!-- Populated by JS -->
                             </div>
                         </div>
 
-                        <!-- Times Section -->
+                        <!-- Activity Chart (24h) -->
+                        <div class="activity-chart">
+                            <h6 class="section-title"><i class="fas fa-chart-area"></i> <?= __('hourly_prediction') ?></h6>
+                            <div class="chart-container">
+                                <div class="chart-labels">
+                                    <div><?= __('high') ?></div>
+                                    <div><?= __('medium') ?></div>
+                                    <div><?= __('low') ?></div>
+                                </div>
+                                <div class="chart-line">
+                                    <div class="chart-grid">
+                                        <div class="grid-line"></div>
+                                        <div class="grid-line"></div>
+                                        <div class="grid-line"></div>
+                                    </div>
+                                    <svg class="chart-wave" id="activityChart" viewBox="0 0 480 140" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.3"/>
+                                                <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0.02"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path id="chartFill" fill="url(#chartGradient)" d="M0,140 L0,70 Q120,70 240,70 T480,70 L480,140 Z"/>
+                                        <path id="chartPath" fill="none" stroke="var(--primary-color)" stroke-width="2.5" d="M0,70 Q120,70 240,70 T480,70"/>
+                                        <circle id="chartNowDot" r="5" fill="var(--primary-color)" cx="0" cy="70" style="display:none"/>
+                                    </svg>
+                                </div>
+                                <div class="time-labels">
+                                    <span>00</span><span>04</span><span>08</span><span>12</span><span>16</span><span>20</span><span>24</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Solunar Times Section -->
                         <div class="times-section" id="timesSection">
                             <div class="times-column">
                                 <h6><?= __('major_times') ?></h6>
@@ -193,6 +230,28 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
         low_activity: "<?= __('low_activity') ?>",
         very_low_activity: "<?= __('very_low_activity') ?>",
         today: "<?= __('today') ?>",
+        best_fishing_times: "<?= __('best_fishing_times') ?>",
+        hourly_prediction: "<?= __('hourly_prediction') ?>",
+        peak: "<?= __('peak') ?>",
+        score: "<?= __('score_label') ?>",
+        factor_solunar: "<?= __('factor_solunar') ?>",
+        factor_time: "<?= __('factor_time') ?>",
+        factor_pressure: "<?= __('factor_pressure') ?>",
+        factor_temperature: "<?= __('factor_temperature') ?>",
+        factor_wind_cloud: "<?= __('factor_wind_cloud') ?>",
+        factor_humidity: "<?= __('factor_humidity') ?>",
+        factor_precipitation: "<?= __('factor_precipitation') ?>",
+        factor_moon_light: "<?= __('factor_moon_light') ?>",
+        moon_new_moon: "<?= __('moon_new_moon') ?>",
+        moon_full_moon: "<?= __('moon_full_moon') ?>",
+        moon_waxing_crescent: "<?= __('moon_waxing_crescent') ?>",
+        moon_first_quarter: "<?= __('moon_first_quarter') ?>",
+        moon_waxing_gibbous: "<?= __('moon_waxing_gibbous') ?>",
+        moon_waning_gibbous: "<?= __('moon_waning_gibbous') ?>",
+        moon_last_quarter: "<?= __('moon_last_quarter') ?>",
+        moon_waning_crescent: "<?= __('moon_waning_crescent') ?>",
+        illumination: "<?= __('illumination') ?>",
+        water_temperature: "<?= __('water_temperature') ?>",
         days: {
             0: "<?= __('sun') ?>", 1: "<?= __('mon') ?>", 2: "<?= __('tue') ?>", 
             3: "<?= __('wed') ?>", 4: "<?= __('thu') ?>", 5: "<?= __('fri') ?>", 6: "<?= __('sat') ?>"
@@ -203,10 +262,12 @@ $avatar = getUserAvatar($profile['avatar_url'] ?? null);
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 <script src="../assets/js/activity_feed.js?v=<?= assetVersion('fe/assets/js/activity_feed.js') ?>"></script>
 
-<?php include '../components/footer.php'; ?>
+<?php include __DIR__ . '/../components/footer.php'; ?>
 
 </body>
 </html>

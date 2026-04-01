@@ -1,37 +1,21 @@
 <?php
-require '../../config/database.php';
-require '../../config/security.php';
-secureSession();
-setSecurityHeaders();
+/**
+ * User profile page — uses bootstrap + services for data.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php'; // Add language support
-require '../../config/actions.php';
-handleGlobalActions();
+$container = $GLOBALS['container'];
+$pdo = $container->get(\PDO::class);
+$userService = $container->get(App\Services\UserService::class);
+$friendService = $container->get(App\Services\FriendService::class);
 
 $profileId = (int)($_GET['id'] ?? 0);
 $currentUser = $_SESSION['user_id'] ?? 0;
 
-$stmt = $pdo->prepare("
-    SELECT u.id, u.username, u.full_name, u.created_at, up.avatar_url, up.bio, up.location, up.experience_level
-    FROM users u
-    LEFT JOIN user_profiles up ON u.id = up.user_id
-    WHERE u.id = ?
-");
-$stmt->execute([$profileId]);
-$user = $stmt->fetch();
-
+$user = $userService->getProfile($profileId);
 if (!$user) die(__('user_not_found'));
 
-// Check friendship
-$checkFriend = $pdo->prepare(
-    "SELECT 1 FROM friends WHERE user_id = ? AND friend_id = ?"
-);
-$checkFriend->execute([$currentUser, $profileId]);
-$isFriend = $checkFriend->fetch();
+$isFriend = $friendService->areFriends($currentUser, $profileId);
 
 // Check pending request
 $pending = $pdo->prepare(
@@ -44,11 +28,11 @@ $isPending = $pending->fetch();
 // Get user's posts
 $posts = [];
 if ($isFriend || $currentUser === $profileId) {
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
     $stmt->execute([$profileId]);
     $posts = $stmt->fetchAll();
 } else {
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? AND visibility = 'public' ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? AND visibility = 'public' ORDER BY created_at DESC LIMIT 50");
     $stmt->execute([$profileId]);
     $posts = $stmt->fetchAll();
 }
@@ -81,8 +65,6 @@ $stmt = $pdo->prepare("
 $stmt->execute([$profileId, $profileId]);
 $friends = $stmt->fetchAll();
 
-require_once '../../config/avatar_helper.php';
-
 // Avatar for the profile being viewed (not current user!)
 $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
 ?>
@@ -104,7 +86,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
 </head>
 <body class="d-flex flex-column min-vh-100" data-user-id="<?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0 ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
-<?php include '../../fe/components/navbar.php'; ?>
+<?php include __DIR__ . '/../../fe/components/navbar.php'; ?>
 
 <main class="flex-grow-1 container my-5 py-5">
     <?php if (isset($_SESSION['friend_flash_success'])): ?>
@@ -267,11 +249,13 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     </div>
 </main>
 
-<?php include '../../fe/components/footer.php'; ?>
+<?php include __DIR__ . '/../../fe/components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../../fe/assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../../fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../../fe/assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 
 </body>
 </html>

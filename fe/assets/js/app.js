@@ -254,7 +254,7 @@ function addComment(postId) {
     const content = commentInput.value.trim();
     
     if (!content) {
-        alert('Please write a comment');
+        showAppNotice('Please write a comment', 'warning');
         return;
     }
     
@@ -356,7 +356,7 @@ function toggleFollow(userId, button) {
             }
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => debugLog('error', 'Follow toggle failed', { error: getErrorMessage(error, 'Network error') }));
 }
 
 // ==================== FRIEND REQUESTS ====================
@@ -371,7 +371,7 @@ function sendFriendRequest(receiverId) {
     formData.append('receiver_id', receiverId);
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('../friends/send_request.php', {
+    fetch(resolvePath('be/friends/send_request.php'), {
         method: 'POST',
         body: formData
     })
@@ -424,23 +424,17 @@ function performSearch(element) {
     }
     
     searchTimeout = setTimeout(() => {
-        const path = window.location.pathname;
-        let searchPath = 'be/search.php';
+        const searchPath = resolvePath('be/search.php');
         
-        // If we're in /fe/pages/ or /be/ we need to go up two levels
-        if (path.includes('/fe/pages/') || path.includes('/be/')) {
-            searchPath = '../../be/search.php';
-        }
-        
-        console.log('Fetching from path:', searchPath, 'query:', query);
+        debugLog('info', 'Search fetch', { path: searchPath, query });
         
         fetch(searchPath + '?q=' + encodeURIComponent(query))
             .then(response => {
-                console.log('Response received, status:', response.status);
+                debugLog('info', 'Search response', { status: response.status });
                 return response.json();
             })
             .then(data => {
-                console.log('Search data:', data);
+                debugLog('info', 'Search data received', { results: data.results?.length || 0 });
                 if (data.success) {
                     displaySearchResults(data.results, resultsDiv);
                 } else {
@@ -458,10 +452,6 @@ function displaySearchResults(results, targetDiv) {
     const resultsDiv = targetDiv || document.querySelector('.searchResults') || document.getElementById('searchResults');
     if (!resultsDiv) return;
     
-    const path = window.location.pathname;
-    const isInFePages = path.includes('/fe/pages/');
-    const isInBe = path.includes('/be/');
-    
     let html = '';
     
     // Users
@@ -470,13 +460,7 @@ function displaySearchResults(results, targetDiv) {
         results.users.forEach(user => {
             let avatar = getAvatarUrl(user.avatar_url);
             
-            // Determine correct path based on current location
-            let profilePath;
-            if (isInFePages || isInBe) {
-                profilePath = '../../be/users/profile.php';
-            } else {
-                profilePath = 'be/users/profile.php';
-            }
+            const profilePath = resolvePath('be/users/profile.php');
             
             const username = escapeHtml(user.username);
             const fullName = escapeHtml(user.full_name);
@@ -536,37 +520,21 @@ function displaySearchResults(results, targetDiv) {
     resultsDiv.innerHTML = html;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 function viewSpot(spotId) {
     // Show spot on map or details
-    alert('Spot details coming soon!');
+    showAppNotice('Spot details coming soon!', 'info');
 }
 
 // ==================== MESSAGING ====================
 function loadConversations() {
-    const path = window.location.pathname;
-    let messagesPath = 'be/messages/message.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        messagesPath = '../messages/message.php';
-    } else if (path.includes('/fe/pages/')) {
-        messagesPath = '../../be/messages/message.php';
-    }
-    
-    fetch(messagesPath + '?action=get_conversations')
+    fetch(resolvePath('be/messages/message.php') + '?action=get_conversations')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 displayConversations(data.conversations);
             }
         })
-        .catch(error => console.error('Error loading conversations:', error));
+        .catch(error => debugLog('error', 'Loading conversations failed', { error: getErrorMessage(error, 'Network error') }));
 }
 
 function displayConversations(conversations) {
@@ -602,17 +570,7 @@ function displayConversations(conversations) {
 
 function openConversation(userId) {
     // Load and display conversation
-    const path = window.location.pathname;
-    let messagesPath = 'be/messages/message.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        messagesPath = '../messages/message.php';
-    } else if (path.includes('/fe/pages/')) {
-        messagesPath = '../../be/messages/message.php';
-    }
-    
-    fetch(messagesPath + '?action=get_conversation&receiver_id=' + userId)
+    fetch(resolvePath('be/messages/message.php') + '?action=get_conversation&receiver_id=' + userId)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -668,15 +626,7 @@ function sendMessage(receiverId) {
     // Allow sending if there's content or files
     if (!content && files.length === 0) return;
     
-    const path = window.location.pathname;
-    let messagesPath = 'be/messages/message.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        messagesPath = '../messages/message.php';
-    } else if (path.includes('/fe/pages/')) {
-        messagesPath = '../../be/messages/message.php';
-    }
+    const messagesPath = resolvePath('be/messages/message.php');
     
     const formData = new FormData();
     formData.append('action', 'send');
@@ -706,273 +656,12 @@ function sendMessage(receiverId) {
     });
 }
 
-// Load conversations on page load
+// Load conversations on page load (skip on messages page - handled by messages.js)
 if (document.body.dataset.userId && document.body.dataset.userId != '0') {
-    if (document.getElementById('conversationsList')) {
+    if (document.getElementById('conversationsList') && !document.getElementById('friendSearchInput')) {
         loadConversations();
         setInterval(loadConversations, 15000);
     }
-}
-
-// ==================== NOTIFICATIONS ====================
-function loadNotifications() {
-    const path = window.location.pathname;
-    let notifPath = 'be/notifications/get_notifications.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        notifPath = '../notifications/get_notifications.php';
-    } else if (path.includes('/fe/pages/')) {
-        notifPath = '../../be/notifications/get_notifications.php';
-    }
-    
-    fetch(notifPath + '?limit=10')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayNotifications(data.notifications);
-                updateNotificationBadge(data.unread_count);
-            }
-        })
-        .catch(error => console.error('Error loading notifications:', error));
-}
-
-function displayNotifications(notifications) {
-    const container = document.getElementById('notificationList');
-    if (!container) return;
-    
-    if (notifications.length === 0) {
-        container.innerHTML = '<div class="dropdown-item text-center text-muted">No notifications</div>';
-        return;
-    }
-    
-    // Determine correct paths based on current location
-    const path = window.location.pathname;
-    const isInFePages = path.includes('/fe/pages/');
-    const isInBe = path.includes('/be/');
-    
-    let profilePath, friendRequestPath;
-    if (isInFePages || isInBe) {
-        profilePath = '../../be/users/profile.php';
-        friendRequestPath = '../../be/friends/list_requests.php';
-    } else {
-        profilePath = 'be/users/profile.php';
-        friendRequestPath = 'be/friends/list_requests.php';
-    }
-    
-    let html = '';
-    notifications.forEach(notif => {
-        const avatar = getAvatarUrl(notif.avatar_url);
-        let message = '';
-        let clickAction = '';
-        
-        switch(notif.type) {
-            case 'like':
-                message = `<strong>${notif.username}</strong> liked your post`;
-                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
-                break;
-            case 'comment':
-                message = `<strong>${notif.username}</strong> commented on your post`;
-                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
-                break;
-            case 'follow':
-                message = `<strong>${notif.username}</strong> started following you`;
-                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
-                break;
-            case 'friend_request':
-                message = `<strong>${notif.username}</strong> sent you a friend request`;
-                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${friendRequestPath}')"`;
-                break;
-            case 'friend_accepted':
-                message = `<strong>${notif.username}</strong> accepted your friend request`;
-                clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
-                break;
-            case 'new_post':
-                message = `<strong>${notif.username}</strong> shared a new post`;
-                clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
-                break;
-            default:
-                message = `<strong>${notif.username}</strong> performed an action`;
-                clickAction = '';
-        }
-        
-        const readClass = notif.is_read ? '' : 'bg-light';
-        html += `
-            <div class="dropdown-item ${readClass} notification-item" ${clickAction} style="cursor: pointer;">
-                <div class="d-flex gap-2">
-                    <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
-                    <div class="flex-grow-1">
-                        <small>${message}</small>
-                        <div class="small text-muted">${formatDate(notif.created_at)}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html + `
-        <div class="dropdown-divider"></div>
-        <a href="#" class="dropdown-item text-center small text-primary">View all notifications</a>
-    `;
-}
-
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    if (!badge) return;
-    
-    if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.classList.remove('d-none');
-    } else {
-        badge.classList.add('d-none');
-    }
-}
-
-function markNotificationRead(notificationId) {
-    const formData = new FormData();
-    formData.append('notification_id', notificationId);
-    formData.append('action', 'mark_read');
-    formData.append('csrf_token', getCsrfToken());
-    
-    fetch('be/notifications/mark_read.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadNotifications();
-        }
-    });
-}
-
-function markAllNotificationsRead() {
-    const path = window.location.pathname;
-    let markReadPath = 'be/notifications/mark_read.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        markReadPath = '../notifications/mark_read.php';
-    } else if (path.includes('/fe/pages/')) {
-        markReadPath = '../../be/notifications/mark_read.php';
-    }
-    
-    const formData = new FormData();
-    formData.append('action', 'mark_all_read');
-    formData.append('csrf_token', getCsrfToken());
-    
-    fetch(markReadPath, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update badge immediately
-            const badge = document.getElementById('notificationBadge');
-            if (badge) {
-                badge.classList.add('d-none');
-            }
-            // Reload notifications list
-            loadNotifications();
-        }
-    })
-    .catch(error => console.error('Error marking all read:', error));
-}
-
-function handleNotificationClick(notificationId, postId) {
-    const path = window.location.pathname;
-    let markReadPath = 'be/notifications/mark_read.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        markReadPath = '../notifications/mark_read.php';
-    } else if (path.includes('/fe/pages/')) {
-        markReadPath = '../../be/notifications/mark_read.php';
-    }
-    
-    const formData = new FormData();
-    formData.append('notification_id', notificationId);
-    formData.append('action', 'mark_read');
-    formData.append('csrf_token', getCsrfToken());
-    
-    fetch(markReadPath, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Immediately update the badge count
-            const badge = document.getElementById('notificationBadge');
-            if (badge && !badge.classList.contains('d-none')) {
-                const currentCount = parseInt(badge.textContent);
-                const newCount = Math.max(0, currentCount - 1);
-                if (newCount > 0) {
-                    badge.textContent = newCount > 99 ? '99+' : newCount;
-                } else {
-                    badge.classList.add('d-none');
-                }
-            }
-            // Then reload full list
-            loadNotifications();
-            if (postId) {
-                // Scroll to post or navigate to post if needed
-            }
-        }
-    })
-    .catch(error => console.error('Error marking notification read:', error));
-}
-
-function handleNotificationClickAndNavigate(notificationId, url) {
-    const path = window.location.pathname;
-    let markReadPath = 'be/notifications/mark_read.php';
-    
-    // Adjust path based on current location
-    if (path.includes('/be/')) {
-        markReadPath = '../notifications/mark_read.php';
-    } else if (path.includes('/fe/pages/')) {
-        markReadPath = '../../be/notifications/mark_read.php';
-    }
-    
-    const formData = new FormData();
-    formData.append('notification_id', notificationId);
-    formData.append('action', 'mark_read');
-    formData.append('csrf_token', getCsrfToken());
-    
-    fetch(markReadPath, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Immediately update the badge count
-            const badge = document.getElementById('notificationBadge');
-            if (badge && !badge.classList.contains('d-none')) {
-                const currentCount = parseInt(badge.textContent);
-                const newCount = Math.max(0, currentCount - 1);
-                if (newCount > 0) {
-                    badge.textContent = newCount > 99 ? '99+' : newCount;
-                } else {
-                    badge.classList.add('d-none');
-                }
-            }
-            // Navigate to URL
-            window.location.href = url;
-        }
-    })
-    .catch(error => {
-        console.error('Error marking notification read:', error);
-        // Navigate anyway
-        window.location.href = url;
-    });
-}
-
-// Load notifications when page loads and refresh periodically
-if (document.body.dataset.userId && document.body.dataset.userId != '0') {
-    loadNotifications();
-    setInterval(loadNotifications, 30000); // Refresh every 30 seconds
 }
 
 // Close search dropdown when clicking outside
@@ -988,33 +677,6 @@ document.addEventListener('click', function(e) {
 });
 
 // ==================== UTILITIES ====================
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return '';
-
-    const now = new Date();
-    const diff = now - date;
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    const lang = (document.documentElement.lang || '').toLowerCase();
-    const isBg = lang.startsWith('bg');
-
-    if (days > 0) return isBg ? `преди ${days} дни` : `${days}d ago`;
-    if (hours > 0) return isBg ? `преди ${hours} часа` : `${hours}h ago`;
-    if (minutes > 0) return isBg ? `преди ${minutes} мин` : `${minutes}m ago`;
-    return isBg ? 'току-що' : 'just now';
-}
-
-function localizeIsoDates() {
-    document.querySelectorAll('[data-iso-date]').forEach(el => {
-        const iso = el.getAttribute('data-iso-date');
-        if (!iso) return;
-        el.textContent = formatDate(iso);
-    });
-}
 
 // If DOM is already ready, run immediately (scripts can be loaded at end of body)
 if (document.readyState === 'loading') {
@@ -1040,7 +702,7 @@ if (document.readyState === 'loading') {
 
 // Scroll-to-top button
 function initScrollToTop() {
-    var btn = document.createElement('button');
+    const btn = document.createElement('button');
     btn.className = 'scroll-to-top';
     btn.innerHTML = '<i class="fas fa-arrow-up"></i>';
     btn.setAttribute('aria-label', 'Scroll to top');

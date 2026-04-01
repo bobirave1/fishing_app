@@ -1,10 +1,29 @@
 <?php
-require '../../config/security.php';
-secureSession();
-require '../../config/database.php';
-setSecurityHeaders();
+/**
+ * Post creation endpoint (legacy direct access).
+ * Delegates to PostService via DI container.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-if (!isset($_SESSION['user_id'])) exit;
+use App\Services\PostService;
+use App\Core\Logger;
+
+/** @var \App\Core\Container $container */
+$container = $GLOBALS['container'];
+$logger = $container->get(Logger::class);
+
+if (!isset($_SESSION['user_id'])) {
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+
+// Rate limit
+if (!checkRateLimit('post_create_' . $userId, 10, 300)) {
+    $_SESSION['post_error'] = 'Too many posts. Please wait a few minutes.';
+    header('Location: ../../index.php');
+    exit;
+}
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -15,10 +34,7 @@ if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
 $title = trim($_POST['title'] ?? '');
 $content = trim($_POST['content'] ?? '');
 $visibility = $_POST['visibility'] ?? 'public';
-$imagePath = null;
-$uploadedMediaPaths = [];
 
-// Input validation
 if (empty($title) || strlen($title) > 200) {
     $_SESSION['post_error'] = 'Title must be between 1 and 200 characters';
     header('Location: ../../index.php');
@@ -35,7 +51,8 @@ if (!in_array($visibility, ['public', 'friends', 'private'])) {
     exit;
 }
 
-// Handle file upload (single or multiple media)
+// Handle file uploads
+$uploadedMediaPaths = [];
 if (isset($_FILES['media'])) {
     $isMultiple = is_array($_FILES['media']['name']);
     $mediaCount = $isMultiple ? count($_FILES['media']['name']) : 1;
@@ -55,83 +72,41 @@ if (isset($_FILES['media'])) {
             continue;
         }
 
-        $validationErrors = validateMediaUpload($file);
-        if (!empty($validationErrors)) {
-            $_SESSION['post_error'] = implode(', ', $validationErrors);
+        $result = secureUploadFile($file, '../../fe/assets/img', 'media');
+        if (!$result['success']) {
+            $_SESSION['post_error'] = $result['error'];
             header('Location: ../../index.php');
             exit;
         }
 
-        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
-        $filename = uniqid('post_', true) . '.' . $ext;
-        $target = '../../fe/assets/img/' . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $target)) {
-            $_SESSION['post_error'] = 'Failed to upload file';
-            header('Location: ../../index.php');
-            exit;
-        }
-
-        $uploadedMediaPaths[] = 'fe/assets/img/' . $filename;
+        $uploadedMediaPaths[] = 'fe/assets/img/' . $result['filename'];
     }
 }
 
-if (!empty($uploadedMediaPaths)) {
-    $imagePath = $uploadedMediaPaths[0];
-}
+$imagePath = $uploadedMediaPaths[0] ?? null;
 
-// Insert post
-$stmt = $pdo->prepare("INSERT INTO posts (user_id, title, content, image, visibility, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-$stmt->execute([$_SESSION['user_id'], $title, $content, $imagePath, $visibility]);
-$postId = $pdo->lastInsertId();
-
-if (!empty($uploadedMediaPaths)) {
-    try {
-        $mediaStmt = $pdo->prepare("INSERT INTO post_images (post_id, image_url, uploaded_at) VALUES (?, ?, NOW())");
-        foreach ($uploadedMediaPaths as $mediaPath) {
-            $mediaStmt->execute([$postId, $mediaPath]);
-        }
-    } catch (Throwable $e) {
-        // If post_images table is missing in a local setup, keep post creation successful with primary media in posts.image.
-    }
-}
+$postService = $container->get(PostService::class);
+$postId = $postService->create($userId, $title, $content, $visibility, $imagePath, $uploadedMediaPaths);
 
 // Notify friends about new post
 if ($visibility !== 'private') {
-    // Get all friends
-    $friendsStmt = $pdo->prepare("
-        SELECT DISTINCT 
-            CASE 
-                WHEN user_id = ? THEN friend_id
-                WHEN friend_id = ? THEN user_id
-            END as friend_id
-        FROM friends 
-        WHERE user_id = ? OR friend_id = ?
-    ");
-    $friendsStmt->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
-    $friends = $friendsStmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Create notification for each friend
-    if (!empty($friends)) {
-        $notifStmt = $pdo->prepare(
-            "INSERT INTO notifications (user_id, type, from_user_id, post_id, created_at)
-             VALUES (?, 'new_post', ?, ?, NOW())"
-        );
-        foreach ($friends as $friendId) {
-            $notifStmt->execute([$friendId, $_SESSION['user_id'], $postId]);
+    $friends = $postService->getFriendIds($userId);
+    $pdo = $container->pdo();
+    $notifStmt = $pdo->prepare(
+        "INSERT INTO notifications (user_id, type, from_user_id, post_id, created_at)
+         VALUES (?, 'new_post', ?, ?, NOW())"
+    );
+    foreach ($friends as $friendId) {
+        if ($friendId) {
+            try {
+                $notifStmt->execute([$friendId, $userId, $postId]);
+            } catch (\Throwable) {
+            }
         }
     }
 }
 
-// Log activity (optional - table may not exist)
-// Uncomment if you have activity_feed table
-/*
-$stmt = $pdo->prepare("
-    INSERT INTO activity_feed (user_id, action_type, post_id, description, created_at)
-    VALUES (?, 'post', ?, ?, NOW())
-");
-$stmt->execute([$_SESSION['user_id'], $postId, $title]);
-*/
+$logger->info('Post created: {postId} by user {userId}', ['postId' => $postId, 'userId' => $userId]);
 
 header('Location: ../../index.php');
 exit;

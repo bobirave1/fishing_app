@@ -1,13 +1,8 @@
 <?php
-require '../../config/security.php';
-secureSession();
-require '../../config/database.php';
-setSecurityHeaders();
-
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php';
+/**
+ * Remove friend — delegates to FriendService.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -25,6 +20,9 @@ if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
     exit;
 }
 
+$container = $GLOBALS['container'];
+$friendService = $container->get(App\Services\FriendService::class);
+
 $currentUserId = (int) $_SESSION['user_id'];
 $friendId = (int) ($_POST['friend_id'] ?? 0);
 $returnTo = $_POST['return_to'] ?? 'friends_list';
@@ -35,15 +33,7 @@ if ($friendId <= 0 || $friendId === $currentUserId) {
     exit;
 }
 
-$deleteStmt = $pdo->prepare(
-    'DELETE FROM friends
-     WHERE (user_id = ? AND friend_id = ?)
-        OR (user_id = ? AND friend_id = ?)'
-);
-
-$deleteStmt->execute([$currentUserId, $friendId, $friendId, $currentUserId]);
-
-if ($deleteStmt->rowCount() > 0) {
+if ($friendService->removeFriend($currentUserId, $friendId)) {
     $_SESSION['friend_flash_success'] = __('friend_removed_success');
 } else {
     $_SESSION['friend_flash_error'] = __('friend_not_found');

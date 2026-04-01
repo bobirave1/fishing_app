@@ -1,10 +1,19 @@
 <?php
-require '../../config/security.php';
-secureSession();
-require '../../config/database.php';
-setSecurityHeaders();
+/**
+ * Login endpoint (legacy direct access).
+ * Delegates to AuthService via DI container.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-function redirectLoginError(string $errorCode, string $email = ''): void {
+use App\Services\AuthService;
+use App\Core\Logger;
+
+/** @var \App\Core\Container $container */
+$container = $GLOBALS['container'];
+$logger = $container->get(Logger::class);
+
+function redirectLoginError(string $errorCode, string $email = ''): void
+{
     $query = ['login_error' => $errorCode];
     if ($email !== '') {
         $query['email'] = $email;
@@ -15,39 +24,37 @@ function redirectLoginError(string $errorCode, string $email = ''): void {
 
 // Rate limiting
 if (!checkRateLimit('login', 5, 900)) {
+    $logger->warning('Login rate limit exceeded from {ip}', ['ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
     http_response_code(429);
     redirectLoginError('rate_limit');
 }
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-    http_response_code(403);
     redirectLoginError('csrf');
 }
 
-// Collect POST data
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-// Validate input
 if (!validateEmail($email) || empty($password)) {
     redirectLoginError('invalid', $email);
 }
 
-// Check if user exists
-$stmt = $pdo->prepare("SELECT id, username, password_hash FROM users WHERE email = ?");
-$stmt->execute([$email]);
-$user = $stmt->fetch();
+$authService = $container->get(AuthService::class);
+$user = $authService->attempt($email, $password);
 
-if (!$user || !password_verify($password, $user['password_hash'])) {
+if (!$user) {
+    $logger->info('Failed login attempt for {email}', ['email' => $email]);
     redirectLoginError('invalid', $email);
 }
 
-// Login successful
 session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['username'] = $user['username'];
-unset($_SESSION['rate_limit']); // Clear rate limit on successful login
+unset($_SESSION['rate_limit']);
+
+$logger->info('User {username} logged in', ['username' => $user['username']]);
 
 header("Location: ../../index.php");
 exit;

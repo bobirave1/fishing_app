@@ -4,13 +4,19 @@
  */
 function handleGlobalActions() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+        $action = $_POST['action'];
+
+        // Only intercept known global actions; let API endpoints handle their own 'action' param
+        if (!in_array($action, ['switch_lang', 'switch_theme'], true)) {
+            return;
+        }
+
         $csrf = $_POST['csrf_token'] ?? '';
         if (!verifyCsrfToken($csrf)) {
             http_response_code(400);
             die('Invalid CSRF token');
         }
 
-        $action = $_POST['action'];
         if ($action === 'switch_lang' && isset($_POST['lang'])) {
             $newLang = (string) $_POST['lang'];
             if (in_array($newLang, ['bg', 'en'], true)) {

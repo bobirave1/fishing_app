@@ -7,7 +7,7 @@
  * Get theme-appropriate default avatar path
  */
 function getDefaultAvatarForTheme() {
-    var isDark = document.body.getAttribute('data-theme') === 'dark';
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
     return isDark
         ? 'fe/assets/img/avatars/default_avatar_dark.jpg'
         : 'fe/assets/img/avatars/default_avatar_light.jpg';
@@ -17,15 +17,10 @@ function getAvatarUrl(avatarUrl) {
     const defaultAvatar = getDefaultAvatarForTheme();
     const avatar = avatarUrl || defaultAvatar;
     
-    // Detect if we're in a subdirectory
-    const path = window.location.pathname;
-    const isInFePages = path.includes('/fe/pages/');
-    const isInBe = path.includes('/be/');
-    
-    // If in subdirectory and avatar starts with fe/, add ../../ prefix
+    // Use resolvePath if available, otherwise fallback to manual detection
     let finalPath = avatar;
-    if ((isInFePages || isInBe) && avatar.startsWith('fe/')) {
-        finalPath = '../../' + avatar;
+    if (avatar.startsWith('fe/')) {
+        finalPath = (typeof resolvePath === 'function') ? resolvePath(avatar) : avatar;
     }
     
     // Add cache buster for default avatar

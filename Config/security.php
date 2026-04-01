@@ -91,9 +91,18 @@ function validateImageUpload($file, $maxSize = 5242880) { // 5MB default
         $errors[] = 'File is too large (max 5MB)';
     }
     
-    // Check MIME type
+    // Check file extension
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($extension, $allowedExtensions)) {
+        $errors[] = 'Invalid file extension';
+    }
+    
+    // Server-side MIME verification via finfo (not trusting client Content-Type)
     $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!in_array($file['type'], $allowedMimes)) {
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $detectedMime = $finfo->file($file['tmp_name']);
+    if (!in_array($detectedMime, $allowedMimes)) {
         $errors[] = 'Invalid file type. Only JPG, PNG, GIF, and WebP are allowed';
     }
     
@@ -101,13 +110,6 @@ function validateImageUpload($file, $maxSize = 5242880) { // 5MB default
     $imageInfo = @getimagesize($file['tmp_name']);
     if ($imageInfo === false) {
         $errors[] = 'File is not a valid image';
-    }
-    
-    // Check file extension
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($extension, $allowedExtensions)) {
-        $errors[] = 'Invalid file extension';
     }
     
     return $errors;
@@ -127,15 +129,6 @@ function validateMediaUpload($file, $maxSize = 20971520) { // 20MB default
         $errors[] = 'File is too large (max 20MB)';
     }
     
-    // Check MIME type
-    $allowedMimes = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/webm', 'video/avi', 'video/quicktime'
-    ];
-    if (!in_array($file['type'], $allowedMimes)) {
-        $errors[] = 'Invalid file type. Only images (JPG, PNG, GIF, WebP) and videos (MP4, WebM, AVI, MOV) are allowed';
-    }
-    
     // Check file extension
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'avi', 'mov'];
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -143,7 +136,46 @@ function validateMediaUpload($file, $maxSize = 20971520) { // 20MB default
         $errors[] = 'Invalid file extension';
     }
     
+    // Server-side MIME verification via finfo
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $detectedMime = $finfo->file($file['tmp_name']);
+    $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $imageMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $videoMimes = ['video/mp4', 'video/webm', 'video/x-msvideo', 'video/quicktime', 'application/octet-stream'];
+    
+    if (in_array($extension, $imageExts) && !in_array($detectedMime, $imageMimes)) {
+        $errors[] = 'Invalid image file type';
+    } elseif (!in_array($extension, $imageExts) && !in_array($detectedMime, $videoMimes)) {
+        $errors[] = 'Invalid video file type';
+    }
+    
     return $errors;
+}
+
+// Secure file upload: validates, generates random filename, and moves file
+function secureUploadFile(array $file, string $targetDir, string $type = 'media'): array {
+    $errors = ($type === 'image')
+        ? validateImageUpload($file)
+        : validateMediaUpload($file);
+    
+    if (!empty($errors)) {
+        return ['success' => false, 'error' => implode(', ', $errors)];
+    }
+    
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $filename = bin2hex(random_bytes(16)) . '.' . $ext;
+    
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+    
+    $targetPath = rtrim($targetDir, '/\\') . '/' . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return ['success' => false, 'error' => 'Failed to move uploaded file'];
+    }
+    
+    return ['success' => true, 'filename' => $filename];
 }
 // Security Headers
 function setSecurityHeaders() {
@@ -153,9 +185,9 @@ function setSecurityHeaders() {
     header('Referrer-Policy: strict-origin-when-cross-origin');
     // Allow geolocation for weather widget, block microphone and camera
     header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
-    // Updated CSP - allow unsafe-eval for development and Bootstrap compatibility
+    // Updated CSP - strict policy (no unsafe-eval needed)
     if (!headers_sent()) {
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https: http:; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://nominatim.openstreetmap.org https://api.openweathermap.org https://cdn.jsdelivr.net;");
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https: http:; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://nominatim.openstreetmap.org https://api.openweathermap.org https://cdn.jsdelivr.net;");
     }
 }
 

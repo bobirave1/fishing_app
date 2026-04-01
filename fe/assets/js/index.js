@@ -16,7 +16,7 @@ function loadEditPost(postId) {
 function submitEditForm() {
     const form = document.getElementById('editPostForm');
     if (!form) {
-        alert('Form not found');
+        showAppNotice('Form not found', 'danger');
         return;
     }
     
@@ -43,12 +43,12 @@ function submitEditForm() {
             if (modal) modal.hide();
             setTimeout(() => location.reload(), 500);
         } else {
-            alert('Error: ' + (data.message || data.error || 'Unknown error'));
+            showAppNotice('Error: ' + (data.message || data.error || 'Unknown error'), 'danger');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while updating the post.');
+        debugLog('error', 'Edit post failed', { error: getErrorMessage(error, 'Network error') });
+        showAppNotice('An error occurred while updating the post.', 'danger');
     });
 }
 
@@ -80,12 +80,12 @@ function confirmDeletePost() {
             bootstrap.Modal.getInstance(document.getElementById('deletePostModal')).hide();
             setTimeout(() => location.reload(), 500);
         } else {
-            alert('Error: ' + data.error);
+            showAppNotice('Error: ' + data.error, 'danger');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while deleting the post.');
+        debugLog('error', 'Delete post failed', { error: getErrorMessage(error, 'Network error') });
+        showAppNotice('An error occurred while deleting the post.', 'danger');
     });
 }
 
@@ -147,10 +147,10 @@ const ui = isBg ? {
 };
 
 if (weatherInfoEl && navigator.geolocation) {
-    console.log('Geolocation supported - requesting position...');
+    debugLog('info', 'Geolocation supported - requesting position');
     
     navigator.geolocation.getCurrentPosition(function(position) {
-        console.log('Position obtained:', position.coords.latitude, position.coords.longitude);
+        debugLog('info', 'Position obtained', { lat: position.coords.latitude, lon: position.coords.longitude });
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         
@@ -158,11 +158,11 @@ if (weatherInfoEl && navigator.geolocation) {
         
         fetch(`be/weather/get_weather.php?lat=${lat}&lon=${lon}&lang=${encodeURIComponent(lang)}`)
             .then(response => {
-                console.log('Weather API response status:', response.status);
+                debugLog('info', 'Weather API response', { status: response.status });
                 return response.json();
             })
             .then(data => {
-                console.log('Weather data:', data);
+                debugLog('info', 'Weather data received', { location: data.location });
                 if (data.error) {
                     weatherInfoEl.innerHTML = `
                         <div class="alert alert-warning">
@@ -205,7 +205,7 @@ if (weatherInfoEl && navigator.geolocation) {
                 }
             })
             .catch((error) => {
-                console.error('Weather fetch error:', error);
+                debugLog('error', 'Weather fetch failed', { error: getErrorMessage(error, 'Network error') });
                 weatherInfoEl.innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-circle"></i> <strong>${ui.errorTitle}</strong><br>
@@ -217,7 +217,7 @@ if (weatherInfoEl && navigator.geolocation) {
                 `;
             });
     }, function(error) {
-        console.error('Geolocation error:', error.code, error.message);
+        debugLog('error', 'Geolocation error', { code: error.code, message: error.message });
         
         let errorMessage = '';
         switch(error.code) {
@@ -250,7 +250,7 @@ if (weatherInfoEl && navigator.geolocation) {
         maximumAge: 300000 // Cache for 5 minutes
     });
 } else if (weatherInfoEl) {
-    console.error('Geolocation not supported');
+    debugLog('error', 'Geolocation not supported');
     weatherInfoEl.innerHTML = `
         <div class="alert alert-secondary">
             <i class="fas fa-times-circle"></i> ${ui.browserNoGeo}
@@ -260,12 +260,6 @@ if (weatherInfoEl && navigator.geolocation) {
 }
 
 // ==================== PHOTO LIGHTBOX ====================
-
-function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.appendChild(document.createTextNode(String(str)));
-    return d.innerHTML;
-}
 
 function setTextWithNewlines(el, text) {
     el.innerHTML = '';
@@ -358,25 +352,25 @@ document.getElementById('lightboxCommentInput').addEventListener('keydown', func
 });
 
 // Track reply state for lightbox comments
-var lightboxReplyTo = null; // { id, username }
+let lightboxReplyTo = null; // { id, username }
 
 function getLbLang() {
-    var lang = (document.documentElement.lang || '').toLowerCase();
+    const lang = (document.documentElement.lang || '').toLowerCase();
     return lang.startsWith('bg');
 }
 
 function renderCommentHtml(c) {
-    var av = (typeof getAvatarUrl === 'function') ? getAvatarUrl(c.avatar_url) : (c.avatar_url || getDefaultAvatarForTheme());
-    var isBg = getLbLang();
-    var replyLabel = isBg ? 'Отговори' : 'Reply';
-    var likedClass = c.user_liked ? ' comment-liked' : '';
-    var heartIcon = c.user_liked ? 'fas' : 'far';
-    var likeCountStr = c.like_count > 0 ? c.like_count : '';
-    var isReply = c.parent_id && c.parent_username;
-    var replyTag = isReply
+    const av = (typeof getAvatarUrl === 'function') ? getAvatarUrl(c.avatar_url) : (c.avatar_url || getDefaultAvatarForTheme());
+    const isBg = getLbLang();
+    const replyLabel = isBg ? 'Отговори' : 'Reply';
+    const likedClass = c.user_liked ? ' comment-liked' : '';
+    const heartIcon = c.user_liked ? 'fas' : 'far';
+    const likeCountStr = c.like_count > 0 ? c.like_count : '';
+    const isReply = c.parent_id && c.parent_username;
+    const replyTag = isReply
         ? '<span class="comment-reply-tag"><i class="fas fa-reply fa-flip-horizontal"></i> ' + escapeHtml(c.parent_username) + '</span>'
         : '';
-    var indent = isReply ? ' style="margin-left:24px;"' : '';
+    const indent = isReply ? ' style="margin-left:24px;"' : '';
 
     return '<div class="lb-comment d-flex gap-2 mb-2"' + indent + ' data-comment-id="' + c.id + '">' +
         '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;">' +
@@ -399,10 +393,10 @@ function renderCommentHtml(c) {
 }
 
 function loadLightboxComments(postId) {
-    var container = document.getElementById('lightboxComments');
+    const container = document.getElementById('lightboxComments');
     container.innerHTML = '<p class="text-center text-muted small py-2"><i class="fas fa-spinner fa-spin"></i></p>';
 
-    var fd = new FormData();
+    const fd = new FormData();
     fd.append('post_id', postId);
     fd.append('action', 'get');
 
@@ -410,13 +404,13 @@ function loadLightboxComments(postId) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success || !data.comments.length) {
-                var isBg = getLbLang();
+                const isBg = getLbLang();
                 container.innerHTML = '<p class="text-center text-muted small py-3">' + (isBg ? 'Няма коментари.' : 'No comments yet.') + '</p>';
                 return;
             }
             // Separate top-level and replies
-            var topLevel = [];
-            var replies = {};
+            const topLevel = [];
+            const replies = {};
             data.comments.forEach(function(c) {
                 if (c.parent_id) {
                     if (!replies[c.parent_id]) replies[c.parent_id] = [];
@@ -425,7 +419,7 @@ function loadLightboxComments(postId) {
                     topLevel.push(c);
                 }
             });
-            var html = '';
+            let html = '';
             topLevel.forEach(function(c) {
                 html += renderCommentHtml(c);
                 if (replies[c.id]) {
@@ -436,7 +430,7 @@ function loadLightboxComments(postId) {
             });
             // Orphan replies (parent deleted but reply exists)
             Object.keys(replies).forEach(function(pid) {
-                var parentExists = topLevel.some(function(c) { return c.id == pid; });
+                const parentExists = topLevel.some(function(c) { return c.id == pid; });
                 if (!parentExists) {
                     replies[pid].forEach(function(r) {
                         html += renderCommentHtml(r);
@@ -452,10 +446,10 @@ function loadLightboxComments(postId) {
 
 function setReplyTo(commentId, username) {
     lightboxReplyTo = { id: commentId, username: username };
-    var input = document.getElementById('lightboxCommentInput');
-    var indicator = document.getElementById('lightboxReplyIndicator');
+    const input = document.getElementById('lightboxCommentInput');
+    const indicator = document.getElementById('lightboxReplyIndicator');
     if (indicator) {
-        var isBg = getLbLang();
+        const isBg = getLbLang();
         indicator.innerHTML = '<i class="fas fa-reply fa-flip-horizontal"></i> ' +
             (isBg ? 'Отговор на' : 'Replying to') + ' <strong>' + escapeHtml(username) + '</strong>' +
             '<button onclick="cancelReply()" class="comment-action-btn" style="margin-left:6px;"><i class="fas fa-times"></i></button>';
@@ -466,7 +460,7 @@ function setReplyTo(commentId, username) {
 
 function cancelReply() {
     lightboxReplyTo = null;
-    var indicator = document.getElementById('lightboxReplyIndicator');
+    const indicator = document.getElementById('lightboxReplyIndicator');
     if (indicator) {
         indicator.innerHTML = '';
         indicator.style.display = 'none';
@@ -474,13 +468,13 @@ function cancelReply() {
 }
 
 function addLightboxComment() {
-    var lb = document.getElementById('photoLightbox');
-    var postId = lb.dataset.postId;
-    var input = document.getElementById('lightboxCommentInput');
-    var content = input.value.trim();
+    const lb = document.getElementById('photoLightbox');
+    const postId = lb.dataset.postId;
+    const input = document.getElementById('lightboxCommentInput');
+    const content = input.value.trim();
     if (!content) return;
 
-    var fd = new FormData();
+    const fd = new FormData();
     fd.append('post_id', postId);
     fd.append('content', content);
     fd.append('action', 'add');
@@ -496,21 +490,21 @@ function addLightboxComment() {
                 input.value = '';
                 cancelReply();
                 loadLightboxComments(postId);
-                var lbCnt = document.getElementById('lightboxCommentCnt');
+                const lbCnt = document.getElementById('lightboxCommentCnt');
                 if (lbCnt) lbCnt.textContent = parseInt(lbCnt.textContent || '0') + 1;
-                var feedCnt = document.getElementById('comment-count-' + postId);
+                const feedCnt = document.getElementById('comment-count-' + postId);
                 if (feedCnt) feedCnt.textContent = parseInt(feedCnt.textContent || '0') + 1;
             } else {
-                alert('Error: ' + (data.error || 'Failed to add comment'));
+                showAppNotice('Error: ' + (data.error || 'Failed to add comment'), 'danger');
             }
         });
 }
 
 function toggleCommentLike(commentId, btn) {
-    var lb = document.getElementById('photoLightbox');
-    var postId = lb.dataset.postId;
+    const lb = document.getElementById('photoLightbox');
+    const postId = lb.dataset.postId;
 
-    var fd = new FormData();
+    const fd = new FormData();
     fd.append('post_id', postId);
     fd.append('comment_id', commentId);
     fd.append('action', 'like_comment');
@@ -520,8 +514,8 @@ function toggleCommentLike(commentId, btn) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                var icon = btn.querySelector('i');
-                var countEl = btn.querySelector('.comment-like-count');
+                const icon = btn.querySelector('i');
+                const countEl = btn.querySelector('.comment-like-count');
                 if (data.liked) {
                     icon.className = 'fas fa-heart comment-liked';
                 } else {

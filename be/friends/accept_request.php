@@ -1,57 +1,31 @@
 <?php
-require '../../config/security.php';
-secureSession();
-require '../../config/database.php';
-setSecurityHeaders();
+/**
+ * Accept friend request — delegates to FriendService.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     exit('Unauthorized');
 }
 
-// CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
     http_response_code(403);
     exit('Invalid CSRF token');
 }
 
+$container = $GLOBALS['container'];
+$friendService = $container->get(App\Services\FriendService::class);
+$logger = $container->get(App\Core\Logger::class);
+
 $userId = $_SESSION['user_id'];
 $requestId = (int)$_POST['request_id'];
 
-$stmt = $pdo->prepare(
-    "SELECT sender_id FROM friend_requests
-     WHERE id = ? AND receiver_id = ? AND status = 'pending'"
-);
-$stmt->execute([$requestId, $userId]);
-$request = $stmt->fetch();
-
-if (!$request) {
+if (!$friendService->acceptRequest($requestId, $userId)) {
     die("Invalid request");
 }
 
-$senderId = $request['sender_id'];
-
-$pdo->beginTransaction();
-
-$pdo->prepare(
-    "UPDATE friend_requests SET status = 'accepted' WHERE id = ?"
-)->execute([$requestId]);
-
-$pdo->prepare(
-    "INSERT INTO friends (user_id, friend_id) VALUES (?, ?), (?, ?)"
-)->execute([$userId, $senderId, $senderId, $userId]);
-
-// Create notification for accepted friend request (optional).
-try {
-    $pdo->prepare(
-        "INSERT INTO notifications (user_id, type, from_user_id, related_id, created_at)
-         VALUES (?, 'friend_accepted', ?, ?, NOW())"
-    )->execute([$senderId, $userId, $userId]);
-} catch (Throwable $e) {
-    // Keep accept flow successful if notifications are unavailable.
-}
-
-$pdo->commit();
+$logger->info("Friend request {$requestId} accepted by user {$userId}");
 
 header("Location: list_requests.php");
 exit;

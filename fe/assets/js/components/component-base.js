@@ -100,14 +100,18 @@ class Component {
      * Log with component name prefix
      */
     log(message, data = null) {
-        console.log(`[${this.constructor.name}] ${message}`, data || '');
+        if (typeof debugLog === 'function') {
+            debugLog('info', `[${this.constructor.name}] ${message}`, data);
+        }
     }
 
     /**
      * Error logging
      */
     error(message, data = null) {
-        console.error(`[${this.constructor.name}] ${message}`, data || '');
+        if (typeof debugLog === 'function') {
+            debugLog('error', `[${this.constructor.name}] ${message}`, data);
+        }
     }
 }
 

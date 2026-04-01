@@ -1,11 +1,7 @@
 <?php
-require_once '../../config/security.php';
+require_once __DIR__ . '/../../config/security.php';
 secureSession();
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require_once '../../config/languages.php';
+require_once __DIR__ . '/../../config/languages.php';
 setSecurityHeaders();
 
 $prefillFullName = htmlspecialchars(trim((string)($_GET['fullName'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -23,7 +19,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= __('sign_up') ?> - FISHINGLORY</title>
+    <title><?= __('sign_up') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
@@ -47,31 +43,31 @@ if (isset($_SESSION['user_id'])) {
                 <?php 
                 switch($_GET['error']) {
                     case 'empty_fields':
-                        echo 'Please fill in all fields';
+                        echo __('err_empty_fields');
                         break;
                     case 'invalid_email':
-                        echo 'Please provide a valid email address';
+                        echo __('err_invalid_email');
                         break;
                     case 'invalid_username':
-                        echo 'Username must be 3-20 characters (letters, numbers, underscores only)';
+                        echo __('err_invalid_username');
                         break;
                     case 'weak_password':
-                        echo 'Password must be at least 8 characters and contain both letters and numbers';
+                        echo __('err_weak_password');
                         break;
                     case 'password_mismatch':
-                        echo 'Passwords do not match';
+                        echo __('err_password_mismatch');
                         break;
                     case 'username_exists':
-                        echo 'Username already taken';
+                        echo __('err_username_exists');
                         break;
                     case 'email_exists':
-                        echo 'Email already registered';
+                        echo __('err_email_exists');
                         break;
                     case 'server_error':
-                        echo 'Registration failed. Please try again';
+                        echo __('err_server');
                         break;
                     default:
-                        echo 'Registration failed. Please try again';
+                        echo __('err_server');
                 }
                 ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -97,15 +93,15 @@ if (isset($_SESSION['user_id'])) {
                 <label for="regUsername" class="form-label"><i class="fas fa-at"></i> <?= __('username') ?></label>
                 <input type="text" class="form-control" id="regUsername" name="username" 
                       placeholder="<?= __('username') ?>" value="<?= $prefillUsername ?>" pattern="[a-zA-Z0-9_]{3,20}" 
-                       title="3-20 characters, letters, numbers, and underscores only" required>
-                <div class="form-text">3-20 characters, letters, numbers, and underscores only</div>
+                       title="<?= __('username_hint') ?>" required>
+                <div class="form-text"><?= __('username_hint') ?></div>
             </div>
 
             <div class="mb-3">
                 <label for="regPassword" class="form-label"><i class="fas fa-lock"></i> <?= __('password') ?></label>
                 <input type="password" class="form-control" id="regPassword" name="password" 
                        placeholder="<?= __('password') ?>" minlength="8" required>
-                <div class="form-text">At least 8 characters with letters and numbers</div>
+                <div class="form-text"><?= __('password_hint') ?></div>
             </div>
 
             <div class="mb-3">
@@ -138,9 +134,10 @@ if (isset($_SESSION['user_id'])) {
 </div>
 </main>
 
-<?php include '../components/footer.php'; ?>
+<?php include __DIR__ . '/../components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
 <script>
     // Enable bubble animation on register form submission

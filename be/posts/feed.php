@@ -1,29 +1,20 @@
 <?php
-session_start();
-require '../config/database.php';
+/**
+ * Feed page — delegates data fetching to PostService.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
 $userId = $_SESSION['user_id'];
+$container = $GLOBALS['container'];
+$postService = $container->get(App\Services\PostService::class);
 
-$stmt = $pdo->prepare("
-SELECT p.*, u.username
-FROM posts p
-JOIN users u ON u.id = p.user_id
-WHERE
-    p.visibility = 'public'
- OR (p.visibility = 'friends' AND p.user_id IN (
-        SELECT friend_id FROM friends WHERE user_id = ?
-    ))
- OR p.user_id = ?
-ORDER BY p.created_at DESC
-");
-
-$stmt->execute([$userId, $userId]);
-$posts = $stmt->fetchAll();
+$result = $postService->getFeed($userId, 1, 50);
+$posts = $result['posts'];
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Feed</title>
+    <title><?= __('home') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../../fe/assets/css/style.css?v=<?= time() ?>">
@@ -60,7 +51,7 @@ $posts = $stmt->fetchAll();
 
 </div>
 
-<?php include '../../fe/components/footer.php'; ?>
+<?php include __DIR__ . '/../../fe/components/footer.php'; ?>
 
 </body>
 </html>

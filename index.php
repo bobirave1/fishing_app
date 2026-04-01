@@ -1,16 +1,30 @@
 <?php
-require 'config/security.php';
-secureSession();
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
+/*
+ * FISHINGLORY — Front Controller
+ * All requests flow through here. Direct file access (be/*, fe/*) still works
+ * via .htaccess passthrough. Clean URLs are dispatched by the router.
+ */
+require __DIR__ . '/config/bootstrap.php';
+
+// Try to dispatch via router (clean URLs)
+$router = require __DIR__ . '/config/routes.php';
+$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+// Strip query string for matching
+$path = parse_url($requestUri, PHP_URL_PATH) ?: '/';
+$basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$cleanPath = $basePath ? substr($path, strlen($basePath)) : $path;
+$cleanPath = $cleanPath ?: '/';
+
+// If route matches, dispatch and exit (unless it's the homepage which falls through)
+if ($cleanPath !== '/' && $router->dispatch($requestMethod, $requestUri)) {
+    exit;
 }
-require 'config/database.php';
-require 'config/avatar_helper.php';
-require 'config/languages.php'; // Add language support
-require 'config/actions.php';
-setSecurityHeaders();
-handleGlobalActions();
+
+// ═══════════════════════════════════════════════════════
+// Homepage — original logic below
+// ═══════════════════════════════════════════════════════
 
 $posts = [];
 $postsPerPage = 20;
@@ -116,7 +130,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISHINGLORY - <?= __('home') ?></title>
+    <title><?= __('home') ?> | FISHINGLORY</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -536,7 +550,9 @@ if (isset($_SESSION['user_id'])) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="fe/assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="fe/assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 <script src="fe/assets/js/index.js?v=<?= assetVersion('fe/assets/js/index.js') ?>"></script>
 
 <?php include 'fe/components/footer.php'; ?>

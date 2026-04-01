@@ -24,7 +24,7 @@ function previewAvatar(event) {
     if (file) {
         // Check file size
         if (file.size > 5 * 1024 * 1024) {
-            alert('File is too large! Maximum size is 5MB.');
+            showAppNotice('File is too large! Maximum size is 5MB.', 'warning');
             event.target.value = '';
             return;
         }
@@ -32,7 +32,7 @@ function previewAvatar(event) {
         // Check file type
         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!validTypes.includes(file.type)) {
-            alert('Invalid file type! Please use JPG, PNG, GIF, or WebP.');
+            showAppNotice('Invalid file type! Please use JPG, PNG, GIF, or WebP.', 'warning');
             event.target.value = '';
             return;
         }
@@ -58,7 +58,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async func
     formData.append('csrf_token', document.body.dataset.csrfToken);
 
     try {
-        const response = await fetch('../../be/users/edit_profile.php', {
+        const response = await fetch(resolvePath('be/users/edit_profile.php'), {
             method: 'POST',
             body: formData
         });
@@ -76,7 +76,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async func
             
             // Redirect after 2 seconds
             setTimeout(() => {
-                window.location.href = '../../index.php';
+                window.location.href = resolvePath('index.php');
             }, 2000);
         } else {
             messageDiv.innerHTML = `
@@ -93,7 +93,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async func
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     } catch (error) {
-        console.error('Error:', error);
+        debugLog('error', 'Profile update failed', { error: getErrorMessage(error, 'Network error') });
         document.getElementById('profileMessage').innerHTML = `
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-triangle"></i> <strong>Error!</strong> Network error. Please try again.

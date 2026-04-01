@@ -32,12 +32,7 @@ function getWeatherData($lat, $lon, $lang = 'en') {
     
     // Check if API key is configured
     if (empty($apiKey) || $apiKey === 'your_api_key_here') {
-        // Try hardcoded fallback key
-        $apiKey = '6cd4ed73300b08fd04b2cb0b7bc31d0f';
-    }
-    
-    if (empty($apiKey)) {
-        error_log("OpenWeatherMap API key not configured. Using fallback data.");
+        error_log("OpenWeatherMap API key not configured. Set OPENWEATHER_API_KEY env variable.");
         return getWeatherDataFallback($lang);
     }
     
@@ -55,7 +50,7 @@ function getWeatherData($lat, $lon, $lang = 'en') {
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
-    curl_close($ch);
+    unset($ch);
     
     // Check for cURL errors
     if ($error) {

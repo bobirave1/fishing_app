@@ -1,6 +1,8 @@
 <?php
-session_start();
-require '../../config/database.php';
+/**
+ * Get notifications — delegates to NotificationService.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
 header('Content-Type: application/json');
 
@@ -10,62 +12,19 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
+    $container = $GLOBALS['container'];
+    $notifService = $container->get(App\Services\NotificationService::class);
+
     $userId = $_SESSION['user_id'];
-    
-    // Check if notifications table exists
-    $tableCheck = $pdo->query("SHOW TABLES LIKE 'notifications'");
-    
-    if ($tableCheck->rowCount() == 0) {
-        // Table doesn't exist, return empty notifications
-        exit(json_encode([
-            'success' => true,
-            'notifications' => [],
-            'unread_count' => 0
-        ]));
-    }
-    
     $limit = intval($_GET['limit'] ?? 10);
     $unreadOnly = isset($_GET['unread_only']) && $_GET['unread_only'];
 
-    $query = "
-        SELECT 
-            n.id, n.type, n.from_user_id, n.related_id, n.post_id,
-            n.is_read, n.created_at, n.message,
-            u.username, up.avatar_url
-        FROM notifications n
-        LEFT JOIN users u ON n.from_user_id = u.id
-        LEFT JOIN user_profiles up ON u.id = up.user_id
-        WHERE n.user_id = ?
-    ";
+    $result = $notifService->getForUser($userId, $limit, $unreadOnly);
 
-    if ($unreadOnly) {
-        $query .= " AND n.is_read = 0";
-    }
+    exit(json_encode(array_merge(['success' => true], $result)));
 
-    $query .= " ORDER BY n.created_at DESC LIMIT ?";
-
-    $stmt = $pdo->prepare($query);
-    $stmt->execute([$userId, $limit]);
-    $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Get unread count
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as unread_count 
-        FROM notifications 
-        WHERE user_id = ? AND is_read = 0
-    ");
-    $stmt->execute([$userId]);
-    $countResult = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    exit(json_encode([
-        'success' => true,
-        'notifications' => $notifications,
-        'unread_count' => $countResult['unread_count'] ?? 0
-    ]));
-    
-} catch (Exception $e) {
-    error_log("Notifications error: " . $e->getMessage());
-    // Return empty notifications instead of error
+} catch (\Exception $e) {
+    $container->get(App\Core\Logger::class)->error("Notifications error: " . $e->getMessage());
     exit(json_encode([
         'success' => true,
         'notifications' => [],

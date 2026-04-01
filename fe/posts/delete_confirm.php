@@ -1,7 +1,7 @@
 <?php
-require '../../config/security.php';
+require __DIR__ . '/../../config/security.php';
 secureSession();
-require '../../config/database.php';
+require __DIR__ . '/../../config/database.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {

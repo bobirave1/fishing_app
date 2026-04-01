@@ -1,42 +1,11 @@
 <?php
-require '../../config/security.php';
-secureSession();
-setSecurityHeaders();
-require '../../config/database.php';
-require '../../config/avatar_helper.php';
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php'; // Add language support
+/**
+ * Friend requests page — uses bootstrap for DI + security.
+ * Language/theme switching is handled by handleGlobalActions() in bootstrap.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-// Handle language/theme switches via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $csrf = $_POST['csrf_token'] ?? '';
-    if (!verifyCsrfToken($csrf)) {
-        http_response_code(400);
-        die('Invalid CSRF token');
-    }
-
-    $action = $_POST['action'];
-    if ($action === 'switch_lang' && isset($_POST['lang'])) {
-        $newLang = (string) $_POST['lang'];
-        if (in_array($newLang, ['bg', 'en'], true)) {
-            $_SESSION['lang'] = $newLang;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-
-    if ($action === 'switch_theme' && isset($_POST['theme'])) {
-        $newTheme = (string) $_POST['theme'];
-        if (in_array($newTheme, ['light', 'dark'], true)) {
-            $_SESSION['theme'] = $newTheme;
-        }
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/'));
-        exit;
-    }
-}
+$pdo = $GLOBALS['container']->get(\PDO::class);
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../index.php');
@@ -50,7 +19,8 @@ $stmt = $pdo->prepare(
      FROM friend_requests fr
      JOIN users u ON u.id = fr.sender_id
      LEFT JOIN user_profiles up ON u.id = up.user_id
-     WHERE fr.receiver_id = ? AND fr.status = 'pending'"
+     WHERE fr.receiver_id = ? AND fr.status = 'pending'
+     LIMIT 100"
 );
 $stmt->execute([$userId]);
 $requests = $stmt->fetchAll();
@@ -71,7 +41,7 @@ $requests = $stmt->fetchAll();
 </head>
 <body class="requests-page d-flex flex-column min-vh-100" data-user-id="<?= $_SESSION['user_id'] ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
-<?php include '../../fe/components/navbar.php'; ?>
+<?php include __DIR__ . '/../../fe/components/navbar.php'; ?>
 
 <main class="flex-grow-1 container my-5 py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -153,10 +123,12 @@ $requests = $stmt->fetchAll();
     <?php endif; ?>
 </main>
 
-<?php include '../../fe/components/footer.php'; ?>
+<?php include __DIR__ . '/../../fe/components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
+<script src="../../fe/assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../../fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../../fe/assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 </body>
 </html>

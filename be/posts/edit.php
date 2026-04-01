@@ -1,75 +1,67 @@
 <?php
-require '../../config/security.php';
-secureSession();
-require '../../config/database.php';
-setSecurityHeaders();
+/**
+ * Post edit endpoint (legacy direct access).
+ * Delegates to PostService via DI container.
+ */
+require_once __DIR__ . '/../../config/bootstrap.php';
 
-// Check if user is logged in
+use App\Services\PostService;
+
+/** @var \App\Core\Container $container */
+$container = $GLOBALS['container'];
+
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     exit('Unauthorized');
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // CSRF Protection
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-        http_response_code(403);
-        exit('Invalid CSRF token');
-    }
-    $postId = $_POST['id'] ?? null;
-    
-    if (!$postId) {
-        http_response_code(400);
-        exit('Post ID required');
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    exit;
+}
 
-    // Fetch the post
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ?");
-    $stmt->execute([$postId]);
-    $post = $stmt->fetch();
+// CSRF Protection
+if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    http_response_code(403);
+    exit('Invalid CSRF token');
+}
 
-    if (!$post) {
-        http_response_code(404);
-        exit('Post not found');
-    }
+$userId = $_SESSION['user_id'];
+$postId = (int) ($_POST['id'] ?? 0);
+if (!$postId) {
+    http_response_code(400);
+    exit('Post ID required');
+}
 
-    // Check if the user is the owner
-    if ($post['user_id'] != $_SESSION['user_id']) {
-        http_response_code(403);
-        exit('You can only edit your own posts');
-    }
+$postService = $container->get(PostService::class);
+$post = $postService->findById($postId);
 
-    $title = $_POST['title'] ?? '';
-    $content = $_POST['content'] ?? '';
-    $visibility = $_POST['visibility'] ?? 'public';
-    $imagePath = $post['image'];
+if (!$post) {
+    http_response_code(404);
+    exit('Post not found');
+}
+if ((int) $post['user_id'] !== $userId) {
+    http_response_code(403);
+    exit('You can only edit your own posts');
+}
 
-    // Handle new file upload
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-        // Delete old image if it exists
+$title = $_POST['title'] ?? '';
+$content = $_POST['content'] ?? '';
+$visibility = $_POST['visibility'] ?? 'public';
+$imagePath = $post['image'];
+
+// Handle new file upload
+if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
+    $result = secureUploadFile($_FILES['image'], '../../fe/assets/img', 'media');
+    if ($result['success']) {
         if (!empty($post['image']) && file_exists('../../' . $post['image'])) {
             unlink('../../' . $post['image']);
         }
-
-        // Upload new image
-        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-        $filename = uniqid() . '.' . $ext;
-        $target = '../../fe/assets/img/' . $filename;
-        move_uploaded_file($_FILES['image']['tmp_name'], $target);
-        $imagePath = 'fe/assets/img/' . $filename;
+        $imagePath = 'fe/assets/img/' . $result['filename'];
     }
-
-    // Update post
-    $stmt = $pdo->prepare("
-        UPDATE posts 
-        SET title = ?, content = ?, image = ?, visibility = ?, updated_at = NOW()
-        WHERE id = ?
-    ");
-    $stmt->execute([$title, $content, $imagePath, $visibility, $postId]);
-
-    // Return success response
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'message' => 'Post updated successfully']);
-    exit;
 }
+
+$postService->update($postId, $title, $content, $visibility, $imagePath);
+
+header('Content-Type: application/json');
+echo json_encode(['success' => true, 'message' => 'Post updated successfully']);
+exit;

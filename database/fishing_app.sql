@@ -259,6 +259,22 @@ INSERT INTO `users` (`id`, `full_name`, `username`, `email`, `password_hash`, `r
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_online_status`
+--
+
+CREATE TABLE `user_online_status` (
+  `user_id` int(11) NOT NULL,
+  `last_seen` datetime NOT NULL DEFAULT current_timestamp(),
+  `is_typing_to` int(11) DEFAULT NULL,
+  PRIMARY KEY (`user_id`),
+  KEY `is_typing_to` (`is_typing_to`),
+  CONSTRAINT `fk_online_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_online_typing` FOREIGN KEY (`is_typing_to`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user_profiles`
 --
 

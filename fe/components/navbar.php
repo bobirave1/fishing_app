@@ -4,6 +4,11 @@ require_once dirname(__DIR__, 2) . '/config/avatar_helper.php';
 require_once dirname(__DIR__, 2) . '/config/languages.php'; // Add language support
 require_once dirname(__DIR__, 2) . '/config/security.php';
 
+// $pdo may not be in scope when rendered from MVC controllers (Response::view)
+if (!isset($pdo) && isset($GLOBALS['container'])) {
+    $pdo = $GLOBALS['container']->get(\PDO::class);
+}
+
 if (isset($_SESSION['user_id'])) {
     $stmt = $pdo->prepare("SELECT avatar_url FROM user_profiles WHERE user_id = ?");
     $stmt->execute([$_SESSION['user_id']]);
@@ -162,6 +167,15 @@ if (isset($_SESSION['user_id'])) {
                 </a></li>
                 <li><a class="dropdown-item" href="<?= $editProfilePath ?>">
                     <i class="fas fa-edit me-2"></i> <?= __('edit_profile') ?>
+                </a></li>
+                <li><a class="dropdown-item" href="<?= $basePath ?>badges">
+                    <i class="fas fa-trophy me-2 text-warning"></i> <?= __('badges') ?>
+                </a></li>
+                <li><a class="dropdown-item" href="<?= $basePath ?>export">
+                    <i class="fas fa-download me-2 text-info"></i> <?= __('export_catches') ?>
+                </a></li>
+                <li><a class="dropdown-item" href="<?= $basePath ?>search">
+                    <i class="fas fa-search me-2 text-success"></i> <?= __('advanced_search') ?>
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
                 <!-- Theme Toggle -->

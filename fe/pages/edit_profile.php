@@ -1,15 +1,11 @@
 <?php
-require '../../config/security.php';
+require __DIR__ . '/../../config/security.php';
 secureSession();
 setSecurityHeaders();
 
-require '../../config/database.php';
-require '../../config/avatar_helper.php';
-// Set default language to Bulgarian for diploma project BEFORE requiring languages.php
-if (!isset($_SESSION['lang'])) {
-    $_SESSION['lang'] = 'bg';
-}
-require '../../config/languages.php'; // Add language support
+require __DIR__ . '/../../config/database.php';
+require __DIR__ . '/../../config/avatar_helper.php';
+require __DIR__ . '/../../config/languages.php';
 
 // Handle language/theme switches via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -68,7 +64,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | FISHINGLORY</title>
+    <title><?= __('edit_profile') ?> | FISHINGLORY</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -80,7 +76,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 </head>
 <body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
-<?php include '../components/navbar.php'; ?>
+<?php include __DIR__ . '/../components/navbar.php'; ?>
 
 <!-- Main Content -->
 <div class="container my-5">
@@ -218,10 +214,13 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
+<script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../assets/js/notifications.js?v=<?= assetVersion('fe/assets/js/notifications.js') ?>"></script>
 <script src="../assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
 <script src="../assets/js/edit_profile.js?v=<?= assetVersion('fe/assets/js/edit_profile.js') ?>"></script>
 
-<?php include '../components/footer.php'; ?>
+<?php include __DIR__ . '/../components/footer.php'; ?>
 
 </body>
 </html>

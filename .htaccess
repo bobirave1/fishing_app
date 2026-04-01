@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /fishing_app/
+
+# Allow direct access to existing files and directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Block direct access to src/ directory
+RewriteRule ^src/ - [F,L]
+
+# Route everything else through the front controller
+RewriteRule ^(.*)$ index.php [QSA,L]

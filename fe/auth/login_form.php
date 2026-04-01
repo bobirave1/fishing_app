@@ -1,7 +1,7 @@
 <?php
-require_once '../../config/security.php';
+require_once __DIR__ . '/../../config/security.php';
 secureSession();
-require_once '../../config/languages.php';
+require_once __DIR__ . '/../../config/languages.php';
 setSecurityHeaders();
 
 $prefillEmail = htmlspecialchars(trim((string)($_GET['email'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -17,7 +17,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FISHINGLORY</title>
+    <title><?= __('login') ?> | FISHINGLORY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css?v=<?= assetVersion('fe/assets/css/style.css') ?>">
@@ -98,9 +98,10 @@ if (isset($_SESSION['user_id'])) {
 </div>
 </main>
 
-<?php include '../components/footer.php'; ?>
+<?php include __DIR__ . '/../components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/helpers.js?v=<?= assetVersion('fe/assets/js/helpers.js') ?>"></script>
 <script src="../assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
 <script>
     // Enable bubble animation on login form submission
