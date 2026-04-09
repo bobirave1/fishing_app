@@ -2,6 +2,7 @@
 require '../../config/security.php';
 secureSession();
 require '../../config/database.php';
+require '../../config/avatar_helper.php';
 require '../../config/weather_api.php'; // Load unified weather functions
 
 if (!isset($_SESSION['user_id'])) {
@@ -66,6 +67,14 @@ if ($action === 'calculate_fish_activity') {
     ");
     $stmt->execute([$userId, $userId, (int)$limit, (int)$offset]);
     $activities = $stmt->fetchAll();
+    
+    // Add default avatars
+    $defaultAvatar = getDefaultAvatarPath();
+    foreach ($activities as &$a) {
+        if (empty($a['avatar_url']) || !is_file(__DIR__ . '/../../' . $a['avatar_url'])) {
+            $a['avatar_url'] = $defaultAvatar;
+        }
+    }
     
     exit(json_encode([
         'success' => true,

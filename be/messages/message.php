@@ -2,6 +2,7 @@
 require '../../config/security.php';
 secureSession();
 require '../../config/database.php';
+require '../../config/avatar_helper.php';
 setSecurityHeaders();
 
 $requestId = bin2hex(random_bytes(8));
@@ -137,10 +138,14 @@ if ($action === 'send') {
     ");
     $stmt->execute([$userId, $receiverId]);
     
-    // Ensure consistent ISO timestamps for front-end localization/parsing
+    // Ensure consistent ISO timestamps and default avatars
+    $defaultAvatar = getDefaultAvatarPath();
     foreach ($messages as &$m) {
         if (!empty($m['created_at'])) {
             $m['created_at'] = date('c', strtotime($m['created_at']));
+        }
+        if (empty($m['avatar_url']) || !is_file(__DIR__ . '/../../' . $m['avatar_url'])) {
+            $m['avatar_url'] = $defaultAvatar;
         }
     }
     
@@ -185,12 +190,50 @@ if ($action === 'send') {
     $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId]);
     $conversations = $stmt->fetchAll();
     
+    // Add default avatars for conversations
+    $defaultAvatar = getDefaultAvatarPath();
+    foreach ($conversations as &$conv) {
+        if (empty($conv['avatar_url']) || !is_file(__DIR__ . '/../../' . $conv['avatar_url'])) {
+            $conv['avatar_url'] = $defaultAvatar;
+        }
+    }
+    
     jsonResponse([
         'success' => true,
         'conversations' => $conversations,
         'request_id' => $requestId,
     ]);
     
+} else if ($action === 'get_friends') {
+    // Get current user's friends list for starting new conversations
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT u.id, u.username, u.full_name, up.avatar_url
+        FROM (
+            SELECT friend_id as friend FROM friends WHERE user_id = ?
+            UNION
+            SELECT user_id as friend FROM friends WHERE friend_id = ?
+        ) f
+        JOIN users u ON u.id = f.friend
+        LEFT JOIN user_profiles up ON u.id = up.user_id
+        ORDER BY u.username ASC
+    ");
+    $stmt->execute([$userId, $userId]);
+    $friends = $stmt->fetchAll();
+
+    // Add default avatars for friends
+    $defaultAvatar = getDefaultAvatarPath();
+    foreach ($friends as &$friend) {
+        if (empty($friend['avatar_url']) || !is_file(__DIR__ . '/../../' . $friend['avatar_url'])) {
+            $friend['avatar_url'] = $defaultAvatar;
+        }
+    }
+
+    jsonResponse([
+        'success' => true,
+        'friends' => $friends,
+        'request_id' => $requestId,
+    ]);
+
 } else {
     jsonError('Invalid action', $requestId, 400);
 }

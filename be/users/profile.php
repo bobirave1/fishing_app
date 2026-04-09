@@ -44,12 +44,34 @@ $isPending = $pending->fetch();
 // Get user's posts
 $posts = [];
 if ($isFriend || $currentUser === $profileId) {
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC");
-    $stmt->execute([$profileId]);
+    $stmt = $pdo->prepare("
+        SELECT p.*,
+               u.username,
+               (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
+               (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
+               (SELECT GROUP_CONCAT(pi.image_url ORDER BY pi.id SEPARATOR '||') FROM post_images pi WHERE pi.post_id = p.id) as media_urls,
+               (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_liked
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.user_id = ?
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->execute([$currentUser, $profileId]);
     $posts = $stmt->fetchAll();
 } else {
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE user_id = ? AND visibility = 'public' ORDER BY created_at DESC");
-    $stmt->execute([$profileId]);
+    $stmt = $pdo->prepare("
+        SELECT p.*,
+               u.username,
+               (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
+               (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
+               (SELECT GROUP_CONCAT(pi.image_url ORDER BY pi.id SEPARATOR '||') FROM post_images pi WHERE pi.post_id = p.id) as media_urls,
+               (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_liked
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.user_id = ? AND p.visibility = 'public'
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->execute([$currentUser, $profileId]);
     $posts = $stmt->fetchAll();
 }
 
@@ -200,19 +222,138 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                     <?php if (empty($posts)): ?>
                         <p class="text-center text-muted"><?= __('no_posts') ?></p>
                     <?php else: ?>
-                        <?php foreach ($posts as $post): ?>
-                            <div class="card mb-3 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title fw-bold text-primary"><?= htmlspecialchars($post['title']) ?></h6>
-                                    <p class="card-text"><?= nl2br(htmlspecialchars($post['content'])) ?></p>
-                                    <?php if (!empty($post['image'])): ?>
-                                        <img src="../../<?= htmlspecialchars($post['image']) ?>" class="img-fluid rounded mb-2" style="max-height: 300px;">
+                        <?php foreach ($posts as $p): 
+                            $postAvatar = $profileAvatar;
+                            $postMedia = [];
+                            if (!empty($p['media_urls'])) {
+                                $postMedia = array_values(array_unique(array_filter(explode('||', (string) $p['media_urls']))));
+                            } elseif (!empty($p['image'])) {
+                                $postMedia = [(string) $p['image']];
+                            }
+                        ?>
+                            <div class="modern-post glass-card">
+                                <div class="post-header">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <img src="<?= htmlspecialchars($postAvatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
+                                        <div class="post-user-info">
+                                            <h6>
+                                                <a href="profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none" style="color: var(--text-primary);">
+                                                    <?= htmlspecialchars($p['username']) ?>
+                                                </a>
+                                            </h6>
+                                            <div class="post-timestamp d-flex align-items-center justify-content-between">
+                                                <span>
+                                                    <i class="fas fa-clock"></i>
+                                                    <span class="post-time-ago" data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"></span>
+                                                </span>
+                                                <span class="badge ms-3" style="font-size: 0.85rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                                    <?php 
+                                                    $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
+                                                    echo $icons[$p['visibility']] ?? '🌍';
+                                                    ?>
+                                                    <?= __($p['visibility']) ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $p['user_id']): ?>
+                                        <div class="post-action-buttons">
+                                            <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editPostModal" 
+                                                    onclick="loadEditPost(<?= $p['id'] ?>)" title="Edit post">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePostModal" 
+                                                    onclick="loadDeletePost(<?= $p['id'] ?>)" title="Delete post">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock"></i> <?= date('M j, Y', strtotime($post['created_at'])) ?> |
-                                        <i class="fas fa-eye"></i> <?= ucfirst($post['visibility']) ?>
-                                    </small>
                                 </div>
+
+                                <div class="post-content">
+                                    <?php if (!empty($p['title'])): ?>
+                                        <h6 class="mb-2"><?= htmlspecialchars($p['title']) ?></h6>
+                                    <?php endif; ?>
+                                    <p class="mb-0"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
+                                </div>
+                                
+                                <?php if (!empty($postMedia)): ?>
+                                    <div class="post-image-wrapper<?= count($postMedia) > 1 ? ' post-media-grid' : '' ?>">
+                                        <?php foreach ($postMedia as $mediaPath): ?>
+                                            <?php
+                                            $ext = strtolower(pathinfo($mediaPath, PATHINFO_EXTENSION));
+                                            $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
+                                            // Adjust media path - profile is in be/users/, media paths are relative to root
+                                            $mediaSrc = (strpos($mediaPath, 'fe/') === 0 || strpos($mediaPath, 'http') === 0) 
+                                                ? '../../' . $mediaPath 
+                                                : '../../' . $mediaPath;
+                                            ?>
+                                            <div class="post-media-item">
+                                                <?php if (in_array($ext, $videoExtensions, true)): ?>
+                                                    <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
+                                                        <source src="<?= htmlspecialchars($mediaSrc) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                <?php else: ?>
+                                                    <img src="<?= htmlspecialchars($mediaSrc) ?>"
+                                                         class="post-image-modern"
+                                                         style="cursor:pointer;"
+                                                         onclick="openPhotoLightbox(this)"
+                                                         data-post-id="<?= (int)$p['id'] ?>"
+                                                         data-avatar="<?= htmlspecialchars($postAvatar) ?>"
+                                                         data-username="<?= htmlspecialchars($p['username']) ?>"
+                                                         data-user-id="<?= (int)$p['user_id'] ?>"
+                                                         data-title="<?= htmlspecialchars($p['title'] ?? '') ?>"
+                                                         data-content="<?= htmlspecialchars($p['content'] ?? '') ?>"
+                                                         data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"
+                                                         data-like-count="<?= (int)$p['like_count'] ?>"
+                                                         data-comment-count="<?= (int)$p['comment_count'] ?>"
+                                                         data-user-liked="<?= !empty($p['user_liked']) ? '1' : '0' ?>">
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <!-- Engagement Section -->
+                                <?php if (isset($_SESSION['user_id'])): ?>
+                                <div class="post-actions">
+                                    <button class="action-btn <?= $p['user_liked'] ? 'liked' : '' ?>" 
+                                            onclick="toggleLike(<?= $p['id'] ?>, this)">
+                                        <i class="<?= $p['user_liked'] ? 'fas' : 'far' ?> fa-heart"></i> 
+                                        <span id="like-count-<?= $p['id'] ?>"><?= $p['like_count'] ?></span>
+                                    </button>
+                                    <button class="action-btn" onclick="toggleComments(<?= $p['id'] ?>)">
+                                        <i class="far fa-comment"></i> 
+                                        <span id="comment-count-<?= $p['id'] ?>"><?= $p['comment_count'] ?></span> <?= __('comments') ?>
+                                    </button>
+                                </div>
+                                    
+                                <!-- Comments Section -->
+                                <div id="comment-section-<?= $p['id'] ?>" class="comment-section d-none">
+                                    <div id="comments-<?= $p['id'] ?>">
+                                        <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading comments...</p>
+                                    </div>
+                                    <div class="mt-3 d-flex gap-2">
+                                        <input type="text" id="comment-input-<?= $p['id'] ?>" 
+                                               class="form-control form-control-sm" 
+                                               placeholder="Write a comment..." />
+                                        <button class="btn btn-sm btn-primary" onclick="addComment(<?= $p['id'] ?>)">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <!-- Engagement Buttons (Read-only for guests) -->
+                                <div class="engagement-buttons">
+                                    <button class="engagement-btn" disabled>
+                                        <i class="far fa-heart"></i> <?= $p['like_count'] ?>
+                                    </button>
+                                    <button class="engagement-btn" disabled>
+                                        <i class="far fa-comment"></i> <?= $p['comment_count'] ?>
+                                    </button>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -267,11 +408,97 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     </div>
 </main>
 
+<!-- Edit Post Modal -->
+<div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPostModalLabel">
+                    <i class="fas fa-edit"></i> <?= __('edit_post') ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editPostBody">
+                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                <button type="button" class="btn btn-primary" onclick="submitEditForm()">
+                    <i class="fas fa-save"></i> <?= __('save') ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Post Modal -->
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-danger">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePostModalLabel">
+                    <i class="fas fa-trash"></i> <?= __('delete_post') ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="deletePostBody">
+                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeletePost()">
+                    <i class="fas fa-trash-alt"></i> <?= __('delete_permanently') ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Lightbox -->
+<div id="photoLightbox" class="photo-lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+    <div class="lightbox-container">
+        <div class="lightbox-media">
+            <img id="lightboxImage" src="" alt="Post image">
+        </div>
+        <div class="lightbox-sidebar">
+            <div class="lightbox-post-header">
+                <img id="lightboxAvatar" src="" class="rounded-circle" width="42" height="42" style="object-fit:cover;flex-shrink:0;">
+                <div style="min-width:0;flex:1;">
+                    <a id="lightboxUsernameLink" href="#" class="text-decoration-none fw-bold" style="color:var(--text-primary);font-size:0.95rem;"></a>
+                    <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;" id="lightboxTimestamp"></div>
+                </div>
+            </div>
+            <div class="lightbox-post-body">
+                <h6 id="lightboxTitle" style="font-weight:700;color:var(--text-primary);margin-bottom:6px;"></h6>
+                <p id="lightboxContent" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
+            </div>
+            <div class="lightbox-actions">
+                <button id="lightboxLikeBtn" class="action-btn" onclick="toggleLike(parseInt(this.dataset.postId), this)">
+                    <i class="far fa-heart"></i> <span>0</span>
+                </button>
+                <span class="action-btn" style="cursor:default;pointer-events:none;">
+                    <i class="far fa-comment"></i> <span id="lightboxCommentCnt">0</span>
+                </span>
+            </div>
+            <div class="lightbox-comments-scroll" id="lightboxComments"></div>
+            <div id="lightboxReplyIndicator" class="lightbox-reply-indicator" style="display:none;"></div>
+            <div class="lightbox-comment-input">
+                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="Write a comment...">
+                <button class="btn btn-sm btn-primary" onclick="addLightboxComment()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php include '../../fe/components/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../fe/assets/js/avatar_helper.js?v=<?= assetVersion('fe/assets/js/avatar_helper.js') ?>"></script>
 <script src="../../fe/assets/js/app.js?v=<?= assetVersion('fe/assets/js/app.js') ?>"></script>
+<script src="../../fe/assets/js/index.js?v=<?= assetVersion('fe/assets/js/index.js') ?>"></script>
 
 </body>
 </html>

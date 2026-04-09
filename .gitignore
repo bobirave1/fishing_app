@@ -7,7 +7,6 @@
 *.code-workspace
 
 # OS files
-# Системни файлове
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -15,9 +14,8 @@ desktop.ini
 # Logs
 *.log
 error_log
-# Конфигурация и пароли
-.env
-config/database.php
+
+# Конфигурация - пароли и ключове са в .env (gitignored)
 
 # Temporary files
 *.tmp
@@ -25,25 +23,26 @@ config/database.php
 *.bak
 *.swp
 *~
-# Качени файлове (не искаме да качваме тестови снимки)
-/fe/assets/img/avatars/*
-!/fe/assets/img/avatars/.gitkeep
 
-# User uploads
+# User uploads - игнорирай потребителски аватари, запази default
 fe/assets/img/avatars/*
 !fe/assets/img/avatars/.gitkeep
+!fe/assets/img/avatars/light_avatar.png
+!fe/assets/img/avatars/dark_avatar.png
+
+# User uploads - съобщения
+fe/assets/uploads/messages/*
+!fe/assets/uploads/messages/.gitkeep
 
 # Database dumps
 *.sql.gz
 backup/
 
-# Node modules (if using npm in future)
+# Node modules
 node_modules/
 
-# Composer vendor (if using composer in future)
+# Composer vendor
 vendor/
 
 # PHP cache
 *.cache
-# Лог файлове
-*.log

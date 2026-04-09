@@ -74,7 +74,7 @@
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    color: var(--text-secondary);
+    color: var(--primary-dark);
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid transparent;
@@ -102,7 +102,7 @@
 .sidebar-item i {
     width: 20px;
     text-align: center;
-    color: var(--primary-color);
+    color: var(--primary-dark);
     font-size: 16px;
 }
 

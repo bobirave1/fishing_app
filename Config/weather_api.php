@@ -32,12 +32,7 @@ function getWeatherData($lat, $lon, $lang = 'en') {
     
     // Check if API key is configured
     if (empty($apiKey) || $apiKey === 'your_api_key_here') {
-        // Try hardcoded fallback key
-        $apiKey = '6cd4ed73300b08fd04b2cb0b7bc31d0f';
-    }
-    
-    if (empty($apiKey)) {
-        error_log("OpenWeatherMap API key not configured. Using fallback data.");
+        error_log("OpenWeatherMap API key not configured. Set OPENWEATHER_API_KEY in .env file. Using fallback data.");
         return getWeatherDataFallback($lang);
     }
     

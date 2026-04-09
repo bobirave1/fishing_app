@@ -273,7 +273,7 @@ if (isset($_SESSION['user_id'])) {
     <div class="modern-post glass-card">
         <div class="post-header">
             <div class="d-flex align-items-center flex-grow-1">
-                <img src="<?= htmlspecialchars($avatar) ?>" class="post-avatar-modern">
+                <img src="<?= htmlspecialchars($avatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
                 <div class="post-user-info">
                     <h6>
                         <a href="be/users/profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none" style="color: var(--text-primary);">
@@ -362,12 +362,6 @@ if (isset($_SESSION['user_id'])) {
                 <i class="far fa-comment"></i> 
                 <span id="comment-count-<?= $p['id'] ?>"><?= $p['comment_count'] ?></span> <?= __('comments') ?>
             </button>
-            <?php if ($_SESSION['user_id'] != $p['user_id']): ?>
-            <button class="action-btn" id="follow-btn-<?= $p['user_id'] ?>" 
-                    onclick="toggleFollow(<?= $p['user_id'] ?>, this)">
-                <i class="fas fa-user-plus"></i> <?= __('follow') ?>
-            </button>
-            <?php endif; ?>
         </div>
             
         <!-- Comments Section -->

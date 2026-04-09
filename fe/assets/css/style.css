@@ -613,6 +613,31 @@ h1, h2, h3 {
     border-color: var(--border-color) !important;
 }
 
+/* Sidebar items in dark mode: white text/icons */
+[data-theme="dark"] .sidebar-item {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .sidebar-item i {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .sidebar-item:hover,
+[data-theme="dark"] .sidebar-item.active {
+    color: var(--text-primary) !important;
+}
+
+/* Edit profile: dark backgrounds for cards/fields in dark mode */
+[data-theme="dark"] .edit-profile-card,
+[data-theme="dark"] .edit-profile-info-card {
+    background: var(--surface-1) !important;
+    border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .edit-profile-card .form-control,
+[data-theme="dark"] .edit-profile-card .form-select {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
 /* ============================================
    Design Cleanup: Unified Color Language
    ============================================ */
@@ -775,6 +800,21 @@ input.form-control:focus {
 
 [data-theme="dark"] .alert-warning {
     background: rgba(245, 158, 11, 0.24);
+}
+
+/* ── Weather widget text ── */
+/* Light mode: всички текстове в weather card да са в primary цвят */
+#weather-info p,
+#weather-info h5,
+#weather-info .alert {
+    color: var(--primary-color) !important;
+}
+
+/* Dark mode: всички текстове в weather card да са бели */
+[data-theme="dark"] #weather-info p,
+[data-theme="dark"] #weather-info h5,
+[data-theme="dark"] #weather-info .alert {
+    color: var(--text-primary) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

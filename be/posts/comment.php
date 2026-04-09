@@ -136,13 +136,17 @@ if ($action === 'add') {
     $stmt->execute([$userId, $postId]);
     $comments = $stmt->fetchAll();
     
-    // Ensure consistent ISO timestamps for front-end localization/parsing
+    // Ensure consistent ISO timestamps and default avatars
+    $defaultAvatar = getDefaultAvatarPath();
     foreach ($comments as &$c) {
         if (!empty($c['created_at'])) {
             $c['created_at'] = date('c', strtotime($c['created_at']));
         }
         $c['like_count'] = (int)$c['like_count'];
         $c['user_liked'] = (int)$c['user_liked'];
+        if (empty($c['avatar_url']) || !is_file(__DIR__ . '/../../' . $c['avatar_url'])) {
+            $c['avatar_url'] = $defaultAvatar;
+        }
     }
     
     jsonResponse([

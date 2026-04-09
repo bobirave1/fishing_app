@@ -49,7 +49,7 @@ if ($type === 'all' || $type === 'users') {
     
     // Fix avatar paths
     foreach ($users as &$user) {
-        if (!$user['avatar_url']) {
+        if (!$user['avatar_url'] || !is_file(__DIR__ . '/../' . $user['avatar_url'])) {
             $user['avatar_url'] = getDefaultAvatarPath();
         }
     }
@@ -74,7 +74,15 @@ if ($type === 'all' || $type === 'posts') {
     ");
     $searchTerm = '%' . $query . '%';
     $stmt->execute([$searchTerm, $searchTerm, $userId, $userId]);
-    $results['posts'] = $stmt->fetchAll();
+    $posts = $stmt->fetchAll();
+    
+    // Fix avatar paths for posts
+    foreach ($posts as &$post) {
+        if (empty($post['avatar_url']) || !is_file(__DIR__ . '/../' . $post['avatar_url'])) {
+            $post['avatar_url'] = getDefaultAvatarPath();
+        }
+    }
+    $results['posts'] = $posts;
 }
 
 // Search waterbodies (fishing spots)

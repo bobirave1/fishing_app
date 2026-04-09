@@ -1,6 +1,7 @@
 <?php
 session_start();
 require '../../config/database.php';
+require '../../config/avatar_helper.php';
 
 header('Content-Type: application/json');
 
@@ -47,6 +48,14 @@ try {
     $stmt = $pdo->prepare($query);
     $stmt->execute([$userId, $limit]);
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Add default avatars
+    $defaultAvatar = getDefaultAvatarPath();
+    foreach ($notifications as &$n) {
+        if (empty($n['avatar_url']) || !is_file(__DIR__ . '/../../' . $n['avatar_url'])) {
+            $n['avatar_url'] = $defaultAvatar;
+        }
+    }
 
     // Get unread count
     $stmt = $pdo->prepare("

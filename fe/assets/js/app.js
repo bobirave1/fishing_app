@@ -5,6 +5,15 @@ function getCsrfToken() {
     return document.body.dataset.csrfToken || '';
 }
 
+// Helper to get correct API base path depending on current page location
+function getApiPath(endpoint) {
+    const path = window.location.pathname;
+    if (path.includes('/fe/pages/') || path.includes('/be/')) {
+        return '../../' + endpoint;
+    }
+    return endpoint;
+}
+
 const APP_DEBUG = window.location.search.includes('debug=1') || localStorage.getItem('fishingDebug') === '1';
 const debugEvents = [];
 
@@ -148,7 +157,7 @@ function toggleLike(postId, button) {
     const originalHTML = button.innerHTML;
     const originalClass = button.className;
     
-    fetch('be/posts/like.php', {
+    fetch(getApiPath('be/posts/like.php'), {
         method: 'POST',
         body: formData
     })
@@ -198,7 +207,7 @@ function loadComments(postId) {
     formData.append('post_id', postId);
     formData.append('action', 'get');
     
-    fetch('be/posts/comment.php', {
+    fetch(getApiPath('be/posts/comment.php'), {
         method: 'POST',
         body: formData
     })
@@ -222,7 +231,7 @@ function loadComments(postId) {
                 let commentHtml = `
                     <div class="comment-item mb-2 pb-2 border-bottom">
                         <div class="d-flex gap-2">
-                            <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
+                            <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;" onerror="handleAvatarError(this)">
                             <div class="flex-grow-1">
                                 <small class="fw-bold">${comment.username}</small>
                                 <p class="mb-1 small">${comment.content}</p>
@@ -264,7 +273,7 @@ function addComment(postId) {
     formData.append('action', 'add');
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('be/posts/comment.php', {
+    fetch(getApiPath('be/posts/comment.php'), {
         method: 'POST',
         body: formData
     })
@@ -298,7 +307,7 @@ function deleteComment(postId, commentId) {
     formData.append('action', 'delete');
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('be/posts/comment.php', {
+    fetch(getApiPath('be/posts/comment.php'), {
         method: 'POST',
         body: formData
     })
@@ -332,7 +341,7 @@ function toggleFollow(userId, button) {
     formData.append('action', action);
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('be/users/follow.php', {
+    fetch(getApiPath('be/users/follow.php'), {
         method: 'POST',
         body: formData
     })
@@ -483,7 +492,7 @@ function displaySearchResults(results, targetDiv) {
             
             html += `
                 <a href="${profilePath}?id=${user.id}" class="fb-search-item">
-                    <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover;">
+                    <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover;" onerror="handleAvatarError(this)">
                     <div class="flex-grow-1">
                         <div style="font-weight: 600; font-size: 15px;">${username}</div>
                         <div style="font-size: 13px; color: #65676b;">${fullName}</div>
@@ -586,7 +595,7 @@ function displayConversations(conversations) {
         html += `
             <div class="conversation-item p-3" data-user-id="${conv.other_user_id}" onclick="openConversation(${conv.other_user_id})">
                 <div class="d-flex gap-2">
-                    <img src="${avatar}" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                    <img src="${avatar}" class="rounded-circle" width="40" height="40" style="object-fit: cover;" onerror="handleAvatarError(this)">
                     <div class="flex-grow-1 min-width-0">
                         <h6 class="mb-0 ${unreadClass}">${conv.username}</h6>
                         <small class="text-muted text-truncate d-block">${lastMsg}</small>
@@ -800,7 +809,7 @@ function displayNotifications(notifications) {
         html += `
             <div class="dropdown-item ${readClass} notification-item" ${clickAction} style="cursor: pointer;">
                 <div class="d-flex gap-2">
-                    <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
+                    <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;" onerror="handleAvatarError(this)">
                     <div class="flex-grow-1">
                         <small>${message}</small>
                         <div class="small text-muted">${formatDate(notif.created_at)}</div>
@@ -834,7 +843,7 @@ function markNotificationRead(notificationId) {
     formData.append('action', 'mark_read');
     formData.append('csrf_token', getCsrfToken());
     
-    fetch('be/notifications/mark_read.php', {
+    fetch(getApiPath('be/notifications/mark_read.php'), {
         method: 'POST',
         body: formData
     })

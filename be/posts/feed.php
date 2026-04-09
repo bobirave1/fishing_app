@@ -1,13 +1,15 @@
 <?php
 session_start();
-require '../config/database.php';
+require '../../config/database.php';
+require '../../config/avatar_helper.php';
 
 $userId = $_SESSION['user_id'];
 
 $stmt = $pdo->prepare("
-SELECT p.*, u.username
+SELECT p.*, u.username, up.avatar_url
 FROM posts p
 JOIN users u ON u.id = p.user_id
+LEFT JOIN user_profiles up ON u.id = up.user_id
 WHERE
     p.visibility = 'public'
  OR (p.visibility = 'friends' AND p.user_id IN (
@@ -36,12 +38,18 @@ $posts = $stmt->fetchAll();
 <div class="container mt-4">
     <h3 class="mb-4">📰 Feed</h3>
 
-<?php foreach ($posts as $p): ?>
+<?php foreach ($posts as $p): 
+    $avatar = getUserAvatar($p['avatar_url'] ?? null);
+?>
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
-            <h5><?= htmlspecialchars($p['title']) ?></h5>
-
-            <strong><?= htmlspecialchars($p['username']) ?></strong>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <img src="<?= htmlspecialchars($avatar) ?>" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                <div>
+                    <h5 class="mb-0"><?= htmlspecialchars($p['title']) ?></h5>
+                    <strong><?= htmlspecialchars($p['username']) ?></strong>
+                </div>
+            </div>
 
             <p class="mt-2"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
 

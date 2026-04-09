@@ -86,7 +86,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card shadow-lg border-0 profile-section-card">
+            <div class="card shadow-lg border-0 profile-section-card edit-profile-card">
                 <div class="card-header edit-profile-header">
                     <h4 class="mb-0">
                         <i class="fas fa-user-edit"></i> Edit Your Profile
@@ -199,7 +199,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
             </div>
 
             <!-- Additional Info Card -->
-            <div class="card mt-4 border-0 shadow-sm">
+            <div class="card mt-4 border-0 shadow-sm edit-profile-info-card">
                 <div class="card-body">
                     <h6 class="fw-bold text-muted mb-3">
                         <i class="fas fa-info-circle"></i> Profile Tips

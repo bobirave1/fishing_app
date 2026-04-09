@@ -1,5 +1,5 @@
 /* ============================================
-   MESSAGING COMPONENT STYLES - MODERN
+   MESSAGING COMPONENT STYLES - MODERN GLASS
    ============================================ */
 
 body {
@@ -7,45 +7,133 @@ body {
     padding-top: 72px !important;
 }
 
-/* Messages Container */
-.messages-container {
+/* ── Page Wrapper ── */
+.messages-page-wrapper {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 16px;
+    height: calc(100vh - 110px);
     display: flex;
-    height: 78vh;
-    background: var(--bg-card);
-    border-radius: 0;
+    flex-direction: column;
+}
+
+/* ── Main Layout Glass Card ── */
+.messages-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    border-radius: var(--radius-lg) !important;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Conversation List */
-.conversations-container {
-    min-height: 100%;
-    border-right: 1px solid var(--border-color);
-}
-
-.conversation-list {
+/* ── Left Panel ── */
+.messages-left-panel {
     width: 320px;
-    height: 100%;
-    background: var(--bg-card);
-    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    background: var(--surface-1);
+    min-height: 0;
 }
 
-.conversation-list-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
+.messages-panel-header {
+    padding: 16px;
     background: var(--gradient-primary);
     color: white;
-    font-weight: 700;
-    font-size: 1.1rem;
+    flex-shrink: 0;
 }
 
-/* Conversation Item */
+.messages-panel-header h5 {
+    color: white;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ── Tabs ── */
+.messages-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.msg-tab {
+    flex: 1;
+    border: 1.5px solid rgba(255,255,255,0.45);
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.msg-tab:hover {
+    background: rgba(255,255,255,0.15);
+    color: white;
+}
+
+.msg-tab.active {
+    background: rgba(255,255,255,0.25);
+    color: white;
+    border-color: white;
+}
+
+.unread-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-danger);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* ── Search ── */
+.messages-search .form-control {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.messages-search .form-control::placeholder {
+    color: rgba(255,255,255,0.65);
+}
+
+.messages-search .form-control:focus {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.6);
+    box-shadow: none;
+    color: white;
+}
+
+/* ── Panel List ── */
+.panel-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.panel-list::-webkit-scrollbar { width: 4px; }
+.panel-list::-webkit-scrollbar-track { background: transparent; }
+.panel-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+/* ── Conversation Item ── */
 .conversation-item {
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: all var(--transition-fast);
-    padding: 16px;
+    padding: 14px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -53,22 +141,23 @@ body {
 
 .conversation-item:hover {
     background: var(--surface-2);
-    border-left: 4px solid var(--primary-color);
-    padding-left: 12px;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 13px;
 }
 
 .conversation-item.active {
     background: var(--bg-tertiary);
-    border-left: 4px solid var(--primary-color);
-    padding-left: 12px;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 13px;
 }
 
 .conversation-avatar {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .conversation-info {
@@ -79,113 +168,129 @@ body {
 .conversation-name {
     font-weight: 600;
     color: var(--text-primary);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .conversation-preview {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
-.conversation-status {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--text-muted);
+.msg-unread-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -4px;
+    background: var(--accent-danger);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.conversation-status.online {
-    background: var(--accent-success);
-}
-
-/* Message Thread */
-.conversation-thread {
+/* ── Right Panel ── */
+.messages-right-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
     background: var(--bg-tertiary);
-    overflow: hidden;
 }
 
+.conversation-view-inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.messages-empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+/* ── Chat Header ── */
+.chat-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-1);
+    flex-shrink: 0;
+    gap: 0;
+}
+
+/* ── Messages Scroll Area ── */
 .messages-scroll-area {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    min-height: 0;
 }
 
-.messages-scroll-area::-webkit-scrollbar {
-    width: 6px;
-}
+.messages-scroll-area::-webkit-scrollbar { width: 5px; }
+.messages-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.messages-scroll-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
-.messages-scroll-area::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.messages-scroll-area::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-}
-
-.messages-scroll-area::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
-}
-
-/* Message Thread */
-.message-thread {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Message Group */
+/* ── Message Group ── */
 .message-group {
     display: flex;
-    margin-bottom: 12px;
     align-items: flex-end;
     gap: 8px;
+    margin-bottom: 4px;
 }
 
 .message-group.own {
-    justify-content: flex-end;
+    flex-direction: row-reverse;
 }
 
 .message-avatar {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
-.message-group.own .message-avatar {
-    order: 2;
-}
-
-/* Message Bubble */
+/* ── Message Bubble ── */
 .message-bubble {
-    max-width: 60%;
-    padding: 12px 16px;
+    max-width: 62%;
+    padding: 10px 14px;
     border-radius: 12px;
     word-wrap: break-word;
-    line-height: 1.4;
-    font-size: 0.95rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: all 150ms ease-in-out;
+    line-height: 1.45;
+    font-size: 0.92rem;
+    box-shadow: var(--shadow-xs);
 }
 
 .message-group.own .message-bubble {
     background: var(--gradient-primary);
     color: white;
     border-bottom-right-radius: 4px;
+}
+
+.message-group.own .message-bubble .message-time {
+    color: rgba(255,255,255,0.75);
+    text-align: right;
 }
 
 .message-group.other .message-bubble {
@@ -195,87 +300,54 @@ body {
     border-bottom-left-radius: 4px;
 }
 
-.message-bubble:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-}
-
 .message-time {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
     margin-top: 4px;
+    display: block;
 }
 
-/* File Preview */
-#filePreview {
-    max-height: 120px;
-    overflow-y: auto;
+.msg-attachment-img {
+    display: block;
+    margin-bottom: 6px;
 }
 
-.file-preview-item {
-    position: relative;
-    display: inline-block;
-}
-
-.file-preview-item img,
-.file-preview-item video {
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.file-preview-item button {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    padding: 0;
-    font-size: 12px;
-    line-height: 1;
-}
-
-.message-group.own .message-time {
-    text-align: right;
-}
-
-/* Message Input Area */
+/* ── Input Area ── */
 .message-input-area {
     border-top: 1px solid var(--border-color);
-    padding: 20px;
-    background: var(--bg-card);
+    padding: 14px 16px;
+    background: var(--surface-1);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .message-input-wrapper {
-    flex: 1;
     display: flex;
     gap: 8px;
-    align-items: center;
+    align-items: flex-end;
 }
 
 .message-input {
     flex: 1;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.95rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.92rem;
     resize: none;
     max-height: 120px;
     font-family: inherit;
-    transition: all 150ms ease-in-out;
+    transition: border-color var(--transition-fast);
     color: var(--text-primary);
     background: var(--surface-2);
+    overflow-y: auto;
 }
 
 .message-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.15);
+    box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.12);
 }
 
 .message-input::placeholder {
@@ -286,12 +358,12 @@ body {
     background: var(--gradient-primary);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
+    border-radius: 10px;
+    padding: 10px 18px;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast);
-    width: auto;
+    flex-shrink: 0;
 }
 
 .message-send-btn:hover {
@@ -299,53 +371,52 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-.message-send-btn:active {
-    transform: translateY(0);
+.message-send-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
-/* Message Actions */
-.message-actions {
+/* ── File Preview Strip ── */
+.file-preview-strip {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    opacity: 0;
-    transition: opacity 150ms ease-in-out;
 }
 
-.message-group:hover .message-actions {
-    opacity: 1;
+.file-preview-item {
+    position: relative;
+    display: inline-block;
 }
 
-.message-action-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    padding: 4px;
-    border-radius: 4px;
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .messages-page-wrapper {
+        margin: 8px auto;
+        padding: 0 8px;
+        height: calc(100vh - 90px);
+    }
+
+    .messages-left-panel {
+        width: 260px;
+    }
 }
 
-.message-action-btn:hover {
-    color: var(--primary-color);
-    background: var(--surface-2);
-}
+@media (max-width: 576px) {
+    .messages-layout {
+        flex-direction: column;
+    }
 
-/* Empty Message State */
-.empty-conversation {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 40px 20px;
-}
+    .messages-left-panel {
+        width: 100%;
+        height: 42%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
 
-.empty-conversation i {
-    font-size: 3rem;
-    color: var(--text-muted);
-    margin-bottom: 16px;
+    .messages-right-panel {
+        height: 58%;
+    }
 }
 
 .empty-conversation p {

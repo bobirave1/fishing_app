@@ -2,7 +2,7 @@
 
 // Load edit post form
 function loadEditPost(postId) {
-    fetch('fe/posts/edit_form.php?id=' + postId)
+    fetch(getApiPath('fe/posts/edit_form.php') + '?id=' + postId)
         .then(response => response.text())
         .then(html => {
             document.getElementById('editPostBody').innerHTML = html;
@@ -27,7 +27,7 @@ function submitEditForm() {
     
     const formData = new FormData(form);
 
-    fetch('be/posts/edit.php', {
+    fetch(getApiPath('be/posts/edit.php'), {
         method: 'POST',
         body: formData
     })
@@ -54,7 +54,7 @@ function submitEditForm() {
 
 // Load delete confirmation
 function loadDeletePost(postId) {
-    fetch('fe/posts/delete_confirm.php?id=' + postId)
+    fetch(getApiPath('fe/posts/delete_confirm.php') + '?id=' + postId)
         .then(response => response.text())
         .then(html => {
             document.getElementById('deletePostBody').innerHTML = html;
@@ -69,7 +69,7 @@ function confirmDeletePost() {
     const form = document.getElementById('deletePostForm');
     const formData = new FormData(form);
 
-    fetch('be/posts/delete.php', {
+    fetch(getApiPath('be/posts/delete.php'), {
         method: 'POST',
         body: formData
     })
@@ -289,7 +289,10 @@ function openPhotoLightbox(img) {
     lb.classList.remove('closing');
 
     document.getElementById('lightboxImage').src = img.src;
-    document.getElementById('lightboxAvatar').src = img.dataset.avatar || '';
+    var avatarSrc = img.dataset.avatar || '';
+    // If avatar is already a resolved path (from PHP), use it directly; if empty, get default
+    document.getElementById('lightboxAvatar').src = avatarSrc || getAvatarUrl(null);
+    document.getElementById('lightboxAvatar').onerror = function() { handleAvatarError(this); };
 
     const usernameLink = document.getElementById('lightboxUsernameLink');
     usernameLink.textContent = img.dataset.username || '';
@@ -379,7 +382,7 @@ function renderCommentHtml(c) {
     var indent = isReply ? ' style="margin-left:24px;"' : '';
 
     return '<div class="lb-comment d-flex gap-2 mb-2"' + indent + ' data-comment-id="' + c.id + '">' +
-        '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;">' +
+        '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;" onerror="handleAvatarError(this)">' +
         '<div style="flex:1;min-width:0;">' +
             replyTag +
             '<div style="background:var(--surface-2);border-radius:8px;padding:6px 10px;">' +
@@ -406,7 +409,7 @@ function loadLightboxComments(postId) {
     fd.append('post_id', postId);
     fd.append('action', 'get');
 
-    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+    fetch(getApiPath('be/posts/comment.php'), { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success || !data.comments.length) {
@@ -489,7 +492,7 @@ function addLightboxComment() {
         fd.append('parent_id', lightboxReplyTo.id);
     }
 
-    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+    fetch(getApiPath('be/posts/comment.php'), { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
@@ -516,7 +519,7 @@ function toggleCommentLike(commentId, btn) {
     fd.append('action', 'like_comment');
     fd.append('csrf_token', getCsrfToken());
 
-    fetch('be/posts/comment.php', { method: 'POST', body: fd })
+    fetch(getApiPath('be/posts/comment.php'), { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {

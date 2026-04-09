@@ -27,18 +27,18 @@ function resolveDefaultAvatarPath() {
     $isDark = ($theme === 'dark');
 
     // Theme-specific defaults first
-    if ($isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/default_avatar_dark.jpg')) {
-        return 'fe/assets/img/avatars/default_avatar_dark.jpg';
+    if ($isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/dark_avatar.png')) {
+        return 'fe/assets/img/avatars/dark_avatar.png';
     }
-    if (!$isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/default_avatar_light.jpg')) {
-        return 'fe/assets/img/avatars/default_avatar_light.jpg';
+    if (!$isDark && is_file(__DIR__ . '/../fe/assets/img/avatars/light_avatar.png')) {
+        return 'fe/assets/img/avatars/light_avatar.png';
     }
 
     // Fallback candidates
     $candidates = [
-        'fe/assets/img/avatars/default_avatar_light.jpg',
+        'fe/assets/img/avatars/light_avatar.png',
+        'fe/assets/img/avatars/dark_avatar.png',
         'fe/assets/img/default-avatar.png',
-        'fe/assets/img/avatars/default.png',
         'fe/assets/img/logo_rounded.png',
     ];
 
