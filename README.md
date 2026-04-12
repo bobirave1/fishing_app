@@ -136,7 +136,7 @@ fishing_app/
 │   ├── posts/              # Post CRUD operations
 │   ├── users/              # User profile management
 │   └── weather/            # Weather API integration
-├── Config/                  # Configuration files
+├── config/                  # Configuration files
 │   ├── database.php        # Database connection
 │   ├── security.php        # Security functions
 │   └── weather_api.php     # Weather API wrapper
@@ -180,7 +180,7 @@ fishing_app/
 ## 🔧 Configuration
 
 ### Database Connection
-Edit `Config/database.php` or use `.env` file:
+Edit `config/database.php` or use `.env` file:
 ```php
 $host = getenv('DB_HOST') ?: 'localhost';
 $dbname = getenv('DB_NAME') ?: 'fishing_app';
@@ -195,7 +195,7 @@ OPENWEATHER_API_KEY=your_api_key_here
 ```
 
 ### Security Headers
-Customize in `Config/security.php`:
+Customize in `config/security.php`:
 - Content Security Policy (CSP)
 - Permissions-Policy
 - X-Frame-Options
