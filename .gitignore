@@ -30,6 +30,9 @@ fe/assets/img/avatars/*
 !fe/assets/img/avatars/light_avatar.png
 !fe/assets/img/avatars/dark_avatar.png
 
+# User uploads - post images
+fe/assets/img/post_*
+
 # User uploads - съобщения
 fe/assets/uploads/messages/*
 !fe/assets/uploads/messages/.gitkeep
