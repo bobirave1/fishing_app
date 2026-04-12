@@ -118,7 +118,7 @@ function validateMediaUpload($file, $maxSize = 20971520) { // 20MB default
     $errors = [];
     
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        $errors[] = 'File upload error';
+        $errors[] = 'File upload error (code: ' . $file['error'] . ')';
         return $errors;
     }
     
@@ -127,20 +127,34 @@ function validateMediaUpload($file, $maxSize = 20971520) { // 20MB default
         $errors[] = 'File is too large (max 20MB)';
     }
     
-    // Check MIME type
-    $allowedMimes = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/webm', 'video/avi', 'video/quicktime'
-    ];
-    if (!in_array($file['type'], $allowedMimes)) {
-        $errors[] = 'Invalid file type. Only images (JPG, PNG, GIF, WebP) and videos (MP4, WebM, AVI, MOV) are allowed';
-    }
-    
-    // Check file extension
+    // Check file extension first
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'avi', 'mov'];
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($extension, $allowedExtensions)) {
         $errors[] = 'Invalid file extension';
+        return $errors;
+    }
+    
+    // Check MIME type (browser-reported + finfo)
+    $allowedMimes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/avi', 'video/quicktime',
+        'video/x-msvideo', 'video/x-matroska', 'application/octet-stream'
+    ];
+    
+    $detectedMime = $file['type'];
+    if (function_exists('finfo_open') && !empty($file['tmp_name'])) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $detectedMime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+    }
+    
+    $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
+    $isVideoByExt = in_array($extension, $videoExtensions);
+    
+    // For video files, allow if extension is valid (finfo may misdetect video types)
+    if (!$isVideoByExt && !in_array($detectedMime, $allowedMimes) && !in_array($file['type'], $allowedMimes)) {
+        $errors[] = 'Invalid file type. Only images (JPG, PNG, GIF, WebP) and videos (MP4, WebM, AVI, MOV) are allowed';
     }
     
     return $errors;
@@ -155,7 +169,7 @@ function setSecurityHeaders() {
     header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
     // Updated CSP - allow unsafe-eval for development and Bootstrap compatibility
     if (!headers_sent()) {
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https: http:; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://nominatim.openstreetmap.org https://api.openweathermap.org https://cdn.jsdelivr.net;");
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: blob: https: http:; media-src 'self' blob:; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://nominatim.openstreetmap.org https://api.openweathermap.org https://cdn.jsdelivr.net;");
     }
 }
 

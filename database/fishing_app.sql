@@ -56,20 +56,6 @@ CREATE TABLE IF NOT EXISTS `user_profiles` (
   CONSTRAINT `user_profiles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Table: waterbodies
---
-CREATE TABLE IF NOT EXISTS `waterbodies` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `type` enum('river','lake','dam','sea') DEFAULT NULL,
-  `latitude` decimal(10,7) DEFAULT NULL,
-  `longitude` decimal(10,7) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_waterbodies_location` (`latitude`,`longitude`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 -- --------------------------------------------------------
 -- Tables with foreign keys to users
 -- --------------------------------------------------------
@@ -84,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `content` text NOT NULL,
   `visibility` enum('public','friends','private') DEFAULT 'public',
   `image` varchar(255) DEFAULT NULL,
+  `link_preview` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -258,67 +245,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   CONSTRAINT `notifications_ibfk_3` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Table: password_resets
---
-CREATE TABLE IF NOT EXISTS `password_resets` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `token` varchar(255) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used` tinyint(1) DEFAULT 0,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `password_resets_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Table: fishing_plans
---
-CREATE TABLE IF NOT EXISTS `fishing_plans` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `waterbody_id` int(11) NOT NULL,
-  `planned_date` date NOT NULL,
-  `notes` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `waterbody_id` (`waterbody_id`),
-  CONSTRAINT `fishing_plans_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fishing_plans_ibfk_2` FOREIGN KEY (`waterbody_id`) REFERENCES `waterbodies` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Table: fish_catches
---
-CREATE TABLE IF NOT EXISTS `fish_catches` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `post_id` int(11) NOT NULL,
-  `fish_species` varchar(100) DEFAULT NULL,
-  `weight` decimal(5,2) DEFAULT NULL,
-  `length` decimal(5,2) DEFAULT NULL,
-  `bait` varchar(100) DEFAULT NULL,
-  `catch_date` date DEFAULT NULL,
-  `waterbody_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `fish_catches_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fish_catches_ibfk_2` FOREIGN KEY (`waterbody_id`) REFERENCES `waterbodies` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
--- Default data (safe to import on any machine)
--- --------------------------------------------------------
-
---
--- Default waterbodies (Bulgarian fishing spots)
---
-INSERT IGNORE INTO `waterbodies` (`id`, `name`, `type`, `latitude`, `longitude`, `description`) VALUES
-(1, 'Danube River', 'river', 43.2119800, 27.9147400, 'Major European river, excellent for fishing'),
-(2, 'Black Sea Coast', 'sea', 43.2566300, 28.2361700, 'Coastal fishing area with sea fish'),
-(3, 'Lake Iskar', 'lake', 42.9960900, 24.3363500, 'Mountain lake near Sofia'),
-(4, 'Arda River', 'river', 41.7375600, 26.5572300, 'Beautiful river in southern Bulgaria');
 
 COMMIT;
 

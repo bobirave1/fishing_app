@@ -68,7 +68,7 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | FISHINGLORY</title>
+    <title><?= __('edit_profile') ?> | FISHINGLORY</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -78,12 +78,12 @@ $avatar = $user['avatar_url'] ?? getDefaultAvatarPath();
     <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
-<body data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<body class="d-flex flex-column min-vh-100" data-user-id="<?= $userId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../components/navbar.php'; ?>
 
 <!-- Main Content -->
-<div class="container my-5">
+<div class="container my-4 flex-grow-1">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-lg border-0 profile-section-card edit-profile-card">

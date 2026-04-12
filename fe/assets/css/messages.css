@@ -4,15 +4,15 @@
 
 body {
     background-color: var(--bg-primary);
-    padding-top: 72px !important;
 }
 
 /* ── Page Wrapper ── */
 .messages-page-wrapper {
-    max-width: 1200px;
+    width: 83.33vw;
+    max-width: 83.33vw;
     margin: 24px auto;
-    padding: 0 16px;
-    height: calc(100vh - 110px);
+    padding: 0;
+    height: calc(100vh - 72px - 48px);
     display: flex;
     flex-direction: column;
 }

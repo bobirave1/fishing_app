@@ -277,10 +277,47 @@ function setTextWithNewlines(el, text) {
 
 const LIGHTBOX_ANIMATION_MS = 220;
 let lightboxCloseTimer = null;
+let lightboxImages = [];
+let lightboxCurrentIndex = 0;
+
+function updateLightboxNav() {
+    var prevBtn = document.getElementById('lightboxPrev');
+    var nextBtn = document.getElementById('lightboxNext');
+    if (prevBtn) prevBtn.style.display = lightboxImages.length > 1 ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = lightboxImages.length > 1 ? '' : 'none';
+}
+
+function lightboxNav(dir) {
+    if (lightboxImages.length <= 1) return;
+    lightboxCurrentIndex = (lightboxCurrentIndex + dir + lightboxImages.length) % lightboxImages.length;
+    document.getElementById('lightboxImage').src = lightboxImages[lightboxCurrentIndex];
+}
 
 function openPhotoLightbox(img) {
     const lb = document.getElementById('photoLightbox');
     const postId = img.dataset.postId;
+
+    // Collect all images for this post from the wrapper's data attribute
+    var wrapper = img.closest('.post-image-wrapper');
+    lightboxImages = [];
+    lightboxCurrentIndex = 0;
+    if (wrapper) {
+        try {
+            lightboxImages = JSON.parse(wrapper.dataset.allImages || '[]');
+        } catch(e) { lightboxImages = []; }
+    }
+    if (lightboxImages.length === 0) {
+        lightboxImages = [img.src];
+    }
+    // Find current index by matching clicked image src
+    var clickedSrc = img.src;
+    for (var i = 0; i < lightboxImages.length; i++) {
+        if (clickedSrc.indexOf(lightboxImages[i]) !== -1 || lightboxImages[i].indexOf(clickedSrc.split('/').pop()) !== -1) {
+            lightboxCurrentIndex = i;
+            break;
+        }
+    }
+    updateLightboxNav();
 
     if (lightboxCloseTimer) {
         clearTimeout(lightboxCloseTimer);
@@ -353,6 +390,11 @@ document.getElementById('photoLightbox').addEventListener('click', function(e) {
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeLightbox();
+    var lb = document.getElementById('photoLightbox');
+    if (lb && lb.classList.contains('active')) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); lightboxNav(-1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); lightboxNav(1); }
+    }
 });
 
 // Enter key on lightbox comment input
@@ -380,13 +422,14 @@ function renderCommentHtml(c) {
         ? '<span class="comment-reply-tag"><i class="fas fa-reply fa-flip-horizontal"></i> ' + escapeHtml(c.parent_username) + '</span>'
         : '';
     var indent = isReply ? ' style="margin-left:24px;"' : '';
+    var profileUrl = window.location.pathname.includes('/users/') ? 'profile.php?id=' + c.user_id : 'be/users/profile.php?id=' + c.user_id;
 
     return '<div class="lb-comment d-flex gap-2 mb-2"' + indent + ' data-comment-id="' + c.id + '">' +
-        '<img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;" onerror="handleAvatarError(this)">' +
+        '<a href="' + profileUrl + '"><img src="' + av + '" class="rounded-circle flex-shrink-0" width="' + (isReply ? '26' : '32') + '" height="' + (isReply ? '26' : '32') + '" style="object-fit:cover;margin-top:2px;" onerror="handleAvatarError(this)"></a>' +
         '<div style="flex:1;min-width:0;">' +
             replyTag +
             '<div style="background:var(--surface-2);border-radius:8px;padding:6px 10px;">' +
-                '<strong style="color:var(--text-primary);font-size:0.8rem;">' + escapeHtml(c.username) + '</strong>' +
+                '<a href="' + profileUrl + '" class="text-decoration-none" style="color:var(--text-primary);"><strong style="font-size:0.8rem;">' + escapeHtml(c.username) + '</strong></a>' +
                 '<p style="margin:3px 0 0;color:var(--text-primary);font-size:0.85rem;word-break:break-word;">' + escapeHtml(c.content) + '</p>' +
             '</div>' +
             '<div class="comment-actions-row">' +
@@ -539,44 +582,99 @@ function toggleCommentLike(commentId, btn) {
 document.addEventListener('DOMContentLoaded', function() {
     const mediaInput = document.getElementById('postMediaInput');
     const preview = document.getElementById('postMediaPreview');
-    const fileNameEl = document.getElementById('postMediaFileName');
-    if (!mediaInput || !preview || !fileNameEl) return;
+    const form = document.getElementById('createPostForm');
+    if (!mediaInput || !preview || !form) return;
 
+    const collectedFiles = [];
     const previewObjectUrls = [];
-    const defaultFileName = fileNameEl.dataset.noFile || fileNameEl.textContent;
-    const selectedFileLabel = fileNameEl.dataset.selectedFile || 'Selected file';
-    const filesSelectedLabel = fileNameEl.dataset.filesSelected || 'files selected';
 
-    mediaInput.addEventListener('change', function() {
+    function renderPreview() {
         while (previewObjectUrls.length) {
             URL.revokeObjectURL(previewObjectUrls.pop());
         }
 
-        const files = Array.from(mediaInput.files || []);
-        if (files.length === 0) {
-            fileNameEl.textContent = defaultFileName;
+        if (collectedFiles.length === 0) {
             preview.classList.remove('show');
             preview.innerHTML = '';
             return;
         }
 
-        if (files.length === 1) {
-            fileNameEl.textContent = selectedFileLabel + ': ' + files[0].name;
-        } else {
-            fileNameEl.textContent = files.length + ' ' + filesSelectedLabel;
-        }
+        const previewParts = collectedFiles.map(function(file, idx) {
+            var removeBtn = '<button type="button" class="media-remove-btn" data-idx="' + idx + '" title="Remove">&times;</button>';
 
-        const previewParts = files.map(function(file) {
             if (file.type.startsWith('image/')) {
-                const objectUrl = URL.createObjectURL(file);
+                var objectUrl = URL.createObjectURL(file);
                 previewObjectUrls.push(objectUrl);
-                return '<img src="' + objectUrl + '" alt="Selected image preview">';
+                return '<div class="media-preview-item">' + removeBtn + '<img src="' + objectUrl + '" alt=""></div>';
             }
 
-            return '<div class="file-name"><i class="fas fa-file me-1"></i>' + escapeHtml(file.name) + '</div>';
+            if (file.type.startsWith('video/')) {
+                var objectUrl = URL.createObjectURL(file);
+                previewObjectUrls.push(objectUrl);
+                return '<div class="media-preview-item">' + removeBtn + '<video src="' + objectUrl + '" muted playsinline></video></div>';
+            }
+
+            return '<div class="media-preview-item">' + removeBtn + '<div class="file-name"><i class="fas fa-file me-1"></i>' + escapeHtml(file.name) + '</div></div>';
         });
 
         preview.innerHTML = previewParts.join('');
         preview.classList.add('show');
+    }
+
+    var MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
+    mediaInput.addEventListener('change', function() {
+        var newFiles = Array.from(mediaInput.files || []);
+        newFiles.forEach(function(file) {
+            if (file.size > MAX_FILE_SIZE) {
+                var sizeMB = (file.size / 1024 / 1024).toFixed(1);
+                alert(file.name + ' е твърде голям (' + sizeMB + ' MB). Максимум 20 MB.');
+                return;
+            }
+            collectedFiles.push(file);
+        });
+        mediaInput.value = '';
+        renderPreview();
+    });
+
+    preview.addEventListener('click', function(e) {
+        var btn = e.target.closest('.media-remove-btn');
+        if (!btn) return;
+        var idx = parseInt(btn.dataset.idx, 10);
+        collectedFiles.splice(idx, 1);
+        renderPreview();
+    });
+
+    form.addEventListener('submit', function(e) {
+        if (collectedFiles.length === 0) return;
+
+        e.preventDefault();
+        var formData = new FormData(form);
+
+        // Remove the empty file input entry
+        formData.delete('media[]');
+
+        collectedFiles.forEach(function(file) {
+            formData.append('media[]', file);
+        });
+
+        var submitBtn = form.querySelector('button[type="submit"], button:not([type])');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + submitBtn.textContent.trim();
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        }).then(function(response) {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                window.location.href = form.action.replace('be/posts/create.php', 'index.php');
+            }
+        }).catch(function() {
+            window.location.reload();
+        });
     });
 });

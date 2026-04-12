@@ -80,11 +80,11 @@ $openUserId = (int)($_GET['user'] ?? 0);
     <link rel="stylesheet" href="../assets/css/components.css?v=<?= assetVersion('fe/assets/css/components.css') ?>">
     <link rel="icon" href="../assets/img/logo_rounded.png">
 </head>
-<body data-user-id="<?= $currentUserId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
+<body class="d-flex flex-column min-vh-100" data-user-id="<?= $currentUserId ?>" data-csrf-token="<?= generateCsrfToken() ?>" data-theme="<?= $_SESSION['theme'] ?? 'light' ?>">
 
 <?php include '../components/navbar.php'; ?>
 
-<div class="messages-page-wrapper">
+<div class="messages-page-wrapper flex-grow-1">
     <div class="messages-layout glass-card">
 
         <!-- LEFT PANEL -->
@@ -209,5 +209,8 @@ $openUserId = (int)($_GET['user'] ?? 0);
 <?php if ($openUserId > 0): ?>
 <script>document.addEventListener('DOMContentLoaded', function() { openConversation(<?= $openUserId ?>); });</script>
 <?php endif; ?>
+
+<?php include '../components/footer.php'; ?>
+
 </body>
 </html>

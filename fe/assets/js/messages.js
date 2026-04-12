@@ -97,9 +97,20 @@ function displayConversations(conversations) {
 
 function updateUnreadBadge(count) {
     const dot = document.getElementById('unreadDot');
-    if (!dot) return;
-    dot.style.display = count > 0 ? 'inline-block' : 'none';
-    dot.textContent   = count > 9 ? '9+' : (count || '');
+    if (dot) {
+        dot.style.display = count > 0 ? 'inline-block' : 'none';
+        dot.textContent   = count > 9 ? '9+' : (count || '');
+    }
+    // Also sync the navbar message badge
+    const navBadge = document.getElementById('messageBadge');
+    if (navBadge) {
+        if (count > 0) {
+            navBadge.textContent = count > 99 ? '99+' : count;
+            navBadge.classList.remove('d-none');
+        } else {
+            navBadge.classList.add('d-none');
+        }
+    }
 }
 
 // ── Open / Close Conversation ─────────────────────────────────

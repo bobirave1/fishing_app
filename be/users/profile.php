@@ -128,7 +128,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
 
 <?php include '../../fe/components/navbar.php'; ?>
 
-<main class="flex-grow-1 container my-5 py-5">
+<main class="flex-grow-1 container my-4">
     <?php if (isset($_SESSION['friend_flash_success'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['friend_flash_success']) ?>
@@ -234,19 +234,21 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                             <div class="modern-post glass-card">
                                 <div class="post-header">
                                     <div class="d-flex align-items-center flex-grow-1">
-                                        <img src="<?= htmlspecialchars($postAvatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
+                                        <a href="profile.php?id=<?= $p['user_id'] ?>">
+                                            <img src="<?= htmlspecialchars($postAvatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
+                                        </a>
                                         <div class="post-user-info">
                                             <h6>
                                                 <a href="profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none" style="color: var(--text-primary);">
                                                     <?= htmlspecialchars($p['username']) ?>
                                                 </a>
                                             </h6>
-                                            <div class="post-timestamp d-flex align-items-center justify-content-between">
+                                            <div class="post-timestamp d-flex align-items-center">
                                                 <span>
                                                     <i class="fas fa-clock"></i>
                                                     <span class="post-time-ago" data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"></span>
                                                 </span>
-                                                <span class="badge ms-3" style="font-size: 0.85rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                                <span class="badge ms-2" style="font-size: 0.75rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
                                                     <?php 
                                                     $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
                                                     echo $icons[$p['visibility']] ?? '🌍';
@@ -274,25 +276,34 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                                     <?php if (!empty($p['title'])): ?>
                                         <h6 class="mb-2"><?= htmlspecialchars($p['title']) ?></h6>
                                     <?php endif; ?>
-                                    <p class="mb-0"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
+                                    <p class="mb-0"><?= preg_replace(
+                                        '#(https?://[^\s<>"\']+)#i',
+                                        '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color);word-break:break-all;">$1</a>',
+                                        nl2br(htmlspecialchars($p['content']))
+                                    ) ?></p>
                                 </div>
                                 
                                 <?php if (!empty($postMedia)): ?>
-                                    <div class="post-image-wrapper<?= count($postMedia) > 1 ? ' post-media-grid' : '' ?>">
-                                        <?php foreach ($postMedia as $mediaPath): ?>
+                                    <?php $mediaCount = count($postMedia); $showCount = min($mediaCount, 4); ?>
+                                    <?php
+                                    $allImages = array_values(array_filter($postMedia, function($path) {
+                                        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                                        return !in_array($ext, ['mp4', 'webm', 'avi', 'mov'], true);
+                                    }));
+                                    ?>
+                                    <div class="post-image-wrapper post-media-count-<?= $showCount ?>" data-all-images='<?= htmlspecialchars(json_encode(array_map(function($p) { return "../../" . $p; }, $allImages)), ENT_QUOTES, "UTF-8") ?>'>
+                                        <?php for ($mi = 0; $mi < $showCount; $mi++): ?>
                                             <?php
+                                            $mediaPath = $postMedia[$mi];
                                             $ext = strtolower(pathinfo($mediaPath, PATHINFO_EXTENSION));
                                             $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
-                                            // Adjust media path - profile is in be/users/, media paths are relative to root
-                                            $mediaSrc = (strpos($mediaPath, 'fe/') === 0 || strpos($mediaPath, 'http') === 0) 
-                                                ? '../../' . $mediaPath 
-                                                : '../../' . $mediaPath;
+                                            $mediaSrc = '../../' . $mediaPath;
+                                            $isLast = ($mi === $showCount - 1) && ($mediaCount > $showCount);
                                             ?>
-                                            <div class="post-media-item">
+                                            <div class="post-media-item<?= $isLast ? ' post-media-more' : '' ?>">
                                                 <?php if (in_array($ext, $videoExtensions, true)): ?>
                                                     <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
                                                         <source src="<?= htmlspecialchars($mediaSrc) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
-                                                        Your browser does not support the video tag.
                                                     </video>
                                                 <?php else: ?>
                                                     <img src="<?= htmlspecialchars($mediaSrc) ?>"
@@ -310,8 +321,11 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                                                          data-comment-count="<?= (int)$p['comment_count'] ?>"
                                                          data-user-liked="<?= !empty($p['user_liked']) ? '1' : '0' ?>">
                                                 <?php endif; ?>
+                                                <?php if ($isLast): ?>
+                                                    <div class="post-media-overlay">+<?= $mediaCount - $showCount ?></div>
+                                                <?php endif; ?>
                                             </div>
-                                        <?php endforeach; ?>
+                                        <?php endfor; ?>
                                     </div>
                                 <?php endif; ?>
                                 
@@ -337,7 +351,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
                                     <div class="mt-3 d-flex gap-2">
                                         <input type="text" id="comment-input-<?= $p['id'] ?>" 
                                                class="form-control form-control-sm" 
-                                               placeholder="Write a comment..." />
+                                               placeholder="<?= __('write_comment') ?>" />
                                         <button class="btn btn-sm btn-primary" onclick="addComment(<?= $p['id'] ?>)">
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
@@ -459,7 +473,9 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
     <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
     <div class="lightbox-container">
         <div class="lightbox-media">
+            <button class="lightbox-nav lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)"><i class="fas fa-chevron-left"></i></button>
             <img id="lightboxImage" src="" alt="Post image">
+            <button class="lightbox-nav lightbox-next" id="lightboxNext" onclick="lightboxNav(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
         <div class="lightbox-sidebar">
             <div class="lightbox-post-header">
@@ -471,7 +487,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             </div>
             <div class="lightbox-post-body">
                 <h6 id="lightboxTitle" style="font-weight:700;color:var(--text-primary);margin-bottom:6px;"></h6>
-                <p id="lightboxContent" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
+                <p id="lightboxContent" style="color:var(--text-primary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
             </div>
             <div class="lightbox-actions">
                 <button id="lightboxLikeBtn" class="action-btn" onclick="toggleLike(parseInt(this.dataset.postId), this)">
@@ -484,7 +500,7 @@ $profileAvatar = getUserAvatar($user['avatar_url'] ?? null);
             <div class="lightbox-comments-scroll" id="lightboxComments"></div>
             <div id="lightboxReplyIndicator" class="lightbox-reply-indicator" style="display:none;"></div>
             <div class="lightbox-comment-input">
-                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="Write a comment...">
+                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="<?= __('write_comment') ?>">
                 <button class="btn btn-sm btn-primary" onclick="addLightboxComment()">
                     <i class="fas fa-paper-plane"></i>
                 </button>

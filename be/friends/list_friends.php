@@ -65,7 +65,7 @@ $friends = $stmt->fetchAll();
 
 <?php include '../../fe/components/navbar.php'; ?>
 
-<main class="flex-grow-1 container my-5 py-5">
+<main class="flex-grow-1 container my-4">
     <?php if (isset($_SESSION['friend_flash_success'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['friend_flash_success']) ?>
@@ -90,35 +90,33 @@ $friends = $stmt->fetchAll();
                 <span class="badge bg-success"><?= count($friends) ?></span>
             <?php endif; ?>
         </h2>
-        <div>
+        <div class="header-actions">
             <?php if ($isOwnProfile): ?>
-                <a href="list_requests.php" class="btn btn-outline-warning me-2">
+                <a href="list_requests.php" class="btn-glass btn-glass-warning">
                     <i class="fas fa-user-plus"></i> <?= __('requests') ?>
                 </a>
             <?php endif; ?>
             <?php if (!$isOwnProfile): ?>
-                <a href="../users/profile.php?id=<?= $viewUserId ?>" class="btn btn-outline-primary me-2">
+                <a href="../users/profile.php?id=<?= $viewUserId ?>" class="btn-glass btn-glass-primary">
                     <i class="fas fa-user"></i> <?= __('back_to_profile') ?>
                 </a>
             <?php endif; ?>
-            <a href="../../index.php" class="btn btn-outline-secondary">
+            <a href="../../index.php" class="btn-glass">
                 <i class="fas fa-arrow-left"></i> <?= __('home') ?>
             </a>
         </div>
     </div>
 
     <?php if (empty($friends)): ?>
-        <div class="card text-center py-5 shadow-sm friends-empty">
-            <div class="card-body">
-                <i class="fas fa-users fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted"><?= __('no_friends') ?></h4>
-                <p class="text-muted"><?= $isOwnProfile ? __('start_connecting') : __('no_friends') ?></p>
-                <?php if ($isOwnProfile): ?>
-                    <a href="../../index.php" class="btn btn-primary mt-2">
-                        <i class="fas fa-search"></i> <?= __('find_friends') ?>
-                    </a>
-                <?php endif; ?>
-            </div>
+        <div class="friends-empty">
+            <i class="fas fa-users"></i>
+            <h4><?= __('no_friends') ?></h4>
+            <p><?= $isOwnProfile ? __('start_connecting') : __('no_friends') ?></p>
+            <?php if ($isOwnProfile): ?>
+                <a href="../../index.php" class="btn-card-primary" style="width: auto; display: inline-flex; margin-top: 16px; padding: 0.6rem 2rem;">
+                    <i class="fas fa-search"></i> <?= __('find_friends') ?>
+                </a>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="row g-4">
@@ -126,30 +124,29 @@ $friends = $stmt->fetchAll();
                 $friendAvatar = getUserAvatar($f['avatar_url'] ?? null);
             ?>
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm friend-card">
-                        <div class="card-body text-center">
-                            <img src="<?= htmlspecialchars($friendAvatar) ?>" 
-                                   class="rounded-circle mb-3 friend-avatar-lg" 
-                                 width="100" height="100" 
-                                   >
-                            <h5 class="fw-bold mb-1"><?= htmlspecialchars($f['username']) ?></h5>
-                            <?php if (!empty($f['full_name'])): ?>
-                                <p class="text-muted small mb-3"><?= htmlspecialchars($f['full_name']) ?></p>
-                            <?php endif; ?>
-                            <a href="../users/profile.php?id=<?= $f['id'] ?>" class="btn btn-primary w-100 mb-2">
-                                <i class="fas fa-user"></i> <?= __('view_profile') ?>
-                            </a>
-                            <?php if ($isOwnProfile): ?>
-                                <form action="remove_friend.php" method="POST" class="w-100" onsubmit="return confirm('<?= htmlspecialchars(__('remove_friend_confirm'), ENT_QUOTES, 'UTF-8') ?>');">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="friend_id" value="<?= (int) $f['id'] ?>">
-                                    <input type="hidden" name="return_to" value="friends_list">
-                                    <button type="submit" class="btn btn-outline-danger w-100">
-                                        <i class="fas fa-user-minus"></i> <?= __('remove_friend') ?>
-                                    </button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
+                    <div class="friend-card">
+                        <img src="<?= htmlspecialchars($friendAvatar) ?>" 
+                             class="friend-avatar-lg" 
+                             width="90" height="90">
+                        <h5 class="fw-bold mb-1"><?= htmlspecialchars($f['username']) ?></h5>
+                        <?php if (!empty($f['full_name'])): ?>
+                            <p class="text-muted small mb-3"><?= htmlspecialchars($f['full_name']) ?></p>
+                        <?php else: ?>
+                            <div class="mb-3"></div>
+                        <?php endif; ?>
+                        <a href="../users/profile.php?id=<?= $f['id'] ?>" class="btn-card-primary mb-2">
+                            <i class="fas fa-user"></i> <?= __('view_profile') ?>
+                        </a>
+                        <?php if ($isOwnProfile): ?>
+                            <form action="remove_friend.php" method="POST" class="w-100" onsubmit="return confirm('<?= htmlspecialchars(__('remove_friend_confirm'), ENT_QUOTES, 'UTF-8') ?>');">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="friend_id" value="<?= (int) $f['id'] ?>">
+                                <input type="hidden" name="return_to" value="friends_list">
+                                <button type="submit" class="btn-card-danger">
+                                    <i class="fas fa-user-minus"></i> <?= __('remove_friend') ?>
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>

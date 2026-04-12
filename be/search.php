@@ -85,18 +85,6 @@ if ($type === 'all' || $type === 'posts') {
     $results['posts'] = $posts;
 }
 
-// Search waterbodies (fishing spots)
-if ($type === 'all' || $type === 'spots') {
-    $stmt = $pdo->prepare("
-        SELECT id, name, type, latitude, longitude, description
-        FROM waterbodies
-        WHERE name LIKE ? OR description LIKE ?
-        LIMIT 10
-    ");
-    $searchTerm = '%' . $query . '%';
-    $stmt->execute([$searchTerm, $searchTerm]);
-    $results['spots'] = $stmt->fetchAll();
-}
 
 exit(json_encode([
     'success' => true,

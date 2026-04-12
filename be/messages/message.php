@@ -234,6 +234,16 @@ if ($action === 'send') {
         'request_id' => $requestId,
     ]);
 
+} else if ($action === 'get_unread_count') {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0");
+    $stmt->execute([$userId]);
+    $result = $stmt->fetch();
+    jsonResponse([
+        'success' => true,
+        'unread_count' => (int)($result['count'] ?? 0),
+        'request_id' => $requestId,
+    ]);
+
 } else {
     jsonError('Invalid action', $requestId, 400);
 }

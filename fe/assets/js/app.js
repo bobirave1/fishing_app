@@ -228,12 +228,13 @@ function loadComments(postId) {
             
             data.comments.forEach(comment => {
                 const avatar = getAvatarUrl(comment.avatar_url);
+                const profileUrl = window.location.pathname.includes('/users/') ? 'profile.php?id=' + comment.user_id : 'be/users/profile.php?id=' + comment.user_id;
                 let commentHtml = `
                     <div class="comment-item mb-2 pb-2 border-bottom">
                         <div class="d-flex gap-2">
-                            <img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;" onerror="handleAvatarError(this)">
+                            <a href="${profileUrl}"><img src="${avatar}" class="rounded-circle" width="32" height="32" style="object-fit: cover;" onerror="handleAvatarError(this)"></a>
                             <div class="flex-grow-1">
-                                <small class="fw-bold">${comment.username}</small>
+                                <a href="${profileUrl}" class="text-decoration-none" style="color:var(--text-primary);"><small class="fw-bold">${comment.username}</small></a>
                                 <p class="mb-1 small">${comment.content}</p>
                                 <small class="text-muted">${formatDate(comment.created_at)}</small>
                             </div>`;
@@ -428,7 +429,7 @@ function performSearch(element) {
     }
     
     if (query.length < 2) {
-        resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">Type at least 2 characters</div>';
+        resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: var(--text-muted); padding: 20px;">Type at least 2 characters</div>';
         return;
     }
     
@@ -453,12 +454,12 @@ function performSearch(element) {
                 if (data.success) {
                     displaySearchResults(data.results, resultsDiv);
                 } else {
-                    resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">No results</div>';
+                    resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: var(--text-muted); padding: 20px;">No results</div>';
                 }
             })
             .catch(err => {
                 debugLog('error', 'Search request failed', { query, error: getErrorMessage(err, 'Network error') });
-                resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">Search error</div>';
+                resultsDiv.innerHTML = '<div class="fb-search-item text-center" style="color: var(--text-muted); padding: 20px;">Search error</div>';
             });
     }, 300);
 }
@@ -495,7 +496,7 @@ function displaySearchResults(results, targetDiv) {
                     <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover;" onerror="handleAvatarError(this)">
                     <div class="flex-grow-1">
                         <div style="font-weight: 600; font-size: 15px;">${username}</div>
-                        <div style="font-size: 13px; color: #65676b;">${fullName}</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">${fullName}</div>
                     </div>
                     ${user.is_friend ? '<span class="badge bg-success">Friend</span>' : ''}
                 </a>
@@ -511,34 +512,20 @@ function displaySearchResults(results, targetDiv) {
             const content = post.content ? escapeHtml(post.content.substring(0, 60)) : '';
             html += `
                 <div class="fb-search-item">
-                    <i class="fas fa-file-alt" style="color: #65676b; width: 36px; text-align: center; font-size: 18px;"></i>
+                    <i class="fas fa-file-alt" style="color: var(--text-muted); width: 36px; text-align: center; font-size: 18px;"></i>
                     <div class="flex-grow-1">
                         <div style="font-weight: 600; font-size: 15px;">${title}</div>
-                        <div style="font-size: 13px; color: #65676b;">${content}${content.length >= 60 ? '...' : ''}</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">${content}${content.length >= 60 ? '...' : ''}</div>
                     </div>
                 </div>
             `;
         });
     }
     
-    // Spots
-    if (results.spots && results.spots.length > 0) {
-        html += '<div class="fb-search-category">Spots</div>';
-        results.spots.forEach(spot => {
-            html += `
-                <a href="#" class="fb-search-item" onclick="viewSpot(${spot.id}); return false;">
-                    <i class="fas fa-map-marker-alt" style="color: #65676b; width: 36px; text-align: center; font-size: 18px;"></i>
-                    <div class="flex-grow-1">
-                        <div style="font-weight: 600; font-size: 15px;">${escapeHtml(spot.name)}</div>
-                        <div style="font-size: 13px; color: #65676b;">${escapeHtml(spot.type || 'Spot')}</div>
-                    </div>
-                </a>
-            `;
-        });
-    }
+
     
     if (!html) {
-        html = '<div class="fb-search-item text-center" style="color: #65676b; padding: 20px;">No results found</div>';
+        html = '<div class="fb-search-item text-center" style="color: var(--text-muted); padding: 20px;">No results found</div>';
     }
     
     resultsDiv.classList.remove('d-none');
@@ -549,11 +536,6 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-function viewSpot(spotId) {
-    // Show spot on map or details
-    alert('Spot details coming soon!');
 }
 
 // ==================== MESSAGING ====================
@@ -751,7 +733,7 @@ function displayNotifications(notifications) {
     if (!container) return;
     
     if (notifications.length === 0) {
-        container.innerHTML = '<div class="dropdown-item text-center text-muted">No notifications</div>';
+        container.innerHTML = `<div class="dropdown-item text-center text-muted">${window.i18n?.no_notifications_empty || 'No notifications'}</div>`;
         return;
     }
     
@@ -777,31 +759,31 @@ function displayNotifications(notifications) {
         
         switch(notif.type) {
             case 'like':
-                message = `<strong>${notif.username}</strong> liked your post`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_liked_post || 'liked your post'}`;
                 clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             case 'comment':
-                message = `<strong>${notif.username}</strong> commented on your post`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_commented_post || 'commented on your post'}`;
                 clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             case 'follow':
-                message = `<strong>${notif.username}</strong> started following you`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_started_following || 'started following you'}`;
                 clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
                 break;
             case 'friend_request':
-                message = `<strong>${notif.username}</strong> sent you a friend request`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_friend_request || 'sent you a friend request'}`;
                 clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${friendRequestPath}')"`;
                 break;
             case 'friend_accepted':
-                message = `<strong>${notif.username}</strong> accepted your friend request`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_friend_accepted || 'accepted your friend request'}`;
                 clickAction = `onclick="handleNotificationClickAndNavigate(${notif.id}, '${profilePath}?id=${notif.from_user_id}')"`;
                 break;
             case 'new_post':
-                message = `<strong>${notif.username}</strong> shared a new post`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_new_post || 'shared a new post'}`;
                 clickAction = notif.post_id ? `onclick="handleNotificationClick(${notif.id}, ${notif.post_id})"` : '';
                 break;
             default:
-                message = `<strong>${notif.username}</strong> performed an action`;
+                message = `<strong>${notif.username}</strong> ${window.i18n?.notif_default_action || 'performed an action'}`;
                 clickAction = '';
         }
         
@@ -819,10 +801,7 @@ function displayNotifications(notifications) {
         `;
     });
     
-    container.innerHTML = html + `
-        <div class="dropdown-divider"></div>
-        <a href="#" class="dropdown-item text-center small text-primary">View all notifications</a>
-    `;
+    container.innerHTML = html;
 }
 
 function updateNotificationBadge(count) {
@@ -978,10 +957,37 @@ function handleNotificationClickAndNavigate(notificationId, url) {
     });
 }
 
+function loadMessageBadge() {
+    const path = window.location.pathname;
+    let messagesPath = 'be/messages/message.php';
+    if (path.includes('/fe/pages/') || path.includes('/be/')) {
+        messagesPath = '../../be/messages/message.php';
+    }
+
+    fetch(messagesPath + '?action=get_unread_count')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById('messageBadge');
+                if (!badge) return;
+                const count = parseInt(data.unread_count) || 0;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        })
+        .catch(() => {});
+}
+
 // Load notifications when page loads and refresh periodically
 if (document.body.dataset.userId && document.body.dataset.userId != '0') {
     loadNotifications();
+    loadMessageBadge();
     setInterval(loadNotifications, 30000); // Refresh every 30 seconds
+    setInterval(loadMessageBadge, 30000);
 }
 
 // Close search dropdown when clicking outside
@@ -1195,5 +1201,25 @@ if (document.readyState === 'loading') {
 } else {
     initBubbles();
 }
+
+// ===== Post text show more / show less toggle =====
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.post-toggle-btn');
+    if (!btn) return;
+    const wrapper = btn.previousElementSibling;
+    if (!wrapper) return;
+    const isExpanded = wrapper.classList.contains('post-text-expanded');
+    if (isExpanded) {
+        wrapper.classList.remove('post-text-expanded');
+        wrapper.classList.add('post-text-collapsed');
+        btn.classList.remove('expanded');
+        btn.innerHTML = btn.dataset.show + ' <i class="fas fa-chevron-down"></i>';
+    } else {
+        wrapper.classList.remove('post-text-collapsed');
+        wrapper.classList.add('post-text-expanded');
+        btn.classList.add('expanded');
+        btn.innerHTML = btn.dataset.hide + ' <i class="fas fa-chevron-down"></i>';
+    }
+});
 
 

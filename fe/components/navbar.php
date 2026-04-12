@@ -90,8 +90,9 @@ if (isset($_SESSION['user_id'])) {
         <a href="<?= $homePath ?>" class="fb-nav-btn <?= ($currentPage == 'index.php') ? 'active' : '' ?>">
             <i class="fas fa-home fs-4"></i>
         </a>
-        <a href="<?= $messagesPath ?>" class="fb-nav-btn <?= ($currentPage == 'messages.php') ? 'active' : '' ?>">
+        <a href="<?= $messagesPath ?>" class="fb-nav-btn <?= ($currentPage == 'messages.php') ? 'active' : '' ?>" style="position: relative;">
             <i class="fas fa-comments fs-4"></i>
+            <span id="messageBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none notification-badge">0</span>
         </a>
         <a href="<?= $activityPath ?>" class="fb-nav-btn <?= ($currentPage == 'activity_feed.php') ? 'active' : '' ?>">
             <i class="fas fa-fish fs-4"></i>
@@ -125,12 +126,12 @@ if (isset($_SESSION['user_id'])) {
             </button>
             <ul class="dropdown-menu dropdown-menu-end navbar-dropdown">
                 <li class="dropdown-header d-flex justify-content-between align-items-center">
-                    <strong>Notifications</strong>
-                    <button class="btn btn-sm btn-link text-decoration-none" onclick="markAllNotificationsRead()">Mark all read</button>
+                    <strong><?= __('notifications') ?></strong>
+                    <button class="btn btn-sm btn-link text-decoration-none" onclick="markAllNotificationsRead()"><?= __('mark_all_read') ?></button>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <div id="notificationList">
-                    <li><span class="dropdown-item-text text-muted">No new notifications</span></li>
+                    <li><span class="dropdown-item-text text-muted"><?= __('no_notifications') ?></span></li>
                 </div>
             </ul>
         </div>
@@ -207,12 +208,29 @@ if (isset($_SESSION['user_id'])) {
             $registerPath = 'fe/auth/register_form.php';
         }
         ?>
-        <a href="<?= $loginPath ?>" class="btn btn-outline-primary me-2"><?= __('login') ?></a>
-        <a href="<?= $registerPath ?>" class="btn btn-primary"><?= __('sign_up') ?></a>
+        <a href="<?= $loginPath ?>" class="nav-auth-btn nav-auth-login">
+            <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
+        </a>
+        <a href="<?= $registerPath ?>" class="nav-auth-btn nav-auth-register">
+            <i class="fas fa-user-plus"></i> <?= __('sign_up') ?>
+        </a>
         <?php endif; ?>
     </div>
 </nav>
 
 <?php if (isset($_SESSION['user_id'])): ?>
+<script>
+window.i18n = {
+    notif_liked_post: <?= json_encode(__('notif_liked_post')) ?>,
+    notif_commented_post: <?= json_encode(__('notif_commented_post')) ?>,
+    notif_started_following: <?= json_encode(__('notif_started_following')) ?>,
+    notif_friend_request: <?= json_encode(__('notif_friend_request')) ?>,
+    notif_friend_accepted: <?= json_encode(__('notif_friend_accepted')) ?>,
+    notif_new_post: <?= json_encode(__('notif_new_post')) ?>,
+    notif_default_action: <?= json_encode(__('notif_default_action')) ?>,
+    view_all_notifications: <?= json_encode(__('view_all_notifications')) ?>,
+    no_notifications_empty: <?= json_encode(__('no_notifications_empty')) ?>
+};
+</script>
 <script src="<?= $basePath ?>fe/assets/js/navbar.js?v=<?= assetVersion('fe/assets/js/navbar.js') ?>"></script>
 <?php endif; ?>

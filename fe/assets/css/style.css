@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=Unbounded:wght@800&display=swap');
 
 :root {
     /* Primary Colors - Teal Oceanic Theme */
@@ -114,7 +114,7 @@ body {
     background-blend-mode: multiply, normal;
     background-attachment: fixed;
     color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     transition: background-color var(--transition-base), background-image var(--transition-slow);
@@ -157,7 +157,7 @@ a:hover {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-family: 'Montserrat', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     font-weight: 600;
     line-height: 1.2;
 }
@@ -195,6 +195,162 @@ h1, h2, h3, h4, h5, h6 {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+}
+
+/* ============================================
+   WELCOME HERO - Guest Homepage Card
+   ============================================ */
+.welcome-hero {
+    padding: 3rem 2rem 2.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-hero::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -8%;
+    width: 220px;
+    height: 220px;
+    background: rgba(8, 131, 149, 0.08);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.welcome-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 160px;
+    height: 160px;
+    background: rgba(122, 178, 178, 0.07);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.welcome-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(8, 131, 149, 0.3);
+}
+
+.welcome-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.welcome-title {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 800;
+    font-size: 2.5rem;
+    letter-spacing: -0.5px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+
+.welcome-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--text-tertiary);
+    font-size: 1.15rem;
+    font-weight: 500;
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+
+/* Hero-style Buttons (welcome section) */
+.btn-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.7rem 1.75rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 250ms ease-in-out;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-hero-primary {
+    background: var(--gradient-primary);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(8, 131, 149, 0.3);
+}
+
+.btn-hero-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(8, 131, 149, 0.4);
+    color: #fff;
+}
+
+.btn-hero-accent {
+    background: var(--surface-1);
+    color: var(--primary-color);
+    border: 1.5px solid var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-hero-accent:hover {
+    background: var(--gradient-primary);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(8, 131, 149, 0.35);
+}
+
+/* ============================================
+   NAVBAR AUTH BUTTONS - Guest Navigation
+   ============================================ */
+.nav-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 200ms ease-in-out;
+    white-space: nowrap;
+}
+
+.nav-auth-login {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.nav-auth-login:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.nav-auth-register {
+    background: var(--gradient-primary);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 10px rgba(8, 131, 149, 0.3);
+}
+
+.nav-auth-register:hover {
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(8, 131, 149, 0.45);
+    transform: translateY(-1px);
 }
 
 /* Hero Section - Professional (guest homepage) */
@@ -424,8 +580,8 @@ h1, h2, h3, h4, h5, h6 {
 .form-select::placeholder,
 textarea::placeholder,
 input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.9;
+    color: var(--text-muted) !important;
+    opacity: 0.9 !important;
 }
 
 /* Bootstrap Overrides */
@@ -766,9 +922,9 @@ h1, h2, h3 {
 .form-select,
 textarea.form-control,
 input.form-control {
-    background: var(--surface-2);
+    background: var(--surface-2) !important;
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
 }
 
 .form-control:focus,
@@ -1288,3 +1444,5 @@ input.form-control:focus {
     color: #fff;
     transform: translateY(-2px);
 }
+
+

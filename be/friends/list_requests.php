@@ -73,7 +73,7 @@ $requests = $stmt->fetchAll();
 
 <?php include '../../fe/components/navbar.php'; ?>
 
-<main class="flex-grow-1 container my-5 py-5">
+<main class="flex-grow-1 container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold page-title">
             <i class="fas fa-user-plus text-warning"></i> <?= __('requests') ?>
@@ -81,26 +81,24 @@ $requests = $stmt->fetchAll();
                 <span class="badge bg-warning text-dark"><?= count($requests) ?></span>
             <?php endif; ?>
         </h2>
-        <div>
-            <a href="list_friends.php" class="btn btn-outline-success me-2">
+        <div class="header-actions">
+            <a href="list_friends.php" class="btn-glass btn-glass-primary">
                 <i class="fas fa-user-friends"></i> <?= __('my_friends') ?>
             </a>
-            <a href="../../index.php" class="btn btn-outline-secondary">
+            <a href="../../index.php" class="btn-glass">
                 <i class="fas fa-arrow-left"></i> <?= __('home') ?>
             </a>
         </div>
     </div>
 
     <?php if (empty($requests)): ?>
-        <div class="card text-center py-5 shadow-sm requests-empty">
-            <div class="card-body">
-                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted"><?= __('no_pending_requests') ?></h4>
-                <p class="text-muted"><?= __('all_caught_up') ?></p>
-                <a href="../../index.php" class="btn btn-primary mt-3">
-                    <i class="fas fa-home"></i> <?= __('go_to_home') ?>
-                </a>
-            </div>
+        <div class="requests-empty">
+            <i class="fas fa-inbox"></i>
+            <h4><?= __('no_pending_requests') ?></h4>
+            <p><?= __('all_caught_up') ?></p>
+            <a href="../../index.php" class="btn-card-primary" style="width: auto; display: inline-flex; margin-top: 16px; padding: 0.6rem 2rem;">
+                <i class="fas fa-home"></i> <?= __('go_to_home') ?>
+            </a>
         </div>
     <?php else: ?>
         <div class="row g-3">
@@ -108,42 +106,39 @@ $requests = $stmt->fetchAll();
                 $senderAvatar = getUserAvatar($r['avatar_url'] ?? null);
             ?>
                 <div class="col-12">
-                    <div class="card shadow-sm request-card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="<?= htmlspecialchars($senderAvatar) ?>" 
-                                         class="rounded-circle request-avatar" 
-                                         width="60" height="60" 
-                                         >
-                                    <div>
-                                        <h5 class="mb-0 fw-bold"><?= htmlspecialchars($r['username']) ?></h5>
-                                        <?php if (!empty($r['full_name'])): ?>
-                                            <p class="text-muted mb-0 small"><?= htmlspecialchars($r['full_name']) ?></p>
-                                        <?php endif; ?>
-                                        <a href="../users/profile.php?id=<?= $r['user_id'] ?>" class="text-primary text-decoration-none small">
-                                            <i class="fas fa-eye"></i> <?= __('view_profile') ?>
-                                        </a>
-                                    </div>
+                    <div class="request-card">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="<?= htmlspecialchars($senderAvatar) ?>" 
+                                     class="rounded-circle request-avatar" 
+                                     width="64" height="64">
+                                <div>
+                                    <h5 class="mb-0 fw-bold"><?= htmlspecialchars($r['username']) ?></h5>
+                                    <?php if (!empty($r['full_name'])): ?>
+                                        <p class="text-muted mb-0 small"><?= htmlspecialchars($r['full_name']) ?></p>
+                                    <?php endif; ?>
+                                    <a href="../users/profile.php?id=<?= $r['user_id'] ?>" class="text-primary text-decoration-none small">
+                                        <i class="fas fa-eye"></i> <?= __('view_profile') ?>
+                                    </a>
                                 </div>
+                            </div>
 
-                                <div class="d-flex gap-2">
-                                    <form action="accept_request.php" method="post" class="d-inline">
-                                        <?= getCsrfField() ?>
-                                        <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
-                                        <button class="btn btn-success">
-                                            <i class="fas fa-check"></i> <?= __('accept') ?>
-                                        </button>
-                                    </form>
+                            <div class="d-flex gap-2">
+                                <form action="accept_request.php" method="post" class="d-inline">
+                                    <?= getCsrfField() ?>
+                                    <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
+                                    <button class="btn-card-success">
+                                        <i class="fas fa-check"></i> <?= __('accept') ?>
+                                    </button>
+                                </form>
 
-                                    <form action="reject_request.php" method="post" class="d-inline">
-                                        <?= getCsrfField() ?>
-                                        <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
-                                        <button class="btn btn-outline-danger">
-                                            <i class="fas fa-times"></i> <?= __('reject') ?>
-                                        </button>
-                                    </form>
-                                </div>
+                                <form action="reject_request.php" method="post" class="d-inline">
+                                    <?= getCsrfField() ?>
+                                    <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
+                                    <button class="btn-card-outline-danger">
+                                        <i class="fas fa-times"></i> <?= __('reject') ?>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

@@ -116,7 +116,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISHINGLORY - <?= __('home') ?></title>
+    <title><?= __('home') ?> | FISHINGLORY</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -130,7 +130,7 @@ if (isset($_SESSION['user_id'])) {
 
 <?php include 'fe/components/navbar.php'; ?>
 
-<main class="flex-grow-1 container-fluid mt-5 mb-0 py-3">
+<main class="flex-grow-1 container my-4">
     <div class="row">
         <!-- Left Sidebar -->
         <?php if (isset($_SESSION['user_id'])): ?>
@@ -170,13 +170,17 @@ if (isset($_SESSION['user_id'])) {
         <div class="col-12 col-md-<?= isset($_SESSION['user_id']) ? '6' : '8 offset-md-2' ?> col-lg-<?= isset($_SESSION['user_id']) ? '7' : '8 offset-lg-2' ?>">
 
 <?php if (!isset($_SESSION['user_id'])): ?>
-    <div class="text-center py-5">
-        <h2 class="fw-bold text-primary mb-4"><?= __('welcome_title') ?></h2>
-        <div class="d-flex justify-content-center gap-3">
-            <a href="fe/auth/login_form.php" class="btn btn-primary btn-lg px-4">
+    <div class="welcome-hero glass-card text-center">
+        <div class="welcome-icon-wrapper">
+            <img src="fe/assets/img/logo_rounded.png" alt="FISHINGLORY" class="welcome-logo">
+        </div>
+        <h1 class="welcome-title"><?= __('welcome_title') ?></h1>
+        <p class="welcome-subtitle"><?= __('welcome_subtitle') ?></p>
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="fe/auth/login_form.php" class="btn-hero btn-hero-primary">
                 <i class="fas fa-sign-in-alt"></i> <?= __('login') ?>
             </a>
-            <a href="fe/auth/register_form.php" class="btn btn-success btn-lg px-4">
+            <a href="fe/auth/register_form.php" class="btn-hero btn-hero-accent">
                 <i class="fas fa-user-plus"></i> <?= __('sign_up') ?>
             </a>
         </div>
@@ -245,14 +249,6 @@ if (isset($_SESSION['user_id'])) {
                 <i class="fas fa-images"></i>
             </label>
 
-            <div
-                id="postMediaFileName"
-                class="create-post-file-name"
-                data-no-file="<?= __('no_file_selected') ?>"
-                data-selected-file="<?= __('selected_file') ?>"
-                data-files-selected="<?= __('files_selected') ?>"
-            ><?= __('no_file_selected') ?></div>
-
             <button class="btn btn-primary w-100 mt-3" style="border-radius: 10px; padding: 0.9rem; font-size: 1.05rem; font-weight: 700;">
                 <i class="fas fa-paper-plane"></i> <?= __('post') ?>
             </button>
@@ -273,19 +269,21 @@ if (isset($_SESSION['user_id'])) {
     <div class="modern-post glass-card">
         <div class="post-header">
             <div class="d-flex align-items-center flex-grow-1">
-                <img src="<?= htmlspecialchars($avatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
+                <a href="be/users/profile.php?id=<?= $p['user_id'] ?>">
+                    <img src="<?= htmlspecialchars($avatar) ?>" class="post-avatar-modern" onerror="handleAvatarError(this)">
+                </a>
                 <div class="post-user-info">
                     <h6>
                         <a href="be/users/profile.php?id=<?= $p['user_id'] ?>" class="text-decoration-none" style="color: var(--text-primary);">
                             <?= htmlspecialchars($p['username']) ?>
                         </a>
                     </h6>
-                    <div class="post-timestamp d-flex align-items-center justify-content-between">
+                    <div class="post-timestamp d-flex align-items-center">
                         <span>
                             <i class="fas fa-clock"></i>
                             <span class="post-time-ago" data-iso-date="<?= htmlspecialchars(date('c', strtotime($p['created_at']))) ?>"></span>
                         </span>
-                        <span class="badge ms-3" style="font-size: 0.85rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <span class="badge ms-2" style="font-size: 0.75rem; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-color);">
                             <?php 
                             $icons = ['public' => '🌍', 'friends' => '👥', 'private' => '🔒'];
                             echo $icons[$p['visibility']] ?? '🌍';
@@ -311,23 +309,46 @@ if (isset($_SESSION['user_id'])) {
 
         <div class="post-content">
             <?php if (!empty($p['title'])): ?>
-                <h6 class="mb-2"><?= htmlspecialchars($p['title']) ?></h6>
+                <h6 class="mb-2 post-title" title="<?= htmlspecialchars($p['title']) ?>"><?= htmlspecialchars(mb_strimwidth($p['title'], 0, 100, '...')) ?></h6>
             <?php endif; ?>
-            <p class="mb-0"><?= nl2br(htmlspecialchars($p['content'])) ?></p>
+            <?php
+                $rawContent = preg_replace(
+                    '#(https?://[^\s<>"\']+)#i',
+                    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color);word-break:break-all;">$1</a>',
+                    nl2br(htmlspecialchars($p['content']))
+                );
+                $isLong = mb_strlen($p['content']) > 200;
+            ?>
+            <div class="post-text-wrapper<?= $isLong ? ' post-text-collapsed' : '' ?>">
+                <p class="mb-0"><?= $rawContent ?></p>
+            </div>
+            <?php if ($isLong): ?>
+                <button class="post-toggle-btn" data-show="<?= htmlspecialchars(__('show_more')) ?>" data-hide="<?= htmlspecialchars(__('show_less')) ?>">
+                    <?= __('show_more') ?> <i class="fas fa-chevron-down"></i>
+                </button>
+            <?php endif; ?>
         </div>
         
         <?php if (!empty($postMedia)): ?>
-            <div class="post-image-wrapper<?= count($postMedia) > 1 ? ' post-media-grid' : '' ?>">
-                <?php foreach ($postMedia as $mediaPath): ?>
+            <?php $mediaCount = count($postMedia); $showCount = min($mediaCount, 4); ?>
+            <?php
+            $allImages = array_values(array_filter($postMedia, function($path) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                return !in_array($ext, ['mp4', 'webm', 'avi', 'mov'], true);
+            }));
+            ?>
+            <div class="post-image-wrapper post-media-count-<?= $showCount ?>" data-all-images='<?= htmlspecialchars(json_encode($allImages), ENT_QUOTES, "UTF-8") ?>'>
+                <?php for ($mi = 0; $mi < $showCount; $mi++): ?>
                     <?php
+                    $mediaPath = $postMedia[$mi];
                     $ext = strtolower(pathinfo($mediaPath, PATHINFO_EXTENSION));
                     $videoExtensions = ['mp4', 'webm', 'avi', 'mov'];
+                    $isLast = ($mi === $showCount - 1) && ($mediaCount > $showCount);
                     ?>
-                    <div class="post-media-item">
+                    <div class="post-media-item<?= $isLast ? ' post-media-more' : '' ?>">
                         <?php if (in_array($ext, $videoExtensions, true)): ?>
                             <video controls class="post-image-modern" style="width: 100%; max-height: 600px;">
                                 <source src="<?= htmlspecialchars($mediaPath) ?>" type="video/<?= $ext === 'mov' ? 'quicktime' : $ext ?>">
-                                Your browser does not support the video tag.
                             </video>
                         <?php else: ?>
                             <img src="<?= htmlspecialchars($mediaPath) ?>"
@@ -345,8 +366,11 @@ if (isset($_SESSION['user_id'])) {
                                  data-comment-count="<?= (int)$p['comment_count'] ?>"
                                  data-user-liked="<?= !empty($p['user_liked']) ? '1' : '0' ?>">
                         <?php endif; ?>
+                        <?php if ($isLast): ?>
+                            <div class="post-media-overlay">+<?= $mediaCount - $showCount ?></div>
+                        <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
+                <?php endfor; ?>
             </div>
         <?php endif; ?>
         
@@ -372,7 +396,7 @@ if (isset($_SESSION['user_id'])) {
             <div class="mt-3 d-flex gap-2">
                 <input type="text" id="comment-input-<?= $p['id'] ?>" 
                        class="form-control form-control-sm" 
-                       placeholder="Write a comment..." />
+                       placeholder="<?= __('write_comment') ?>" />
                 <button class="btn btn-sm btn-primary" onclick="addComment(<?= $p['id'] ?>)">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -454,7 +478,7 @@ if (isset($_SESSION['user_id'])) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="editPostBody">
-                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+                <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> <?= __('loading') ?></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
@@ -477,7 +501,7 @@ if (isset($_SESSION['user_id'])) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="deletePostBody">
-                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+                <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> <?= __('loading') ?></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button>
@@ -494,7 +518,9 @@ if (isset($_SESSION['user_id'])) {
     <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
     <div class="lightbox-container">
         <div class="lightbox-media">
+            <button class="lightbox-nav lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)"><i class="fas fa-chevron-left"></i></button>
             <img id="lightboxImage" src="" alt="Post image">
+            <button class="lightbox-nav lightbox-next" id="lightboxNext" onclick="lightboxNav(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
         <div class="lightbox-sidebar">
             <div class="lightbox-post-header">
@@ -506,7 +532,7 @@ if (isset($_SESSION['user_id'])) {
             </div>
             <div class="lightbox-post-body">
                 <h6 id="lightboxTitle" style="font-weight:700;color:var(--text-primary);margin-bottom:6px;"></h6>
-                <p id="lightboxContent" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
+                <p id="lightboxContent" style="color:var(--text-primary);font-size:0.9rem;line-height:1.6;margin:0;"></p>
             </div>
             <div class="lightbox-actions">
                 <button id="lightboxLikeBtn" class="action-btn" onclick="toggleLike(parseInt(this.dataset.postId), this)">
@@ -519,7 +545,7 @@ if (isset($_SESSION['user_id'])) {
             <div class="lightbox-comments-scroll" id="lightboxComments"></div>
             <div id="lightboxReplyIndicator" class="lightbox-reply-indicator" style="display:none;"></div>
             <div class="lightbox-comment-input">
-                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="Write a comment...">
+                <input type="text" id="lightboxCommentInput" class="form-control form-control-sm" placeholder="<?= __('write_comment') ?>">
                 <button class="btn btn-sm btn-primary" onclick="addLightboxComment()">
                     <i class="fas fa-paper-plane"></i>
                 </button>
