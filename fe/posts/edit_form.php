@@ -3,22 +3,20 @@ require '../../config/security.php';
 secureSession();
 require '../../config/database.php';
 require '../../config/languages.php';
+require '../../config/avatar_helper.php';
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     exit;
 }
 
 $postId = $_GET['id'] ?? null;
-
 if (!$postId) {
     http_response_code(400);
     exit;
 }
 
-// Fetch the post
-$stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ?");
+$stmt = $pdo->prepare("SELECT p.*, u.username, up.avatar_url FROM posts p JOIN users u ON u.id = p.user_id LEFT JOIN user_profiles up ON up.user_id = p.user_id WHERE p.id = ?");
 $stmt->execute([$postId]);
 $post = $stmt->fetch();
 
@@ -27,42 +25,68 @@ if (!$post || $post['user_id'] != $_SESSION['user_id']) {
     exit;
 }
 
-// Return just the form content (to be loaded into modal)
+// Get existing media
+$existingMedia = [];
+try {
+    $mediaStmt = $pdo->prepare("SELECT id, image_url FROM post_images WHERE post_id = ? ORDER BY id");
+    $mediaStmt->execute([$postId]);
+    $existingMedia = $mediaStmt->fetchAll();
+} catch (Throwable $e) {}
+
+if (empty($existingMedia) && !empty($post['image'])) {
+    $existingMedia = [['id' => 0, 'image_url' => $post['image']]];
+}
+
+$avatar = getUserAvatar($post['avatar_url'] ?? null);
+
+// Compute absolute base URL for images (this HTML is AJAX-loaded into different page contexts)
+$baseUrl = dirname(dirname(dirname($_SERVER['SCRIPT_NAME'])));
+if ($baseUrl !== '/') $baseUrl .= '/';
 ?>
-<form id="editPostForm" action="be/posts/edit.php" method="post" enctype="multipart/form-data">
+<form id="editPostForm" enctype="multipart/form-data">
     <?= getCsrfField() ?>
     <input type="hidden" name="id" value="<?= htmlspecialchars($postId) ?>">
-    
-    <div class="mb-3">
-        <label for="editTitle" class="form-label"><i class="fas fa-heading"></i> <?= __('title') ?></label>
-        <input type="text" id="editTitle" name="title" class="form-control" 
-               value="<?= htmlspecialchars($post['title']) ?>" required>
-    </div>
 
-    <div class="mb-3">
-        <label for="editContent" class="form-label"><i class="fas fa-pen"></i> <?= __('content') ?></label>
-        <textarea id="editContent" name="content" class="form-control" rows="5" required><?= htmlspecialchars($post['content']) ?></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label for="editVisibility" class="form-label"><i class="fas fa-eye"></i> <?= __('visibility') ?></label>
-        <select id="editVisibility" name="visibility" class="form-select">
-            <option value="public" <?= $post['visibility'] === 'public' ? 'selected' : '' ?>><?= __('public_emoji') ?></option>
-            <option value="friends" <?= $post['visibility'] === 'friends' ? 'selected' : '' ?>><?= __('friends_emoji') ?></option>
-            <option value="private" <?= $post['visibility'] === 'private' ? 'selected' : '' ?>><?= __('only_me') ?></option>
-        </select>
-    </div>
-
-    <?php if (!empty($post['image'])): ?>
-        <div class="mb-3">
-            <label class="form-label"><i class="fas fa-image"></i> <?= __('current_image') ?></label>
-            <img src="<?= htmlspecialchars($post['image']) ?>" class="img-fluid rounded" style="max-height: 150px;">
-            <small class="d-block text-muted mt-2"><?= __('upload_new_image') ?></small>
+    <div class="composer-header">
+        <img src="<?= $baseUrl . htmlspecialchars($avatar) ?>" alt="avatar" class="composer-avatar">
+        <div class="composer-meta">
+            <div class="composer-name"><?= htmlspecialchars($post['username']) ?></div>
+            <select name="visibility" class="form-select form-select-sm composer-privacy">
+                <option value="public" <?= $post['visibility'] === 'public' ? 'selected' : '' ?>>🌍 <?= __('public') ?></option>
+                <option value="friends" <?= $post['visibility'] === 'friends' ? 'selected' : '' ?>>👥 <?= __('friends') ?></option>
+                <option value="private" <?= $post['visibility'] === 'private' ? 'selected' : '' ?>>🔒 <?= __('private') ?></option>
+            </select>
         </div>
+    </div>
+
+    <div class="composer-fields">
+        <input type="text" name="title" class="create-post-input mb-2"
+               placeholder="<?= __('post_title_placeholder') ?>"
+               value="<?= htmlspecialchars($post['title']) ?>"
+               required maxlength="200">
+        <textarea name="content" class="create-post-input composer-content-input"
+                  placeholder="<?= __('post_placeholder') ?>"
+                  required maxlength="5000"><?= htmlspecialchars($post['content']) ?></textarea>
+    </div>
+
+    <?php if (!empty($existingMedia)): ?>
+    <div id="editExistingMedia" class="post-media-preview show">
+        <?php foreach ($existingMedia as $media): ?>
+            <div class="media-preview-item" data-media-id="<?= (int)$media['id'] ?>">
+                <button type="button" class="media-remove-btn" data-remove-id="<?= (int)$media['id'] ?>" title="<?= __('remove') ?>">&times;</button>
+                <img src="<?= $baseUrl . htmlspecialchars($media['image_url']) ?>" alt="">
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <input type="hidden" name="remove_media" id="editRemoveMedia" value="">
     <?php endif; ?>
 
-    <div class="mb-3">
-        <label for="editImage" class="form-label"><i class="fas fa-upload"></i> <?= __('change_image') ?></label>
-        <input type="file" id="editImage" name="image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp">
-    </div>
+    <input type="file" id="editMediaInput" name="media[]" class="create-post-file-input"
+           multiple accept="image/jpeg,image/png,image/gif,image/webp">
+
+    <div id="editMediaPreview" class="post-media-preview" aria-live="polite"></div>
+
+    <label for="editMediaInput" class="composer-icon-btn mt-1" title="<?= __('attach_file') ?>">
+        <i class="fas fa-images"></i>
+    </label>
 </form>

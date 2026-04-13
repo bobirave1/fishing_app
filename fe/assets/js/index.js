@@ -6,6 +6,7 @@ function loadEditPost(postId) {
         .then(response => response.text())
         .then(html => {
             document.getElementById('editPostBody').innerHTML = html;
+            initEditMediaPreview();
         })
         .catch(() => {
             document.getElementById('editPostBody').innerHTML = '<p class="text-danger">Error loading form.</p>';
@@ -13,42 +14,110 @@ function loadEditPost(postId) {
 }
 
 // Submit edit form
+var editCollectedFiles = [];
+var editPreviewUrls = [];
+var editRemovedMediaIds = [];
+
+function initEditMediaPreview() {
+    editCollectedFiles = [];
+    editPreviewUrls = [];
+    editRemovedMediaIds = [];
+
+    var mediaInput = document.getElementById('editMediaInput');
+    var preview = document.getElementById('editMediaPreview');
+    if (!mediaInput || !preview) return;
+
+    function renderNewPreview() {
+        while (editPreviewUrls.length) URL.revokeObjectURL(editPreviewUrls.pop());
+        if (editCollectedFiles.length === 0) {
+            preview.classList.remove('show');
+            preview.innerHTML = '';
+            return;
+        }
+        preview.innerHTML = editCollectedFiles.map(function(file, idx) {
+            var btn = '<button type="button" class="media-remove-btn" data-new-idx="' + idx + '" title="Remove">&times;</button>';
+            if (file.type.startsWith('image/')) {
+                var url = URL.createObjectURL(file);
+                editPreviewUrls.push(url);
+                return '<div class="media-preview-item">' + btn + '<img src="' + url + '" alt=""></div>';
+            }
+            return '<div class="media-preview-item">' + btn + '<div class="file-name"><i class="fas fa-file me-1"></i>' + escapeHtml(file.name) + '</div></div>';
+        }).join('');
+        preview.classList.add('show');
+    }
+
+    mediaInput.addEventListener('change', function() {
+        Array.from(mediaInput.files || []).forEach(function(f) {
+            if (f.size > 20 * 1024 * 1024) {
+                alert(f.name + ' is too large (max 20 MB)');
+                return;
+            }
+            editCollectedFiles.push(f);
+        });
+        mediaInput.value = '';
+        renderNewPreview();
+    });
+
+    preview.addEventListener('click', function(e) {
+        var btn = e.target.closest('.media-remove-btn[data-new-idx]');
+        if (!btn) return;
+        editCollectedFiles.splice(parseInt(btn.dataset.newIdx, 10), 1);
+        renderNewPreview();
+    });
+
+    // Handle removing existing media
+    var existingContainer = document.getElementById('editExistingMedia');
+    if (existingContainer) {
+        existingContainer.addEventListener('click', function(e) {
+            var btn = e.target.closest('.media-remove-btn[data-remove-id]');
+            if (!btn) return;
+            var id = btn.dataset.removeId;
+            editRemovedMediaIds.push(id);
+            btn.closest('.media-preview-item').remove();
+            document.getElementById('editRemoveMedia').value = editRemovedMediaIds.join(',');
+            if (!existingContainer.querySelector('.media-preview-item')) {
+                existingContainer.classList.remove('show');
+            }
+        });
+    }
+}
+
 function submitEditForm() {
-    const form = document.getElementById('editPostForm');
-    if (!form) {
-        alert('Form not found');
-        return;
+    var form = document.getElementById('editPostForm');
+    if (!form) { alert('Form not found'); return; }
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    var formData = new FormData(form);
+    formData.delete('media[]');
+    editCollectedFiles.forEach(function(f) { formData.append('media[]', f); });
+
+    var saveBtn = document.querySelector('#editPostModal .modal-footer .btn-primary');
+    var origHTML = '';
+    if (saveBtn) {
+        origHTML = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
     }
-    
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-    
-    const formData = new FormData(form);
 
     fetch(getApiPath('be/posts/edit.php'), {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
         if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editPostModal'));
+            var modal = bootstrap.Modal.getInstance(document.getElementById('editPostModal'));
             if (modal) modal.hide();
-            setTimeout(() => location.reload(), 500);
+            setTimeout(function() { location.reload(); }, 500);
         } else {
-            alert('Error: ' + (data.message || data.error || 'Unknown error'));
+            alert('Error: ' + (data.error || data.message || 'Unknown error'));
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = origHTML; }
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch(function(err) {
+        console.error('Error:', err);
         alert('An error occurred while updating the post.');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = origHTML; }
     });
 }
 
@@ -93,6 +162,9 @@ function confirmDeletePost() {
 
 // Clear edit and delete modals when closed
 document.getElementById('editPostModal').addEventListener('hidden.bs.modal', function () {
+    editCollectedFiles = [];
+    while (editPreviewUrls.length) URL.revokeObjectURL(editPreviewUrls.pop());
+    editRemovedMediaIds = [];
     document.getElementById('editPostBody').innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
 });
 
