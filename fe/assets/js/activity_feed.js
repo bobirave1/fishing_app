@@ -13,17 +13,15 @@ let userLocationObtained = false;
 function initCalendar() {
     const calendarDays = document.getElementById('calendarDays');
     const today = new Date();
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
+    const days = window.fishingTranslations.days;
     for (let i = -3; i <= 3; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
-        
         const dayItem = document.createElement('div');
         dayItem.className = 'day-item' + (i === 0 ? ' active' : '');
         dayItem.innerHTML = `
             <span class="day-number">${date.getDate()}</span>
-            <span class="day-name">${i === 0 ? 'Today' : days[date.getDay()]}</span>
+            <span class="day-name">${i === 0 ? window.fishingTranslations.today : days[date.getDay()]}</span>
         `;
         calendarDays.appendChild(dayItem);
     }
@@ -256,12 +254,12 @@ function displayActivityData(data) {
         document.getElementById('scoreNumber').style.color = '#dc3545';
     }
     
-    // Update activity level text
-    let levelText = 'Very low fish activity';
-    if (score >= 80) levelText = 'Excellent fish activity';
-    else if (score >= 60) levelText = 'Good fish activity';
-    else if (score >= 40) levelText = 'Moderate fish activity';
-    else if (score >= 20) levelText = 'Low fish activity';
+    // Update activity level text (use translations)
+    let levelText = window.fishingTranslations.very_low_activity;
+    if (score >= 80) levelText = window.fishingTranslations.excellent_activity;
+    else if (score >= 60) levelText = window.fishingTranslations.good_activity;
+    else if (score >= 40) levelText = window.fishingTranslations.moderate_activity;
+    else if (score >= 20) levelText = window.fishingTranslations.low_activity;
     document.getElementById('activityLevelText').textContent = levelText;
     
     // Update chart

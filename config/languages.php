@@ -8,6 +8,20 @@ $lang = $_SESSION['lang'] ?? 'bg'; // Default to Bulgarian for diploma project
 
 $translations = [
     'en' => [
+            // Edit Profile extra
+            'update_profile_info' => 'Update your information and profile picture',
+            'bio_placeholder' => 'Tell us about yourself and your fishing experience...',
+            'characters' => 'characters',
+            'beginner_desc' => 'Just starting out',
+            'advanced_desc' => 'Several years experience',
+            'pro_desc' => 'Expert level',
+            'save_changes' => 'Save Changes',
+            'profile_tips' => 'Profile Tips',
+            'tip_clear_picture' => 'Use a clear profile picture to help others recognize you',
+            'tip_share_experience' => 'Share your fishing experience and favorite techniques in your bio',
+            'tip_add_location' => 'Add your location to connect with local anglers',
+            'tip_keep_updated' => 'Keep your profile updated to get the most out of FISHINGLORY',
+            'max' => 'max',
         // Navigation
         'home' => 'Home',
         'messages' => 'Messages',
@@ -209,6 +223,20 @@ $translations = [
         'change_image' => 'Change Image (optional)',
     ],
     'bg' => [
+            // Edit Profile extra
+            'update_profile_info' => 'Обновете информацията и профилната си снимка',
+            'bio_placeholder' => 'Разкажете за себе си и риболовния си опит...',
+            'characters' => 'символа',
+            'beginner_desc' => 'Тепърва започващ',
+            'advanced_desc' => 'С няколко години опит',
+            'pro_desc' => 'Експертно ниво',
+            'save_changes' => 'Запази промените',
+            'profile_tips' => 'Съвети за профила',
+            'tip_clear_picture' => 'Използвайте ясна профилна снимка, за да ви разпознават лесно',
+            'tip_share_experience' => 'Споделете риболовния си опит и любими техники в биографията',
+            'tip_add_location' => 'Добавете местоположение, за да се свържете с местни рибари',
+            'tip_keep_updated' => 'Дръжте профила си актуален, за да се възползвате максимално от FISHINGLORY',
+            'max' => 'макс',
         // Navigation
         'home' => 'Начало',
         'messages' => 'Съобщения',
