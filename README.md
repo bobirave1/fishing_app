@@ -287,7 +287,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Your Name**
 - GitHub: [@bobirave1](https://github.com/bobirave1)
-- Email: your.email@example.com
+- Email: hristov.borislav369@gmail.com
 
 ## 🙏 Acknowledgments
 
